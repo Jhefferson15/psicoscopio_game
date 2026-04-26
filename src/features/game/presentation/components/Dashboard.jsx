@@ -1,19 +1,19 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useGame } from '../state/GameContext';
-import { 
-  BookOpen, 
-  Target, 
-  Layers, 
-  PlayCircle, 
-  Award, 
-  Users, 
-  ArrowRight, 
-  ArrowLeft, 
-  Shuffle, 
-  Brain, 
-  Sprout, 
-  RefreshCw, 
+import {
+  BookOpen,
+  Target,
+  Layers,
+  PlayCircle,
+  Award,
+  Users,
+  ArrowRight,
+  ArrowLeft,
+  Shuffle,
+  Brain,
+  Sprout,
+  RefreshCw,
   Settings,
   PenTool,
   ClipboardList,
@@ -28,10 +28,10 @@ import './Dashboard.css';
 
 const Dashboard = () => {
   const { startGame, goToMenu } = useGame();
-  
+
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { 
+    visible: {
       opacity: 1,
       transition: { staggerChildren: 0.1 }
     }
@@ -43,7 +43,7 @@ const Dashboard = () => {
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="dashboard-overlay"
       initial="hidden"
       animate="visible"
@@ -52,14 +52,14 @@ const Dashboard = () => {
       <div className="dashboard-container">
         <header className="dashboard-header">
           <div className="dashboard-nav">
-             <button className="btn-nav-back" onClick={goToMenu}>
-                <Home size={18} />
-                <span>Menu</span>
-             </button>
-             <button className="btn-nav-forward" onClick={startGame}>
-                <span>Entrar no Tabuleiro</span>
-                <ArrowRightCircle size={18} />
-             </button>
+            <button className="btn-nav-back" onClick={goToMenu}>
+              <Home size={18} />
+              <span>Menu</span>
+            </button>
+            <button className="btn-nav-forward" onClick={startGame}>
+              <span>Entrar no Tabuleiro</span>
+              <ArrowRightCircle size={18} />
+            </button>
           </div>
           <div className="logo-section">
             <h1 className="logo-text">PSICOSCÓPIO</h1>
