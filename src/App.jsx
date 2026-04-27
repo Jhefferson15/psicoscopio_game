@@ -3,12 +3,13 @@ import Board from './features/game/presentation/components/Board';
 import Dice from './features/game/presentation/components/Dice';
 import TabletopView from './features/game/presentation/components/TabletopView';
 import StartMenu from './features/game/presentation/components/StartMenu';
-import Dashboard from './features/game/presentation/components/Dashboard';
+import CardCreator from './features/game/presentation/components/CardCreator';
 import GameCard from './features/game/presentation/components/GameCard';
 import { GameProvider, useGame } from './features/game/presentation/state/GameContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Minimize2, X } from 'lucide-react';
 import MobileWarning from './features/game/presentation/components/MobileWarning';
+import Navigation from './features/game/presentation/components/Navigation';
 
 const GameContent = () => {
   const { players, currentPlayerIndex, showModal, setShowModal, isBoardFullScreen, toggleFullScreen, currentScreen, focusedCard, setFocusedCard, confirmedMobileWarning, setConfirmedMobileWarning } = useGame();
@@ -18,34 +19,69 @@ const GameContent = () => {
       {!confirmedMobileWarning && (
         <MobileWarning onConfirm={() => setConfirmedMobileWarning(true)} />
       )}
-      {currentScreen === 'menu' ? (
-        <StartMenu />
-      ) : !isBoardFullScreen ? (
-        <TabletopView />
-      ) : (
-        <div className="app-container">
-          <div className="player-info">
-            <h3>Jogadores</h3>
-            {players.map((p, i) => (
-              <div key={p.id} className={`player-item ${i === currentPlayerIndex ? 'active-player' : ''}`}>
-                <div className="player-dot" style={{ backgroundColor: p.color }}></div>
-                {p.name} {i === currentPlayerIndex ? '(Sua vez)' : ''}
-              </div>
-            ))}
-          </div>
-
-          <div className="board-wrapper">
-            <Board />
-            <div className="controls-overlay">
-              <button className="dice-button exit-fs" onClick={toggleFullScreen}>
-                <Minimize2 size={20} />
-                Sair Full Screen
-              </button>
-              <Dice />
+      <Navigation />
+      <AnimatePresence mode="wait">
+        {currentScreen === 'menu' ? (
+          <motion.div
+            key="menu"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <StartMenu />
+          </motion.div>
+        ) : currentScreen === 'card_creation' ? (
+          <motion.div
+            key="card_creation"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.05 }}
+            transition={{ duration: 0.3 }}
+          >
+            <CardCreator />
+          </motion.div>
+        ) : !isBoardFullScreen ? (
+          <motion.div
+            key="tabletop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <TabletopView />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="fullscreen-board"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.2 }}
+            className="app-container"
+          >
+            <div className="player-info">
+              <h3>Jogadores</h3>
+              {players.map((p, i) => (
+                <div key={p.id} className={`player-item ${i === currentPlayerIndex ? 'active-player' : ''}`}>
+                  <div className="player-dot" style={{ backgroundColor: p.color }}></div>
+                  {p.name} {i === currentPlayerIndex ? '(Sua vez)' : ''}
+                </div>
+              ))}
             </div>
-          </div>
-        </div>
-      )}
+
+            <div className="board-wrapper">
+              <Board />
+              <div className="controls-overlay">
+                <button className="dice-button exit-fs" onClick={toggleFullScreen}>
+                  <Minimize2 size={20} />
+                  Sair Full Screen
+                </button>
+                <Dice />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showModal && (

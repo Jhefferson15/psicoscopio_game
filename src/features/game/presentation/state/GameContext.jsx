@@ -16,7 +16,6 @@ export const GameProvider = ({ children }) => {
   const [isBoardFullScreen, setIsBoardFullScreen] = useState(false);
   const [currentScreen, setCurrentScreen] = useState('menu');
   const [focusedCard, setFocusedCard] = useState(null); // { type, index, id }
-  const [showDashboard, setShowDashboard] = useState(false);
   const [boardRotation, setBoardRotation] = useState(0);
   const [confirmedMobileWarning, setConfirmedMobileWarning] = useState(false);
   const [settings, setSettings] = useState({
@@ -24,8 +23,19 @@ export const GameProvider = ({ children }) => {
     vibration: true
   });
 
+  // Novos estados para Grandes Implementações
+  const [playerAttributes, setPlayerAttributes] = useState({
+    1: { memory: 20, reflection: 40, challenge: 10 },
+    2: { memory: 30, reflection: 15, challenge: 50 }
+  });
+
+  const [diaryEntries, setDiaryEntries] = useState([
+    { id: 1, type: 'reflexao', text: 'Iniciei a jornada com foco em autoconhecimento.', timestamp: new Date().toLocaleTimeString() }
+  ]);
+
+  const [gameTime, setGameTime] = useState(60); // Segundos restantes
+
   const toggleFullScreen = () => setIsBoardFullScreen(prev => !prev);
-  const goToDashboard = () => setCurrentScreen('dashboard');
   
   const startGame = () => {
     setCurrentScreen('game');
@@ -34,7 +44,11 @@ export const GameProvider = ({ children }) => {
   const initializeGame = (newPlayers) => {
     setPlayers(newPlayers.map((p, i) => new Player(p.id || i + 1, p.name, p.color, 0)));
     setCurrentPlayerIndex(0);
-    startGame();
+    setCurrentScreen('card_creation');
+  };
+
+  const finishCardCreation = () => {
+    setCurrentScreen('game');
   };
 
   const goToMenu = () => setCurrentScreen('menu');
@@ -104,8 +118,6 @@ export const GameProvider = ({ children }) => {
       startGame,
       focusedCard,
       setFocusedCard,
-      showDashboard,
-      setShowDashboard,
       boardRotation,
       setBoardRotation,
       confirmedMobileWarning,
@@ -113,9 +125,16 @@ export const GameProvider = ({ children }) => {
       settings,
       setSettings,
       initializeGame,
+      finishCardCreation,
       rotateBoard: () => setBoardRotation(prev => prev + 90),
-      goToDashboard,
-      goToMenu
+      goToMenu,
+      playerAttributes,
+      setPlayerAttributes,
+      diaryEntries,
+      setDiaryEntries,
+      gameTime,
+      setGameTime,
+      setCurrentScreen
     }}>
       {children}
     </GameContext.Provider>
