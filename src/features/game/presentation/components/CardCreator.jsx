@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../state/useGame';
 import { Trash2, Brush, Plus, Brain, Sprout, Puzzle, Image as ImageIcon, Type, Upload, Layers, RotateCcw, CheckCircle, Undo2, Redo2, Eraser } from 'lucide-react';
@@ -29,7 +29,7 @@ const CardCreator = () => {
    const [history, setHistory] = useState([]);
    const [historyStep, setHistoryStep] = useState(-1);
 
-  const saveToHistory = () => {
+  const saveToHistory = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -41,7 +41,7 @@ const CardCreator = () => {
     
     setHistory(newHistory);
     setHistoryStep(newHistory.length - 1);
-  };
+  }, [history, historyStep]);
 
   const undo = () => {
     if (historyStep <= 0) return;
@@ -61,7 +61,7 @@ const CardCreator = () => {
     ctx.putImageData(history[newStep], 0, 0);
   };
 
-  const initCanvas = () => {
+  const initCanvas = useCallback(() => {
     setTimeout(() => {
       const canvas = canvasRef.current;
       if (!canvas) return;
@@ -78,13 +78,13 @@ const CardCreator = () => {
       setHistory([initialData]);
       setHistoryStep(0);
     }, 0);
-  };
+  }, []);
 
   useEffect(() => {
     if (creationMode === 'drawing') {
       initCanvas();
     }
-  }, [creationMode]);
+  }, [creationMode, initCanvas]);
 
   const startDrawing = (e) => {
     if (creationMode !== 'drawing') return;
@@ -106,7 +106,7 @@ const CardCreator = () => {
     setIsCanvasDirty(true);
   };
 
-  const draw = (e) => {
+  const draw = useCallback((e) => {
     if (!isDrawing || creationMode !== 'drawing') return;
     
     const canvas = canvasRef.current;
@@ -121,14 +121,14 @@ const CardCreator = () => {
 
     ctx.lineTo(x, y);
     ctx.stroke();
-  };
+  }, [isDrawing, creationMode]);
 
-  const stopDrawing = () => {
+  const stopDrawing = useCallback(() => {
     if (isDrawing) {
       saveToHistory();
       setIsDrawing(false);
     }
-  };
+  }, [isDrawing, saveToHistory]);
 
   useEffect(() => {
     const handleGlobalMouseMove = (e) => {
@@ -152,7 +152,7 @@ const CardCreator = () => {
       window.removeEventListener('touchmove', handleGlobalMouseMove);
       window.removeEventListener('touchend', handleGlobalMouseUp);
     };
-  }, [isDrawing]);
+  }, [isDrawing, draw, stopDrawing]);
 
   const clearCanvas = () => {
     if (creationMode === 'drawing') {

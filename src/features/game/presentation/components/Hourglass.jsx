@@ -8,21 +8,24 @@ const STATIC_PARTICLES = Array.from({ length: 12 }).map((_, i) => ({
   x: 50 + (Math.random() * 4 - 2)
 }));
 
-const Hourglass = ({ progress = 0.5, isCritical = false, onClick }) => {
+const Hourglass = ({ progress = 0.5, isCritical = false, onClick, activePlayerIndex }) => {
   const [rotation, setRotation] = useState(0);
-  const prevProgressRef = useRef(progress);
+  const prevPlayerRef = useRef(activePlayerIndex);
   
-  // Detectar reset de tempo (quando o progresso aumenta subitamente)
+  // Detectar mudança de turno para girar a ampulheta
   useEffect(() => {
-    if (progress > prevProgressRef.current + 0.5) {
-      // O tempo foi reiniciado, hora de girar!
+    if (activePlayerIndex !== undefined && activePlayerIndex !== prevPlayerRef.current) {
       setRotation(prev => prev + 180);
+      prevPlayerRef.current = activePlayerIndex;
     }
-    prevProgressRef.current = progress;
-  }, [progress]);
+  }, [activePlayerIndex]);
 
   // Garantir que o progresso seja um número válido entre 0 e 1
   const safeProgress = Math.max(0, Math.min(1, Number(progress) || 0));
+
+  // Lógica para compensar a rotação de 180 graus na visualização da areia
+  const isUpsideDown = Math.round(rotation / 180) % 2 !== 0;
+  const visualSafeProgress = isUpsideDown ? (1 - safeProgress) : safeProgress;
   
   const particles = STATIC_PARTICLES;
 
@@ -84,9 +87,9 @@ const Hourglass = ({ progress = 0.5, isCritical = false, onClick }) => {
         {/* Areia Superior - Diminuindo */}
         <motion.rect
           x="15"
-          y={15 + (1 - safeProgress) * 65}
+          y={15 + (1 - visualSafeProgress) * 65}
           width="70"
-          height="65"
+          height={visualSafeProgress * 65}
           fill="url(#sand-gradient-v4)"
           clipPath="url(#top-glass-v4)"
         />
@@ -94,46 +97,48 @@ const Hourglass = ({ progress = 0.5, isCritical = false, onClick }) => {
         {/* Areia Inferior - Aumentando */}
         <motion.rect
           x="15"
-          y={145 - ((1 - safeProgress) * 65)}
+          y={145 - ((1 - visualSafeProgress) * 65)}
           width="70"
-          height="65"
+          height={(1 - visualSafeProgress) * 65}
           fill="url(#sand-gradient-v4)"
           clipPath="url(#bottom-glass-v4)"
         />
         
-        {/* Partículas de Areia Caindo */}
-        {safeProgress > 0 && safeProgress < 1 && particles.map(p => (
-          <motion.circle
-            key={p.id}
-            cx={p.x}
-            cy="80"
-            r="1.2"
-            fill="#F59E0B"
-            animate={{ 
-              y: [0, 65],
-              opacity: [0, 1, 0]
-            }}
-            transition={{ 
-              duration: 0.6, 
-              repeat: Infinity, 
-              delay: p.delay,
-              ease: "linear"
-            }}
-          />
-        ))}
+        {/* Grupo de Partículas e Fio que compensam a rotação para cair sempre "para baixo" */}
+        <g transform={`rotate(${-rotation}, 50, 80)`}>
+          {safeProgress > 0 && safeProgress < 1 && particles.map(p => (
+            <motion.circle
+              key={p.id}
+              cx={p.x}
+              cy="80"
+              r="1.2"
+              fill="#F59E0B"
+              animate={{ 
+                y: [0, 65],
+                opacity: [0, 1, 0]
+              }}
+              transition={{ 
+                duration: 0.6, 
+                repeat: Infinity, 
+                delay: p.delay,
+                ease: "linear"
+              }}
+            />
+          ))}
 
-        {/* Fio de Areia */}
-        {safeProgress > 0 && safeProgress < 1 && (
-          <motion.line 
-            x1="50" y1="80" x2="50" y2="145" 
-            stroke="#F59E0B" 
-            strokeWidth="2" 
-            strokeDasharray="4,4"
-            filter="url(#glow-v4)"
-            animate={{ strokeDashoffset: [0, -20] }}
-            transition={{ repeat: Infinity, duration: 0.3, ease: "linear" }}
-          />
-        )}
+          {/* Fio de Areia */}
+          {safeProgress > 0 && safeProgress < 1 && (
+            <motion.line 
+              x1="50" y1="80" x2="50" y2="145" 
+              stroke="#F59E0B" 
+              strokeWidth="2" 
+              strokeDasharray="4,4"
+              filter="url(#glow-v4)"
+              animate={{ strokeDashoffset: [0, -20] }}
+              transition={{ repeat: Infinity, duration: 0.3, ease: "linear" }}
+            />
+          )}
+        </g>
 
         {/* Contorno do Vidro */}
         <path 

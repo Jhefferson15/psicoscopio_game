@@ -1,4 +1,4 @@
-import { test, expect, describe, vi } from 'vitest';
+import { test, expect, describe } from 'vitest';
 
 describe('Navegação da Coleção de Cartas', () => {
   test('O botão de coleção não deve estar presente nas opções de menu inicial', () => {

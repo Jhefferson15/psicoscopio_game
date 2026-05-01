@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../state/useGame';
 import { 
   Settings as SettingsIcon, 
@@ -12,7 +11,10 @@ import {
   Sparkles, 
   Check,
   Edit3,
-  X
+  ChevronLeft,
+  X,
+  Download,
+  Upload
 } from 'lucide-react';
 import './StandardCardsSettings.css';
 
@@ -40,14 +42,18 @@ const StandardCardsSettings = () => {
     saveNewCardSet, 
     updateCardSet, 
     deleteCardSet,
+    importCardSet,
     resetToDefault,
-    goToMenu
+    goToMenu,
+    showSystemPopup
   } = useGame();
 
   const [editingSet, setEditingSet] = useState(null); // { id, name, content }
   const [activeCategory, setActiveCategory] = useState('reflexao');
   const [newItemText, setNewItemText] = useState('');
   const [setName, setSetName] = useState('');
+  const [editingItemIndex, setEditingItemIndex] = useState(null);
+  const [editingItemText, setEditingItemText] = useState('');
 
   const startEditing = (set) => {
     setEditingSet(JSON.parse(JSON.stringify(set)));
@@ -56,14 +62,16 @@ const StandardCardsSettings = () => {
 
   const handleSave = () => {
     if (editingSet.id === 'default') {
-      // Create new from default
       saveNewCardSet(`${setName} (Cópia)`, editingSet.content);
-      setEditingSet(null);
     } else {
-      // Update existing
       updateCardSet(editingSet.id, editingSet.content, setName);
-      setEditingSet(null);
     }
+    setEditingSet(null);
+    showSystemPopup({
+      title: 'Salvo!',
+      message: 'Coleção de cartas salva com sucesso.',
+      type: 'success'
+    });
   };
 
   const handleCreateNew = () => {
@@ -87,175 +95,284 @@ const StandardCardsSettings = () => {
     setEditingSet({ ...editingSet, content: updatedContent });
   };
 
+  const startEditItem = (index, text) => {
+    setEditingItemIndex(index);
+    setEditingItemText(text);
+  };
+
+  const saveEditItem = () => {
+    if (!editingItemText.trim() || editingItemIndex === null) return;
+    const updatedContent = { ...editingSet.content };
+    updatedContent[activeCategory][editingItemIndex] = editingItemText.trim();
+    setEditingSet({ ...editingSet, content: updatedContent });
+    setEditingItemIndex(null);
+    setEditingItemText('');
+  };
+
+  const cancelEditItem = () => {
+    setEditingItemIndex(null);
+    setEditingItemText('');
+  };
+
+  const handleExport = (set) => {
+    const data = JSON.stringify(set, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${set.name.toLowerCase().replace(/\s+/g, '_')}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const json = JSON.parse(event.target.result);
+        const newId = importCardSet(json);
+        if (newId) {
+          showSystemPopup({
+            title: 'Importado!',
+            message: 'Coleção de cartas importada com sucesso.',
+            type: 'success'
+          });
+        }
+      } catch {
+        showSystemPopup({
+          title: 'Erro',
+          message: 'Falha ao ler o arquivo JSON.',
+          type: 'error'
+        });
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
   return (
-    <div className="settings-screen modern-light">
-      <div className="settings-container">
+    <div className="settings-wrapper">
+      <div className="settings-ambient-bg"></div>
+      
+      <div className="settings-layout">
         <header className="settings-header">
-          <div className="header-title">
-            <SettingsIcon className="text-purple" size={32} />
+          <button className="btn-back-settings" onClick={goToMenu} title="Voltar ao Menu">
+            <ChevronLeft size={24} />
+          </button>
+          <div className="settings-title-group">
+            <SettingsIcon className="title-icon-settings" size={24} />
             <div>
-              <h1>Configurações de Cartas</h1>
-              <p>Personalize as mensagens e desafios do seu Psicoscópio</p>
+              <h1>Ateliê de Configurações</h1>
+              <p className="settings-subtitle">Personalize a experiência e as mensagens do jogo</p>
             </div>
           </div>
-          <button className="btn-close-settings" onClick={goToMenu}>
-            <X size={24} />
-          </button>
+          <div className="settings-version-tag">v1.2.0</div>
         </header>
 
-        <main className="settings-layout">
+        <main className="settings-main-grid">
           {/* Sidebar: Lista de Conjuntos */}
-          <aside className="settings-sidebar">
-            <div className="sidebar-section">
-              <div className="section-header">
-                <h3>MEUS CONJUNTOS</h3>
-                <button className="btn-icon-small" onClick={handleCreateNew} title="Novo Conjunto">
-                  <Plus size={18} />
-                </button>
-              </div>
-              <div className="sets-list">
-                {availableCardSets.map(set => (
-                  <div 
-                    key={set.id} 
-                    className={`set-item ${activeCardSet.id === set.id ? 'active' : ''} ${editingSet?.id === set.id ? 'editing' : ''}`}
-                  >
-                    <div className="set-info" onClick={() => changeActiveCardSet(set.id)}>
-                      <div className="set-status-dot">
-                        {activeCardSet.id === set.id && <Check size={12} />}
-                      </div>
-                      <span className="set-name">{set.name}</span>
+          <aside className="settings-sidebar-premium">
+            <div className="sidebar-header-premium">
+              <h3>COLEÇÕES</h3>
+              <button 
+                className="btn-add-set" 
+                onClick={handleCreateNew} 
+                title="Novo Conjunto"
+              >
+                <Plus size={18} />
+              </button>
+              <label className="btn-import-set" title="Importar Coleção">
+                <Upload size={18} />
+                <input type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
+              </label>
+            </div>
+            
+            <div className="sets-list-premium">
+              {availableCardSets.map(set => (
+                <div 
+                  key={set.id} 
+                  className={`set-item-premium ${activeCardSet.id === set.id ? 'active' : ''} ${editingSet?.id === set.id ? 'editing' : ''}`}
+                >
+                  <div className="set-click-area" onClick={() => changeActiveCardSet(set.id)}>
+                    <div className="set-active-indicator">
+                      {activeCardSet.id === set.id && <Check size={12} />}
                     </div>
-                    <div className="set-actions">
-                      <button onClick={() => startEditing(set)} title="Editar">
-                        <Edit3 size={16} />
-                      </button>
-                      {set.id !== 'default' && (
-                        <button className="text-red" onClick={() => deleteCardSet(set.id)} title="Excluir">
-                          <Trash2 size={16} />
-                        </button>
-                      )}
+                    <div className="set-meta">
+                      <span className="set-name-text">{set.name}</span>
+                      <span className="set-count-text">{set.content?.reflexao?.length || 0} cartas</span>
                     </div>
                   </div>
-                ))}
-              </div>
+                  <div className="set-actions-premium">
+                    <button onClick={() => startEditing(set)} className="btn-edit-set" title="Editar Coleção">
+                      <Edit3 size={16} />
+                    </button>
+                    <button onClick={() => handleExport(set)} className="btn-export-set" title="Exportar JSON">
+                      <Download size={16} />
+                    </button>
+                    {set.id !== 'default' && (
+                      <button className="btn-delete-set" onClick={() => {
+                        showSystemPopup({
+                          title: 'Excluir Coleção?',
+                          message: `Deseja excluir a coleção "${set.name}"?`,
+                          type: 'confirm',
+                          onConfirm: () => deleteCardSet(set.id)
+                        });
+                      }} title="Excluir Coleção">
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
 
-            <div className="sidebar-footer">
-               <button className="btn-secondary full-width" onClick={resetToDefault}>
+            <div className="sidebar-footer-premium">
+               <button className="btn-reset-standard" onClick={resetToDefault}>
                  <RotateCcw size={18} />
-                 <span>Resetar para o Padrão</span>
+                 <span>RESTAURAR ORIGINAIS</span>
                </button>
             </div>
           </aside>
 
           {/* Main Area: Edição */}
-          <section className="settings-editor">
-            <AnimatePresence mode="wait">
-              {editingSet ? (
-                <motion.div 
-                  key="editor"
-                  className="editor-content"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                >
-                  <div className="editor-header">
+          <section className="settings-editor-premium">
+            {editingSet ? (
+              <div className="editor-container-premium">
+                <div className="editor-top-bar">
+                  <div className="editor-title-input">
+                    <Edit3 size={18} className="text-muted" />
                     <input 
                       type="text" 
-                      className="edit-set-name"
+                      className="input-set-name"
                       value={setName}
                       onChange={(e) => setSetName(e.target.value)}
                       disabled={editingSet.id === 'default'}
                       placeholder="Nome do conjunto..."
                     />
-                    <div className="editor-actions">
-                       <button className="btn-outline" onClick={() => setEditingSet(null)}>Cancelar</button>
-                       <button className="btn-primary" onClick={handleSave}>
-                         <Save size={18} />
-                         <span>Salvar Alterações</span>
-                       </button>
-                    </div>
                   </div>
+                  <div className="editor-top-actions">
+                     <button className="btn-cancel-edit" onClick={() => setEditingSet(null)}>DESCARTE</button>
+                      <button className="btn-save-edit" onClick={handleSave}>
+                        <Save size={18} />
+                        <span>SALVAR COLEÇÃO</span>
+                      </button>
+                      <button className="btn-export-set-large" onClick={() => handleExport(editingSet)}>
+                        <Download size={18} />
+                      </button>
+                  </div>
+                </div>
 
-                  {editingSet.id === 'default' && (
-                    <div className="alert-info">
-                      <p>O conjunto padrão não pode ser modificado. Ao salvar, uma cópia será criada.</p>
-                    </div>
-                  )}
+                {editingSet.id === 'default' && (
+                  <div className="readonly-notice">
+                    <Sparkles size={16} />
+                    <p>Esta é uma coleção do sistema. Suas alterações criarão uma nova cópia personalizada.</p>
+                  </div>
+                )}
 
-                  <div className="category-tabs">
-                    {Object.keys(editingSet.content).map(cat => {
-                      const Icon = categoryIcons[cat];
-                      return (
-                        <button 
-                          key={cat}
-                          className={`cat-tab ${activeCategory === cat ? 'active' : ''}`}
-                          onClick={() => setActiveCategory(cat)}
-                          style={{ '--cat-color': categoryColors[cat] }}
-                        >
+                <div className="category-navigation">
+                  {Object.keys(editingSet.content).map(cat => {
+                    const Icon = categoryIcons[cat];
+                    return (
+                      <button 
+                        key={cat}
+                        className={`cat-nav-item ${activeCategory === cat ? 'active' : ''}`}
+                        onClick={() => setActiveCategory(cat)}
+                        style={{ '--cat-color': categoryColors[cat] }}
+                      >
+                        <div className="cat-icon-circle">
                           <Icon size={18} />
-                          <span>{cat.charAt(0).toUpperCase() + cat.slice(1)}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                        </div>
+                        <span>{cat.toUpperCase()}</span>
+                      </button>
+                    );
+                  })}
+                </div>
 
-                  <div className="items-editor">
-                    <div className="add-item-row">
+                <div className="editor-workspace">
+                  <div className="add-content-row">
+                    <div className="input-glow-wrapper">
                       <input 
                         type="text" 
-                        placeholder={`Adicionar nova frase para ${activeCategory}...`}
+                        placeholder={`O que escrever em ${activeCategory}?`}
                         value={newItemText}
                         onChange={(e) => setNewItemText(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && addItem()}
                       />
-                      <button className="btn-add" onClick={addItem}>
-                        <Plus size={20} />
-                      </button>
                     </div>
-
-                    <div className="items-list">
-                      {editingSet.content[activeCategory].map((item, idx) => (
-                        <motion.div 
-                          key={idx} 
-                          className="content-item"
-                          layout
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                        >
-                          <p>{item}</p>
-                          <button className="btn-remove" onClick={() => removeItem(idx)}>
-                            <Trash2 size={16} />
-                          </button>
-                        </motion.div>
-                      ))}
-                      {editingSet.content[activeCategory].length === 0 && (
-                        <div className="empty-state">
-                          <p>Nenhuma frase cadastrada nesta categoria.</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div 
-                  key="placeholder"
-                  className="editor-placeholder"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
-                  <div className="placeholder-content">
-                    <SettingsIcon size={64} className="text-muted" />
-                    <h2>Editor de Cartas</h2>
-                    <p>Selecione um conjunto na lateral para editar as mensagens ou crie um novo conjunto personalizado.</p>
-                    <button className="btn-primary" onClick={handleCreateNew}>
-                      <Plus size={18} />
-                      <span>Criar Novo Conjunto</span>
+                    <button className="btn-add-item-premium" onClick={addItem}>
+                      <Plus size={20} />
+                      <span>ADICIONAR</span>
                     </button>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+
+                  <div className="content-items-list">
+                    {editingSet.content[activeCategory].map((item, idx) => (
+                      <div 
+                        key={`${activeCategory}-${idx}`} 
+                        className="premium-content-card"
+                      >
+                        {editingItemIndex === idx ? (
+                          <>
+                            <input 
+                              type="text"
+                              className="edit-item-input"
+                              value={editingItemText}
+                              onChange={(e) => setEditingItemText(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && saveEditItem()}
+                              autoFocus
+                            />
+                            <div className="edit-actions">
+                              <button className="btn-confirm-edit" onClick={saveEditItem}>
+                                <Check size={16} />
+                              </button>
+                              <button className="btn-remove-item" onClick={cancelEditItem}>
+                                <X size={16} />
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <p>{item}</p>
+                            <div className="edit-actions">
+                              <button className="btn-edit-item-inline" onClick={() => startEditItem(idx, item)}>
+                                <Edit3 size={16} />
+                              </button>
+                              <button className="btn-remove-item" onClick={() => removeItem(idx)}>
+                                <X size={16} />
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                    {editingSet.content[activeCategory].length === 0 && (
+                      <div className="editor-empty-state">
+                        <Brain size={48} />
+                        <p>Nenhuma frase nesta categoria ainda.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="editor-placeholder-premium">
+                <div className="placeholder-visual">
+                  <div className="blob-animation"></div>
+                  <SettingsIcon size={80} className="floating-icon" />
+                </div>
+                <h2>Seu Ateliê Criativo</h2>
+                <p>Selecione uma coleção à esquerda para editar ou comece uma do zero.</p>
+                <button className="btn-create-large" onClick={handleCreateNew}>
+                  <Plus size={24} />
+                  <span>CRIAR NOVA COLEÇÃO</span>
+                </button>
+              </div>
+            )}
           </section>
         </main>
       </div>

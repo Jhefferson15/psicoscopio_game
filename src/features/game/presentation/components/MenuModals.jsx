@@ -1,4 +1,4 @@
-import { Globe, ShieldCheck, Copy, X, Users, ChevronRight, User, Volume2, VolumeX, RotateCcw, Image as ImageIcon } from 'lucide-react';
+import { Globe, ShieldCheck, Copy, X, Users, ChevronRight, User, Volume2, VolumeX, RotateCcw, Image as ImageIcon, Layout } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import CustomCardsGallery from './CustomCardsGallery';
@@ -34,7 +34,7 @@ const ModalWrapper = ({ title, onClose, children }) => (
 );
 
 export const PlayerSetupModal = ({ onClose }) => {
-  const { initializeGame, createOnlineGame, joinOnlineGame, roomId } = useGame();
+  const { initializeGame, createOnlineGame, joinOnlineGame, roomId, showSystemPopup } = useGame();
 
   const { user } = useAuth();
   const [mode, setMode] = useState('local'); // 'local' | 'online'
@@ -54,7 +54,11 @@ export const PlayerSetupModal = ({ onClose }) => {
       initializeGame(playerData.slice(0, playerCount));
     } else {
       if (!user) {
-        alert("Você precisa estar logado para criar uma sala online.");
+        showSystemPopup({
+          title: 'Acesso Restrito',
+          message: 'Você precisa estar logado para criar uma sala online.',
+          type: 'error'
+        });
         return;
       }
       createOnlineGame(playerData.slice(0, playerCount));
@@ -65,13 +69,21 @@ export const PlayerSetupModal = ({ onClose }) => {
     if (joinCode.trim().length === 6) {
       joinOnlineGame(joinCode.toUpperCase());
     } else {
-      alert("Insira um código válido de 6 caracteres.");
+      showSystemPopup({
+        title: 'Código Inválido',
+        message: 'Insira um código válido de 6 caracteres.',
+        type: 'error'
+      });
     }
   };
 
   const copyRoomId = () => {
     navigator.clipboard.writeText(roomId);
-    alert("Código da sala copiado!");
+    showSystemPopup({
+      title: 'Copiado!',
+      message: 'Código da sala copiado para a área de transferência.',
+      type: 'success'
+    });
   };
 
 
@@ -247,6 +259,17 @@ export const SettingsModal = ({ onClose }) => {
             <div className="setting-text">
               <h3>Cartas Padronizadas</h3>
               <p>Personalizar textos e desafios</p>
+            </div>
+          </div>
+          <ChevronRight size={20} className="text-muted" />
+        </div>
+
+        <div className="setting-item" onClick={() => { setCurrentScreen('board_editor'); onClose(); }}>
+          <div className="setting-info">
+            <div className="setting-icon"><Layout size={20} /></div>
+            <div className="setting-text">
+              <h3>Editor de Tabuleiro</h3>
+              <p>Customizar casas e mecânicas</p>
             </div>
           </div>
           <ChevronRight size={20} className="text-muted" />

@@ -8,4 +8,28 @@ export class Tile {
     this.angle = angle; // Angle in degrees for SVG positioning
     this.action = action; // Function or type of special action
   }
+
+  static fromJSON(json) {
+    return new Tile(
+      json.id,
+      json.type,
+      json.label,
+      json.color,
+      json.ring,
+      json.angle,
+      json.action
+    );
+  }
+
+  toJSON() {
+    return {
+      id: this.id,
+      type: this.type,
+      label: this.label,
+      color: this.color,
+      ring: this.ring,
+      angle: this.angle,
+      action: this.action
+    };
+  }
 }

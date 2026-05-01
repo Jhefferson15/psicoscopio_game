@@ -1,6 +1,6 @@
 .game-wrapper {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100dvh;
   position: relative;
   overflow: hidden;
 }
@@ -9,8 +9,8 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -40,8 +40,8 @@
 .focused-card-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(20px);
+  background: rgba(248, 250, 252, 0.85);
+  backdrop-filter: blur(25px);
   z-index: 2000;
   display: flex;
   align-items: center;
@@ -65,9 +65,9 @@
   width: 320px;
   height: 480px;
   box-shadow: 
-    0 50px 100px rgba(0,0,0,0.6),
-    0 0 40px rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.1);
+    0 50px 100px rgba(0,0,0,0.1),
+    0 0 40px rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.05);
 }
 
 /* Tamanhos maiores para a carta focada */
@@ -110,7 +110,7 @@
   text-transform: uppercase;
   letter-spacing: 1px;
   cursor: pointer;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 

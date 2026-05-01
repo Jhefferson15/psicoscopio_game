@@ -1,4 +1,3 @@
-import React from 'react';
 import './App.css';
 import Board from './features/game/presentation/components/Board';
 import Dice from './features/game/presentation/components/Dice';
@@ -15,12 +14,14 @@ import CustomCardsGallery from './features/game/presentation/components/CustomCa
 import StandardCardsSettings from './features/game/presentation/components/StandardCardsSettings';
 import Lobby from './features/game/presentation/components/Lobby';
 import WaitingPlayers from './features/game/presentation/components/WaitingPlayers';
+import BoardEditor from './features/game/presentation/components/BoardEditor';
+import SystemPopup from './features/game/presentation/components/SystemPopup';
 import { AuthProvider } from './features/auth/presentation/state/AuthContext.jsx';
-import { UserProvider } from './features/user/presentation/state/UserContext.jsx';
+import { UserProvider } from './features/user/presentation/state/UserProvider.jsx';
 
 
 const GameContent = () => {
-  const { players, currentPlayerIndex, showModal, closeModal, closeFocusedCard, isBoardFullScreen, toggleFullScreen, currentScreen, focusedCard, confirmedMobileWarning, setConfirmedMobileWarning, activeCardSet } = useGame();
+  const { players, currentPlayerIndex, showModal, closeModal, closeFocusedCard, isBoardFullScreen, toggleFullScreen, currentScreen, focusedCard, activeCardSet } = useGame();
 
   return (
     <div className="game-wrapper">
@@ -65,6 +66,16 @@ const GameContent = () => {
             transition={{ duration: 0.3 }}
           >
             <StandardCardsSettings />
+          </motion.div>
+        ) : currentScreen === 'board_editor' ? (
+          <motion.div
+            key="board_editor"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.05 }}
+            transition={{ duration: 0.3 }}
+          >
+            <BoardEditor />
           </motion.div>
         ) : currentScreen === 'lobby' ? (
           <motion.div
@@ -188,6 +199,7 @@ const GameContent = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      <SystemPopup />
     </div>
   );
 };

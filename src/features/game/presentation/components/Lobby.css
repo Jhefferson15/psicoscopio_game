@@ -1,188 +1,249 @@
-.lobby-overlay {
+.lobby-screen-wrapper {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.9);
-  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 20px;
+  background: white; /* Identidade: Base branca pura */
+  font-family: 'Outfit', sans-serif;
+}
+
+.lobby-background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* Identidade: Padrão de pontos azul (var-secondary) com 5% opacidade */
+.bg-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(var(--secondary) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.05;
+}
+
+/* Identidade: Brilho radial que traz profundidade ao glassmorphism */
+.bg-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1000px;
+  height: 1000px;
+  background: radial-gradient(circle, rgba(72, 133, 206, 0.1) 0%, transparent 70%);
 }
 
 .lobby-card {
-  background: white;
+  position: relative;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.7); /* Identidade: Glassmorphism */
+  backdrop-filter: blur(25px);
   width: 100%;
-  max-width: 600px;
-  border-radius: 24px;
+  max-width: 800px;
+  border-radius: 40px; /* Identidade: Raio de 40px */
   overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  box-shadow: 
+    0 40px 100px rgba(0, 0, 0, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5); /* Identidade: Borda de reflexo interna */
+  border: 1px solid rgba(0,0,0,0.03);
 }
 
 .lobby-header {
-  padding: 24px;
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  color: white;
+  padding: 50px 40px 30px;
+  text-align: center;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
+  border-bottom: 1px solid rgba(0,0,0,0.02);
 }
 
 .room-info h1 {
-  font-size: 1.5rem;
+  font-size: 28px;
   margin: 0;
-  font-weight: 700;
+  font-weight: 900;
+  letter-spacing: 6px; /* Identidade: Letter spacing de 6px */
+  text-transform: uppercase;
+  color: var(--text);
+  /* Identidade: Gradiente linear no título */
+  background: linear-gradient(to right, #1e293b, var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .room-code {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 4px 12px;
-  border-radius: 8px;
-  font-family: monospace;
-  font-size: 1rem;
-  margin-top: 8px;
+  gap: 12px;
+  background: #f1f5f9;
+  padding: 10px 24px;
+  border-radius: 50px; /* Identidade: Botões em formato pílula */
+  margin-top: 20px;
   cursor: pointer;
-  transition: all 0.2s;
+  border: 1px solid rgba(0,0,0,0.02);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .room-code:hover {
-  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  background: white;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+}
+
+.code-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 2px;
+}
+
+.code-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  color: var(--secondary);
+  letter-spacing: 3px;
+  font-size: 18px;
 }
 
 .close-lobby {
-  background: rgba(255, 255, 255, 0.1);
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  background: #f1f5f9;
   border: none;
-  color: white;
-  padding: 8px;
+  color: #94a3b8;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s;
 }
 
 .close-lobby:hover {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  background: var(--primary); /* Vermelho Psico no hover de fechar */
+  color: white;
+  transform: rotate(90deg);
 }
 
 .lobby-body {
-  padding: 32px;
+  padding: 40px;
 }
 
-.participants-list h3 {
-  font-size: 1.1rem;
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.list-header h3 {
+  font-size: 12px;
+  font-weight: 900;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+
+.slots-badge {
+  background: #f1f5f9;
+  padding: 6px 15px;
+  border-radius: 50px;
+  font-size: 10px;
+  font-weight: 900;
   color: #64748b;
-  margin-bottom: 20px;
+  letter-spacing: 1px;
 }
 
 .participants-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  gap: 15px;
 }
 
 .participant-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background: #f8fafc;
-  border-radius: 16px;
-  border: 2px solid transparent;
+  gap: 15px;
+  padding: 15px;
+  background: white;
+  border-radius: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.02);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+  transition: all 0.3s;
 }
 
-.participant-item.empty {
-  opacity: 0.5;
-  border: 2px dashed #e2e8f0;
+.participant-item:hover {
+  transform: translateX(5px);
+  border-color: var(--secondary);
 }
 
 .participant-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
+  font-weight: 900;
+  font-size: 1.2rem;
+  box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+  border: 2px solid white;
 }
 
-.participant-name {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 600;
+.p-name {
+  font-weight: 700;
   color: #1e293b;
+  font-size: 16px;
 }
 
-.owner-badge {
-  color: #f59e0b;
-}
-
-.owner-label {
-  margin-left: auto;
-  font-size: 0.7rem;
+.p-role {
+  font-size: 10px;
+  color: var(--secondary);
+  font-weight: 800;
   text-transform: uppercase;
-  background: #fef3c7;
-  color: #92400e;
-  padding: 2px 8px;
-  border-radius: 100px;
+  letter-spacing: 1px;
 }
 
-.lobby-status {
+.lobby-status-area {
   margin-top: 40px;
-  padding-top: 32px;
-  border-top: 1px solid #e2e8f0;
+  padding: 40px;
   text-align: center;
+  background: #f8fafc;
+  border-radius: 30px;
 }
 
-.btn-start-game {
-  width: 100%;
-  padding: 16px;
-  background: #3b82f6;
+.btn-premium-start {
+  background: #1e293b; /* Identidade: Cor de ação primária do menu */
   color: white;
   border: none;
-  border-radius: 16px;
-  font-size: 1.1rem;
-  font-weight: 700;
+  padding: 20px 60px;
+  border-radius: 50px;
+  font-weight: 900;
+  font-size: 14px;
+  letter-spacing: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 15px;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
 }
 
-.btn-start-game:hover:not(:disabled) {
-  background: #2563eb;
-  transform: translateY(-2px);
+.btn-premium-start:hover:not(:disabled) {
+  transform: translateY(-5px);
+  background: #000;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.2);
 }
 
-.btn-start-game:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  filter: grayscale(1);
-}
-
-.owner-controls .hint {
-  font-size: 0.85rem;
-  color: #ef4444;
-  margin-top: 12px;
-}
-
-.waiting-status {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  color: #64748b;
-}
-
-.spinner {
-  animation: spin 2s linear infinite;
-  color: #3b82f6;
+.spinner-modern {
+  animation: spin 1.5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  color: var(--secondary);
 }
 
 @keyframes spin {
@@ -190,7 +251,7 @@
   to { transform: rotate(360deg); }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   .participants-grid {
     grid-template-columns: 1fr;
   }

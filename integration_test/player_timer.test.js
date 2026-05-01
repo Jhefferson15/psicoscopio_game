@@ -1,4 +1,4 @@
-import { test, expect, vi } from 'vitest';
+import { test, expect } from 'vitest';
 import { Player } from '../src/features/game/domain/entities/Player';
 
 test('O tempo do jogador deve diminuir e o turno deve passar quando chegar a zero', () => {

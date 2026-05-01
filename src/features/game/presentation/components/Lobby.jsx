@@ -1,6 +1,4 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Users, Shield, Loader2, Play, Copy, X } from 'lucide-react';
+import { Shield, Loader2, Play, Copy, X } from 'lucide-react';
 import { useGame } from '../state/useGame';
 import { useAuth } from '../../../auth/presentation/state/useAuth';
 import './Lobby.css';
@@ -17,83 +15,113 @@ const Lobby = () => {
   };
 
   return (
-    <div className="lobby-overlay">
-      <motion.div 
-        className="lobby-card"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-      >
+    <div className="lobby-screen-wrapper">
+      <div className="lobby-background">
+        <div className="bg-pattern"></div>
+        <div className="bg-glow"></div>
+      </div>
+      <div className="lobby-card">
         <div className="lobby-header">
           <div className="room-info">
             <h1>Sala de Espera</h1>
-            <div className="room-code" onClick={copyRoomId}>
-              <span>Código: {roomId}</span>
+            <div 
+              className="room-code" 
+              onClick={copyRoomId}
+            >
+              <span className="code-label">CÓDIGO DA SALA:</span>
+              <span className="code-value">{roomId}</span>
               <Copy size={16} />
             </div>
           </div>
-          <button className="close-lobby" onClick={goToMenu}>
+          <button className="close-lobby" onClick={goToMenu} title="Sair da Sala">
             <X size={20} />
           </button>
         </div>
 
         <div className="lobby-body">
           <div className="participants-list">
-            <h3>Jogadores na Sala ({Object.keys(roomParticipants).length}/4)</h3>
+            <div className="list-header">
+              <h3>Participantes</h3>
+              <div className="slots-badge">
+                {Object.keys(roomParticipants).length} / 4 JOGADORES
+              </div>
+            </div>
+            
             <div className="participants-grid">
               {Object.values(roomParticipants).map((p, index) => (
-                <motion.div 
+                <div 
                   key={p.id}
                   className="participant-item"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
                 >
-                  <div className="participant-avatar" style={{ backgroundColor: players[index]?.color || '#64748b' }}>
+                  <div className="participant-avatar" style={{ 
+                    backgroundColor: players[index]?.color || '#64748b',
+                    color: 'white'
+                  }}>
                     {p.photoURL ? (
                       <img src={p.photoURL} alt={p.name} className="avatar-img" />
                     ) : (
-                      <Users size={20} color="white" />
+                      <span>{p.name?.charAt(0).toUpperCase() || '?'}</span>
                     )}
+                    {/* Indicador de Presença */}
+                    <div className={`presence-indicator-modern ${p.isOnline ? 'is-online' : 'is-offline'}`} 
+                         style={{ width: '12px', height: '12px', border: '1.5px solid white' }}>
+                    </div>
                   </div>
-                  <div className="participant-name">
-                    <span>{p.id === user?.id ? 'Você' : p.name}</span>
-                    {p.id === ownerId && <Shield size={14} className="owner-badge" />}
+                  <div className="participant-info">
+                    <div className="name-row">
+                      <span className="p-name">{p.id === user?.id ? 'Você' : p.name}</span>
+                      {p.id === ownerId && <Shield size={14} className="owner-icon" />}
+                    </div>
+                    {p.id === ownerId && <span className="p-role">Anfitrião</span>}
                   </div>
-                  {p.id === ownerId && <span className="owner-label">Dono</span>}
-                </motion.div>
+                  
+                  {p.id === user?.id && <div className="self-indicator" />}
+                </div>
               ))}
+              
               {[...Array(4 - Object.keys(roomParticipants).length)].map((_, i) => (
-                <div key={`empty-${i}`} className="participant-item empty">
+                <div 
+                  key={`empty-${i}`} 
+                  className="participant-item empty"
+                  style={{ opacity: 0.5 }}
+                >
                   <div className="participant-avatar">?</div>
-                  <div className="participant-name">Aguardando...</div>
+                  <div className="participant-info">
+                    <span className="p-name">Aguardando...</span>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="lobby-status">
+          <div className="lobby-status-area">
             {isOwner ? (
-              <div className="owner-controls">
-                <p>Todos os jogadores entraram?</p>
+              <div className="owner-panel">
+                <div className="panel-hint">
+                  {Object.keys(roomParticipants).length < 2 
+                    ? "Convide mais alguém para começar a jornada." 
+                    : "Todos prontos? Vamos começar!"}
+                </div>
                 <button 
-                  className="btn-start-game" 
+                  className="btn-premium-start" 
                   onClick={startOnlineGame}
                   disabled={Object.keys(roomParticipants).length < 2}
                 >
-                  <Play size={20} />
-                  <span>Iniciar Partida</span>
+                  <Play size={20} fill="currentColor" />
+                  <span>INICIAR JORNADA</span>
                 </button>
-                {Object.keys(roomParticipants).length < 2 && <p className="hint">Mínimo de 2 jogadores para iniciar.</p>}
               </div>
             ) : (
-              <div className="waiting-status">
-                <Loader2 size={24} className="spinner" />
-                <p>Aguardando o dono iniciar a partida...</p>
+              <div className="waiting-panel">
+                <div className="loading-animation">
+                  <Loader2 size={32} className="spinner-modern" />
+                </div>
+                <p>O anfitrião está preparando o tabuleiro...</p>
               </div>
             )}
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };

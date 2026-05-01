@@ -1,10 +1,7 @@
 import { test, expect } from 'vitest';
 
 test('O sistema deve permitir o acesso sem o bloqueio do MobileWarning', () => {
-  // Simulação do estado confirmedMobileWarning que antes era obrigatório
-  let confirmedMobileWarning = false;
-  
-  // A lógica agora deve permitir renderizar o conteúdo independentemente desta flag
+  // A lógica agora deve permitir renderizar o conteúdo independentemente da flag de aviso mobile
   // No App.jsx, removemos a condicional que usava esta flag para bloquear a UI
   
   const canRenderGame = true; // Agora é sempre true por padrão no App.jsx

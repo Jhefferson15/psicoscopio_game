@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { AuthContext } from './useAuth.js';
 import { FirebaseAuthRepository } from '../../data/repositories/FirebaseAuthRepository.js';
 import { isFirebaseConfigured } from '../../../../config/firebase.js';
@@ -9,9 +9,9 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const authRepository = new FirebaseAuthRepository();
-  const loginUseCase = new LoginWithGoogleUseCase(authRepository);
-  const logoutUseCase = new LogoutUseCase(authRepository);
+  const authRepository = useMemo(() => new FirebaseAuthRepository(), []);
+  const loginUseCase = useMemo(() => new LoginWithGoogleUseCase(authRepository), [authRepository]);
+  const logoutUseCase = useMemo(() => new LogoutUseCase(authRepository), [authRepository]);
 
   useEffect(() => {
     const unsubscribe = authRepository.onAuthStateChanged((user) => {
@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [authRepository]);
 
   const login = async () => {
     setLoading(true);

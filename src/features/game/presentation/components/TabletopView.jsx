@@ -37,12 +37,14 @@ const TabletopView = () => {
     players,
     currentPlayerIndex,
     toggleFullScreen,
-    isBoardFullScreen
+    isBoardFullScreen,
+    showDiary,
+    setShowDiary,
+    activeBoardConfig
   } = useGame();
 
   const [showHourglassDetails, setShowHourglassDetails] = React.useState(false);
   const [showCollection, setShowCollection] = React.useState(false);
-  const [showDiary, setShowDiary] = React.useState(false);
 
 
   const currentPlayer = players[currentPlayerIndex];
@@ -230,9 +232,10 @@ const TabletopView = () => {
         </div>
         <div className={`timer-atmosphere ${gameTime < 20 ? 'critical' : ''}`}>
           <Hourglass 
-            progress={gameTime / 120} 
+            progress={gameTime / (activeBoardConfig.mechanics?.turnTime || 120)} 
             isCritical={gameTime < 20}
             onClick={() => setShowHourglassDetails(true)} 
+            activePlayerIndex={currentPlayerIndex}
           />
           <div className="time-remaining">
             <Clock size={14} />
@@ -261,7 +264,10 @@ const TabletopView = () => {
             >
               <div className="hourglass-detail-header">
                 <div style={{ transform: 'scale(2.5)', marginBottom: '60px' }}>
-                  <Hourglass progress={gameTime / 120} />
+                  <Hourglass 
+                    progress={gameTime / (activeBoardConfig.mechanics?.turnTime || 120)} 
+                    activePlayerIndex={currentPlayerIndex}
+                  />
                 </div>
                 <h2 style={{ fontSize: '32px', fontWeight: '900', color: 'var(--text)', marginBottom: '10px' }}>
                   Tempo de Reflexão
@@ -281,7 +287,8 @@ const TabletopView = () => {
                 <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '20px' }}>
                   <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total da Rodada</span>
                   <div style={{ fontSize: '24px', fontWeight: '900', color: 'var(--secondary)' }}>
-                    02:00
+                    {Math.floor((activeBoardConfig.mechanics?.turnTime || 120) / 60).toString().padStart(2, '0')}:
+                    {((activeBoardConfig.mechanics?.turnTime || 120) % 60).toString().padStart(2, '0')}
                   </div>
                 </div>
               </div>

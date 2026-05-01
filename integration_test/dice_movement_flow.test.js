@@ -1,4 +1,4 @@
-import { test, expect, vi } from 'vitest';
+import { test, expect } from 'vitest';
 
 test('Deve seguir o fluxo: Rolar -> Delay -> Resultado Aparece -> Delay -> Movimento Começa', async () => {
   let isMoving = false;

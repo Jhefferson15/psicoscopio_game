@@ -9,12 +9,17 @@
   --card-bg: rgba(255, 255, 255, 0.7);
 }
 
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   font-family: 'Outfit', 'Inter', sans-serif;
   background-color: var(--bg);
   color: var(--text);
   overflow: hidden;
+  overflow-x: hidden;
 }
 
 /* ========================================== */
@@ -110,7 +115,7 @@ body {
 
   .dashboard-center.is-fullscreen .board-hero-wrapper {
     max-width: 100% !important;
-    height: calc(100vh - 150px) !important;
+    height: calc(100dvh - 150px) !important;
     aspect-ratio: auto !important;
   }
 

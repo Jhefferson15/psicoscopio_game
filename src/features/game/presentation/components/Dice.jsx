@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useGame } from '../state/useGame';
 import { Dices, User } from 'lucide-react';
 import './Dice.css'; // Vamos criar os estilos na próxima etapa
@@ -55,28 +55,39 @@ const Dice = () => {
                 disabled={!canRollThisDice}
                 animate={isRolling && isThisPlayerTurn ? { 
                   x: [0, -2, 2, -2, 2, 0],
-                  transition: { repeat: Infinity, duration: 0.15 }
-                } : {}}
+                } : { x: 0 }}
+                transition={isRolling && isThisPlayerTurn ? { 
+                  repeat: Infinity, 
+                  duration: 0.15 
+                } : { duration: 0.2 }}
                 style={{ 
                   borderColor: isThisPlayerTurn ? player.color : 'rgba(255,255,255,0.2)',
                   filter: !isThisPlayerTurn ? 'grayscale(100%) opacity(0.5)' : 'none'
                 }}
               >
-                <motion.div
-                  animate={isRolling && isThisPlayerTurn ? { rotate: 360 } : {}}
-                  transition={{ repeat: Infinity, duration: 0.5, ease: "linear" }}
-                  className="dice-icon-wrapper"
-                >
+                <div className="dice-icon-wrapper">
                   {isRolling && isThisPlayerTurn ? (
-                    <Dices size={isThisPlayerTurn ? 32 : 24} color={player.color} />
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ repeat: Infinity, duration: 0.5, ease: "linear" }}
+                      style={{ display: 'flex', alignItems: 'center', justifyItems: 'center' }}
+                    >
+                      <Dices size={isThisPlayerTurn ? 32 : 24} color={player.color} />
+                    </motion.div>
                   ) : player.lastRoll ? (
-                    <span className="dice-number-large" style={{ color: player.color }}>
+                    <motion.span 
+                      initial={{ scale: 0.5, opacity: 0, rotate: -20 }}
+                      animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                      transition={{ type: "spring", damping: 12 }}
+                      className="dice-number-large" 
+                      style={{ color: player.color }}
+                    >
                       {player.lastRoll}
-                    </span>
+                    </motion.span>
                   ) : (
                     <Dices size={isThisPlayerTurn ? 32 : 24} color={player.color} />
                   )}
-                </motion.div>
+                </div>
               </motion.button>
               
               {/* Nome do jogador abaixo do dado */}

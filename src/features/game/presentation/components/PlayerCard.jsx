@@ -1,7 +1,12 @@
 import { motion } from 'framer-motion';
 import { User, Award, TrendingUp, Clock } from 'lucide-react';
+import { useGame } from '../state/useGame';
 
 const PlayerCard = ({ player, isActive }) => {
+  const { roomParticipants, isOnline: isGameOnline } = useGame();
+  const participant = roomParticipants ? roomParticipants[player.id] : null;
+  const isPlayerOnline = participant ? participant.isOnline : true; // Default true para modo offline
+
   return (
     <motion.div 
       className={`player-card ${isActive ? 'active' : ''}`}
@@ -9,14 +14,21 @@ const PlayerCard = ({ player, isActive }) => {
       animate={{ opacity: 1, x: 0 }}
       whileHover={{ scale: 1.05 }}
     >
-      <div className="player-avatar" style={{ backgroundColor: player.color }}>
-        <User size={32} color="white" />
-        {isActive && (
-          <motion.div 
-            className="active-indicator"
-            layoutId="active-indicator"
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          />
+      <div className="player-avatar-relative">
+        <div className="player-avatar" style={{ backgroundColor: player.color }}>
+          <User size={32} color="white" />
+          {isActive && (
+            <motion.div 
+              className="active-indicator"
+              layoutId="active-indicator"
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            />
+          )}
+        </div>
+        {isGameOnline && (
+          <div className={`presence-indicator-modern ${isPlayerOnline ? 'is-online' : 'is-offline'}`} 
+               title={isPlayerOnline ? 'Online' : 'Offline'}>
+          </div>
         )}
       </div>
       

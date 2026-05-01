@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import { Clock, CheckCircle, Loader2, Play } from 'lucide-react';
 import { useGame } from '../state/useGame';
 import { useAuth } from '../../../auth/presentation/state/useAuth';
 import './WaitingPlayers.css';
 
 const WaitingPlayers = () => {
-  const { roomId, roomParticipants, readyPlayers, ownerId, players, startPlayingGame } = useGame();
+  const { roomParticipants, readyPlayers, ownerId, players, startPlayingGame } = useGame();
   const { user } = useAuth();
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutos
   
@@ -46,55 +45,101 @@ const WaitingPlayers = () => {
   };
 
   return (
-    <div className="waiting-players-overlay">
-      <motion.div 
-        className="waiting-card"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
+    <div className="waiting-screen-wrapper">
+      <div className="waiting-background">
+        <div className="bg-pattern"></div>
+        <div className="bg-glow-waiting"></div>
+      </div>
+      <div className="waiting-card">
         <div className="waiting-header">
-          <Clock className="timer-icon" size={32} />
-          <div className="timer-display">
-            <h2>Aguardando Jogadores</h2>
-            <div className="countdown">{formatTime(timeLeft)}</div>
+          <div className="timer-section">
+            <div className="timer-ring">
+              <Clock size={32} className="timer-icon-modern" />
+            </div>
+            <div className="timer-text">
+              <span className="timer-label">TEMPO ESTIMADO</span>
+              <div className="countdown-modern">{formatTime(timeLeft)}</div>
+            </div>
+          </div>
+          <div className="header-status-badge">
+            SALA EM PREPARAÇÃO
           </div>
         </div>
 
         <div className="waiting-body">
-          <p>Os jogadores estão finalizando suas cartas no Ateliê.</p>
+          <div className="preparation-context">
+            <div className="context-icon">🎨</div>
+            <div className="context-text">
+              <h3>O Ateliê está fervendo!</h3>
+              <p>Os outros jogadores estão personalizando suas cartas. A jornada começa em breve.</p>
+            </div>
+          </div>
           
-          <div className="ready-list">
+          <div className="progress-bar-container">
+            <div className="progress-bar-label">
+              <span>Status dos Jogadores</span>
+              <span>{Object.values(readyPlayers).filter(Boolean).length} / {participantList.length} PRONTOS</span>
+            </div>
+            <div className="progress-bar-track">
+              <div 
+                className="progress-bar-fill"
+                style={{ width: `${(Object.values(readyPlayers).filter(Boolean).length / participantList.length) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="ready-grid-premium">
             {participantList.map((p, index) => (
-              <div key={p.id} className={`ready-item ${readyPlayers[p.id] ? 'is-ready' : ''}`}>
-                <div className="player-avatar-small" style={{ backgroundColor: players[index]?.color || '#64748b' }}>
+              <div 
+                key={p.id} 
+                className={`ready-item-premium ${readyPlayers[p.id] ? 'is-ready' : ''}`}
+              >
+                <div className="player-avatar-wrapper" style={{ borderColor: players[index]?.color || '#64748b' }}>
                    {p.photoURL ? (
-                     <img src={p.photoURL} alt={p.name} className="avatar-img-small" />
+                     <img src={p.photoURL} alt={p.name} className="avatar-img-premium" />
                    ) : (
-                     readyPlayers[p.id] ? <CheckCircle size={16} /> : <Loader2 size={16} className="spin" />
+                     <div className="avatar-placeholder-premium" style={{ backgroundColor: players[index]?.color || '#64748b' }}>
+                        {p.name?.charAt(0).toUpperCase() || '?'}
+                     </div>
+                   )}
+                   {/* Indicador de Presença */}
+                   <div className={`presence-indicator-modern ${p.isOnline ? 'is-online' : 'is-offline'}`} 
+                        title={p.isOnline ? 'Online' : 'Offline'}>
+                   </div>
+                   {readyPlayers[p.id] && (
+                     <div className="ready-badge-mini">
+                       <CheckCircle size={12} />
+                     </div>
                    )}
                 </div>
-                <span>{p.id === user?.id ? 'Você' : (p.name || `Jogador ${index + 1}`)}</span>
-                <span className="ready-status">
-                  {readyPlayers[p.id] ? 'Pronto' : 'Criando cartas...'}
-                </span>
+                <div className="player-meta">
+                  <span className="player-name-text">{p.id === user?.id ? 'Você' : (p.name || `Jogador ${index + 1}`)}</span>
+                  <span className="player-status-tag">
+                    {readyPlayers[p.id] ? 'CONCLUÍDO' : 'NO ATELIÊ...'}
+                  </span>
+                </div>
+                {!readyPlayers[p.id] && (
+                  <Loader2 size={16} className="spin-slow" />
+                )}
               </div>
             ))}
           </div>
         </div>
 
         {isOwner && (
-          <div className="waiting-footer">
+          <div className="waiting-footer-premium">
             <button 
-              className="btn-force-start" 
+              className="btn-premium-action" 
               onClick={handleForceStart}
               disabled={participantList.length < 2}
             >
-              <Play size={18} />
-              <span>Iniciar agora com quem está pronto</span>
+              <Play size={18} fill="currentColor" />
+              <span>INICIAR COM QUEM ESTÁ PRONTO</span>
             </button>
+            <p className="footer-hint">Você pode aguardar os outros ou iniciar agora.</p>
           </div>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 };

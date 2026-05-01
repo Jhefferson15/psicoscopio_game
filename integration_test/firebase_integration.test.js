@@ -1,4 +1,4 @@
-import { test, expect, vi } from 'vitest';
+import { test, expect } from 'vitest';
 import { User } from '../src/features/auth/domain/entities/User';
 
 // Mock dos Repositórios para testes de integração de lógica
@@ -14,9 +14,9 @@ class MockAuthRepository {
 }
 
 class MockGameSyncRepository {
-  async createRoom(data) { return 'ABC123'; }
-  async updateGameState(id, data) { return true; }
-  listenToGameState(id, cb) {
+  async createRoom() { return 'ABC123'; }
+  async updateGameState() { return true; }
+  listenToGameState(_id, cb) {
     cb({ players: [{ id: 1, name: 'P1', position: 5 }] });
     return () => {};
   }

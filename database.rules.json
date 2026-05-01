@@ -3,7 +3,33 @@
     "rooms": {
       "$roomId": {
         ".read": "auth != null",
-        ".write": "auth != null"
+
+        "status": {
+          ".write": "auth != null && root.child('rooms').child($roomId).child('ownerId').val() === auth.uid"
+        },
+
+        "ownerId": {
+          ".write": "auth != null && !data.exists()"
+        },
+
+        "participants": {
+          "$userId": {
+            ".write": "auth != null && (auth.uid === $userId || root.child('rooms').child($roomId).child('ownerId').val() === auth.uid)"
+          }
+        },
+
+        "readyPlayers": {
+          "$userId": {
+            ".write": "auth != null && auth.uid === $userId"
+          }
+        },
+
+        "gameState": {
+          ".read": "auth != null",
+          ".write": "auth != null && root.child('rooms').child($roomId).child('participants').child(auth.uid).exists()"
+        },
+
+        ".write": "auth != null && !data.exists()"
       }
     }
   }

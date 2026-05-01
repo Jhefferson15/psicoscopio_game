@@ -9,8 +9,7 @@ import {
   Smile, 
   Meh, 
   Frown, 
-  Book, 
-  Filter,
+  Book,
   Check,
   ChevronRight
 } from 'lucide-react';

@@ -1,4 +1,5 @@
 import { Tile } from '../../domain/entities/Tile';
+import { BoardConfig } from '../../domain/entities/BoardConfig';
 
 const OUTER_RADIUS = 300;
 const MIDDLE_RADIUS = 225;
@@ -58,6 +59,19 @@ export const boardData = [
   // CENTER
   new Tile('center', 'center', 'CHEGADA', '#FFFFFF', 'center', 0)
 ];
+
+export const getDefaultBoardConfig = () => {
+  return new BoardConfig(
+    'default',
+    'Tabuleiro Original',
+    boardData.map(t => t.toJSON()),
+    {
+      turnTime: 120,
+      diceMin: 1,
+      diceMax: 6
+    }
+  );
+};
 
 export const getTilePosition = (tile) => {
   let radius = 0;

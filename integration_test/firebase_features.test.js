@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { onValue } from 'firebase/database';
 import { FirebaseAuthRepository } from '../src/features/auth/data/repositories/FirebaseAuthRepository';
 import { FirebaseGameSyncRepository } from '../src/features/game/data/repositories/FirebaseGameSyncRepository';
@@ -32,6 +32,12 @@ vi.mock('firebase/database', () => ({
   getDatabase: vi.fn(),
   ref: vi.fn((db, path) => ({ path })),
   set: vi.fn(() => Promise.resolve()),
+  update: vi.fn(() => Promise.resolve()),
+  serverTimestamp: vi.fn(() => Date.now()),
+  onDisconnect: vi.fn(() => ({
+    set: vi.fn(() => Promise.resolve()),
+    cancel: vi.fn(() => Promise.resolve())
+  })),
   onValue: vi.fn((ref, callback) => {
     callback({
       exists: () => true,
@@ -117,8 +123,6 @@ describe('Firebase Game Sync Repository', () => {
   });
 
   it('deve permitir iniciar a partida e inicializar a lista de jogadores no gameState', async () => {
-    // O teste do repositório é simples, o GameContext é que faz a lógica complexa.
-    // Mas vamos garantir que o método startGame do repo ainda funciona.
     await expect(syncRepo.startGame('ROOM123')).resolves.not.toThrow();
   });
 
@@ -126,13 +130,42 @@ describe('Firebase Game Sync Repository', () => {
     await expect(syncRepo.updateGameState('ROOM123', { turn: 1 })).resolves.not.toThrow();
   });
 
-  it('deve escutar mudanças no estado do jogo', () => {
+  it('deve registrar o inicio de turno com playerIndex e duracao', async () => {
+    await expect(syncRepo.startTurn('ROOM123', 1, 120)).resolves.not.toThrow();
+  });
+
+  it('deve apagar a sala completamente com deleteRoom', async () => {
+    await expect(syncRepo.deleteRoom('ROOM123')).resolves.not.toThrow();
+    // set deve ser chamado com null para apagar o no
+    const { set: mockSet } = await import('firebase/database');
+    expect(mockSet).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'rooms/ROOM123' }),
+      null
+    );
+  });
+
+  it('deve remover sala quando ultimo jogador sair (leaveRoom)', async () => {
+    vi.mocked(onValue).mockImplementationOnce((ref, callback) => {
+      callback({
+        exists: () => true,
+        val: () => ({
+          participants: { 'uid-solo': { id: 'uid-solo', name: 'Solo' } }
+        })
+      });
+      return () => {};
+    });
+
+    await expect(syncRepo.leaveRoom('ROOM123', 'uid-solo')).resolves.not.toThrow();
+  });
+
+  it('deve escutar mudancas no estado do jogo', () => {
     vi.mocked(onValue).mockImplementationOnce((ref, callback) => {
       callback({
         exists: () => true,
         val: () => ({
           players: [{ name: 'Test' }],
-          currentPlayerIndex: 0
+          currentPlayerIndex: 0,
+          lastActionBy: 'uid-123'
         })
       });
       return () => {};
@@ -144,5 +177,6 @@ describe('Firebase Game Sync Repository', () => {
     expect(callback).toHaveBeenCalled();
     expect(callback.mock.calls[0][0].players).toBeDefined();
     expect(callback.mock.calls[0][0].players[0].name).toBe('Test');
+    expect(callback.mock.calls[0][0].lastActionBy).toBe('uid-123');
   });
 });

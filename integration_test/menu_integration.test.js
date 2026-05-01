@@ -1,4 +1,4 @@
-import { test, expect, vi } from 'vitest';
+import { test, expect } from 'vitest';
 
 // Simulação simplificada do comportamento do StartMenu e modais
 test('Fluxo de Menu: Deve permitir alternar estados de modal sem erro', () => {
