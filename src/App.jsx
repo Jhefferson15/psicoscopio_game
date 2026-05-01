@@ -8,7 +8,6 @@ import { GameProvider } from './features/game/presentation/state/GameContext';
 import { useGame } from './features/game/presentation/state/useGame';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Minimize2, X } from 'lucide-react';
-import MobileWarning from './features/game/presentation/components/MobileWarning';
 import Navigation from './features/game/presentation/components/Navigation';
 import CustomCardsGallery from './features/game/presentation/components/CustomCardsGallery';
 import StandardCardsSettings from './features/game/presentation/components/StandardCardsSettings';
@@ -20,9 +19,6 @@ const GameContent = () => {
 
   return (
     <div className="game-wrapper">
-      {!confirmedMobileWarning && (
-        <MobileWarning onConfirm={() => setConfirmedMobileWarning(true)} />
-      )}
       <Navigation />
       <AnimatePresence mode="wait">
         {currentScreen === 'menu' ? (

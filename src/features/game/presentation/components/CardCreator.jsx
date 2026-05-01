@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../state/useGame';
-import { Trash2, Brush, Plus, Brain, Sprout, Puzzle, Image as ImageIcon, Type, Upload, Layers, RotateCcw, CheckCircle } from 'lucide-react';
+import { Trash2, Brush, Plus, Brain, Sprout, Puzzle, Image as ImageIcon, Type, Upload, Layers, RotateCcw, CheckCircle, Undo2, Redo2, Eraser } from 'lucide-react';
 import { GAME_CARDS } from '../../domain/gameConstants';
 import { CustomCard } from '../../domain/entities/CustomCard';
 import { customCardRepository } from '../../data/repositories/LocalStorageCardRepository';
@@ -25,6 +25,41 @@ const CardCreator = () => {
    const [uploadedImage, setUploadedImage] = useState(null);
    const [isCanvasDirty, setIsCanvasDirty] = useState(false);
    const [showCollection, setShowCollection] = useState(false);
+   const [isEraser, setIsEraser] = useState(false);
+   const [history, setHistory] = useState([]);
+   const [historyStep, setHistoryStep] = useState(-1);
+
+  const saveToHistory = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    
+    const newHistory = history.slice(0, historyStep + 1);
+    newHistory.push(imgData);
+    if (newHistory.length > 20) newHistory.shift();
+    
+    setHistory(newHistory);
+    setHistoryStep(newHistory.length - 1);
+  };
+
+  const undo = () => {
+    if (historyStep <= 0) return;
+    const newStep = historyStep - 1;
+    setHistoryStep(newStep);
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.putImageData(history[newStep], 0, 0);
+  };
+
+  const redo = () => {
+    if (historyStep >= history.length - 1) return;
+    const newStep = historyStep + 1;
+    setHistoryStep(newStep);
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.putImageData(history[newStep], 0, 0);
+  };
 
   const initCanvas = () => {
     setTimeout(() => {
@@ -37,6 +72,11 @@ const CardCreator = () => {
       
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Save initial state
+      const initialData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      setHistory([initialData]);
+      setHistoryStep(0);
     }, 0);
   };
 
@@ -52,13 +92,16 @@ const CardCreator = () => {
     const ctx = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
     
-    const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
-    const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = ((e.clientX || (e.touches && e.touches[0].clientX)) - rect.left) * scaleX;
+    const y = ((e.clientY || (e.touches && e.touches[0].clientY)) - rect.top) * scaleY;
 
     ctx.beginPath();
     ctx.moveTo(x, y);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = lineWidth;
+    ctx.strokeStyle = isEraser ? '#ffffff' : color;
+    ctx.lineWidth = isEraser ? lineWidth * 2 : lineWidth;
     setIsDrawing(true);
     setIsCanvasDirty(true);
   };
@@ -70,15 +113,21 @@ const CardCreator = () => {
     const ctx = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
     
-    const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
-    const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = ((e.clientX || (e.touches && e.touches[0].clientX)) - rect.left) * scaleX;
+    const y = ((e.clientY || (e.touches && e.touches[0].clientY)) - rect.top) * scaleY;
 
     ctx.lineTo(x, y);
     ctx.stroke();
   };
 
   const stopDrawing = () => {
-    setIsDrawing(false);
+    if (isDrawing) {
+      saveToHistory();
+      setIsDrawing(false);
+    }
   };
 
   useEffect(() => {
@@ -175,6 +224,18 @@ const CardCreator = () => {
     { hex: '#F59E0B', name: 'Amber' },
     { hex: '#10B981', name: 'Emerald' },
     { hex: '#1e293b', name: 'Slate' },
+    { hex: '#F43F5E', name: 'Rose' },
+    { hex: '#EC4899', name: 'Pink' },
+    { hex: '#D946EF', name: 'Fuchsia' },
+    { hex: '#8B5CF6', name: 'Violet' },
+    { hex: '#6366F1', name: 'Indigo' },
+    { hex: '#3B82F6', name: 'Blue' },
+    { hex: '#0EA5E9', name: 'Sky Blue' },
+    { hex: '#06B6D4', name: 'Cyan' },
+    { hex: '#14B8A6', name: 'Teal' },
+    { hex: '#84CC16', name: 'Lime' },
+    { hex: '#EAB308', name: 'Yellow' },
+    { hex: '#F97316', name: 'Orange' },
   ];
 
   const modes = [
@@ -295,7 +356,10 @@ const CardCreator = () => {
                     key={type.type}
                     className={`type-chip ${selectedType.type === type.type ? 'active' : ''}`}
                     style={{ '--chip-color': type.color }}
-                    onClick={() => setSelectedType(type)}
+                    onClick={() => {
+                        setSelectedType(type);
+                        setIsEraser(false);
+                    }}
                   >
                     {type.type}
                   </button>
@@ -303,77 +367,111 @@ const CardCreator = () => {
               </div>
             </div>
 
-            {creationMode === 'drawing' && (
-              <>
-                <div className="tool-group">
-                  <label>Paleta de Cores</label>
-                  <div className="color-swatches">
-                    {colors.map(c => (
+            <div className="tool-group-container">
+              {creationMode === 'drawing' && (
+                <>
+                  <div className="drawing-actions-row">
+                    <div className="undo-redo-btns">
                       <button 
-                        key={c.hex}
-                        className={`swatch ${color === c.hex ? 'active' : ''}`}
-                        style={{ background: c.hex }}
-                        onClick={() => setColor(c.hex)}
-                        title={c.name}
-                      />
-                    ))}
+                        className="btn-history" 
+                        onClick={undo} 
+                        disabled={historyStep <= 0}
+                        title="Desfazer"
+                      >
+                        <Undo2 size={18} />
+                      </button>
+                      <button 
+                        className="btn-history" 
+                        onClick={redo} 
+                        disabled={historyStep >= history.length - 1}
+                        title="Refazer"
+                      >
+                        <Redo2 size={18} />
+                      </button>
+                    </div>
+                    <button 
+                      className={`btn-eraser ${isEraser ? 'active' : ''}`} 
+                      onClick={() => setIsEraser(!isEraser)}
+                      title="Borracha"
+                    >
+                      <Eraser size={18} />
+                      <span>Borracha</span>
+                    </button>
                   </div>
-                </div>
 
+                  <div className="tool-group">
+                    <label>Paleta de Cores</label>
+                    <div className="color-swatches">
+                      {colors.map(c => (
+                        <button 
+                          key={c.hex}
+                          className={`swatch ${color === c.hex && !isEraser ? 'active' : ''}`}
+                          style={{ background: c.hex }}
+                          onClick={() => {
+                            setColor(c.hex);
+                            setIsEraser(false);
+                          }}
+                          title={c.name}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="tool-group">
+                    <div className="tool-header">
+                      <label>Traço</label>
+                      <span className="value-display">{lineWidth}px</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="2" 
+                      max="30" 
+                      value={lineWidth} 
+                      onChange={(e) => setLineWidth(parseInt(e.target.value))}
+                      className="premium-slider"
+                    />
+                  </div>
+                </>
+              )}
+
+              {creationMode === 'text' && (
                 <div className="tool-group">
-                  <div className="tool-header">
-                    <label>Traço</label>
-                    <span className="value-display">{lineWidth}px</span>
-                  </div>
-                  <input 
-                    type="range" 
-                    min="2" 
-                    max="30" 
-                    value={lineWidth} 
-                    onChange={(e) => setLineWidth(parseInt(e.target.value))}
-                    className="premium-slider"
+                  <label>Texto da Carta</label>
+                  <textarea 
+                    className="premium-textarea"
+                    placeholder="Escreva sua reflexão ou desafio..."
+                    value={cardText}
+                    onChange={(e) => setCardText(e.target.value)}
+                    maxLength={150}
                   />
+                  <div className="char-count">{cardText.length}/150</div>
                 </div>
-              </>
-            )}
+              )}
 
-            {creationMode === 'text' && (
-              <div className="tool-group">
-                <label>Texto da Carta</label>
-                <textarea 
-                  className="premium-textarea"
-                  placeholder="Escreva sua reflexão ou desafio..."
-                  value={cardText}
-                  onChange={(e) => setCardText(e.target.value)}
-                  maxLength={150}
-                />
-                <div className="char-count">{cardText.length}/150</div>
-              </div>
-            )}
+              {creationMode === 'image' && (
+                <div className="tool-group">
+                  <label>Carregar Imagem</label>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                  />
+                  <button className="btn-upload-premium" onClick={() => fileInputRef.current.click()}>
+                     <Upload size={18} />
+                     <span>Escolher Arquivo</span>
+                  </button>
+                  <p className="upload-hint">Use imagens com proporção vertical para melhor resultado.</p>
+                </div>
+              )}
 
-            {creationMode === 'image' && (
-              <div className="tool-group">
-                <label>Carregar Imagem</label>
-                <input 
-                  type="file" 
-                  ref={fileInputRef}
-                  style={{ display: 'none' }}
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                />
-                <button className="btn-upload-premium" onClick={() => fileInputRef.current.click()}>
-                   <Upload size={18} />
-                   <span>Escolher Arquivo</span>
+              <div className="tool-group footer-tools">
+                <button className="btn-outline-danger" onClick={clearCanvas}>
+                  <Trash2 size={18} />
+                  <span>Limpar {creationMode === 'drawing' ? 'Canvas' : creationMode === 'text' ? 'Texto' : 'Imagem'}</span>
                 </button>
-                <p className="upload-hint">Use imagens com proporção vertical para melhor resultado.</p>
               </div>
-            )}
-
-            <div className="tool-group footer-tools">
-              <button className="btn-outline-danger" onClick={clearCanvas}>
-                <Trash2 size={18} />
-                <span>Limpar {creationMode === 'drawing' ? 'Canvas' : creationMode === 'text' ? 'Texto' : 'Imagem'}</span>
-              </button>
             </div>
           </aside>
         </div>

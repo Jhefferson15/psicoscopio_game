@@ -1108,7 +1108,7 @@ body {
 }
 
 .game-logo-modern {
-  margin-left: 80px; /* Garante espaço para o botão de navegação global */
+  margin-left: 0;
 }
 
 .game-logo-modern h1 {
@@ -1975,8 +1975,10 @@ body {
   padding: 8px 15px;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1); /* Sombra mais forte para o efeito de flutuação */
   transition: all 0.5s;
+  transform: translateY(-20px); /* Transborda para cima */
+  border: 1px solid rgba(0,0,0,0.05);
 }
 
 .timer-atmosphere.critical {
@@ -2343,4 +2345,233 @@ body {
   border: 1px solid #fecaca;
 }
 
+/* ========================================== */
+/* RESPONSIVE OVERRIDES (MOBILE & TABLET)     */
+/* ========================================== */
 
+@media (max-width: 768px) {
+  :root {
+    --side-padding: 20px;
+  }
+
+  body {
+    overflow-y: auto; /* Permitir scroll vertical no mobile se necessário */
+  }
+
+  /* Ajustes Gerais de Modal */
+  .modal-content, .menu-modal-content {
+    max-width: 95vw !important;
+    padding: 25px 20px !important;
+    border-radius: 24px !important;
+  }
+
+  .modal-title {
+    font-size: 24px !important;
+  }
+
+  /* Start Menu Mobile */
+  .menu-logo h1 {
+    font-size: 28px !important;
+    letter-spacing: 4px !important;
+  }
+  
+  .menu-card {
+    padding: 40px 20px !important;
+    border-radius: 30px !important;
+  }
+
+  .btn-primary {
+    padding: 16px !important;
+    font-size: 16px !important;
+    border-radius: 16px !important;
+  }
+
+  .menu-grid {
+    grid-template-columns: 1fr !important; /* Stack buttons vertically on small screens */
+  }
+
+  /* Tabletop Mobile Layout */
+  .tabletop-dashboard-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 10px !important;
+    gap: 15px !important;
+    overflow-y: auto !important;
+    height: auto !important;
+  }
+
+  .tabletop-header-modern {
+    height: 70px !important;
+    padding: 0 15px !important;
+  }
+
+  .game-logo-modern {
+    margin-left: 0 !important;
+  }
+
+  .header-actions {
+    gap: 8px !important;
+  }
+
+  .btn-fullscreen-modern span {
+    display: none;
+  }
+
+  .tabletop-header-modern {
+    padding: 0 10px !important;
+    justify-content: space-around;
+  }
+
+  .dashboard-center, .dashboard-sidebar {
+    display: contents !important;
+  }
+
+  .board-hero-wrapper {
+    order: 1 !important;
+    width: 100% !important;
+    max-width: 600px !important;
+    aspect-ratio: 1 / 1 !important;
+    margin: 0 auto !important;
+    padding: 10px !important;
+    height: auto !important;
+  }
+
+  .dashboard-center.is-fullscreen .board-hero-wrapper {
+    max-width: 100% !important;
+    height: calc(100vh - 150px) !important;
+    aspect-ratio: auto !important;
+  }
+
+  .dashboard-center.is-fullscreen .bottom-dashboard-row-large {
+    display: none !important;
+  }
+
+  .action-area-modern {
+    order: 2 !important; /* Dado logo após o tabuleiro */
+    width: 100% !important;
+  }
+
+  .bottom-dashboard-row-large {
+    order: 3 !important; /* Diário e ficha de evolução */
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+  }
+
+  .players-panel, .profile-gallery-area {
+    order: 4 !important;
+  }
+
+  .info-panel-modern, .special-tiles-panel {
+    order: 5 !important;
+  }
+
+  /* Ajuste de sidebars para economizar espaço */
+  .info-panel-modern {
+    border-radius: 20px !important;
+    padding: 15px !important;
+  }
+
+  .cards-stack-modern {
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+
+  .card-stack-item {
+    width: 50px !important;
+    height: 75px !important;
+  }
+
+  /* Footer do Tabletop */
+  .dashboard-footer-modern {
+    height: 60px !important;
+    padding: 0 15px !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 1000 !important;
+    background: white !important;
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.05) !important;
+  }
+
+  .timer-atmosphere {
+    width: auto !important;
+    transform: translateY(-15px) scale(0.9) !important;
+    z-index: 1001 !important;
+  }
+
+  /* Focused Card Mobile */
+  .game-card.focused {
+    width: 85vw !important;
+    height: 60vh !important;
+    min-height: 400px;
+  }
+
+  .game-card.focused .card-body-text p {
+    font-size: 16px !important;
+  }
+
+  .game-card.focused .card-header-bar {
+    font-size: 14px !important;
+  }
+
+  /* Board FullScreen Mobile */
+  .app-container {
+    flex-direction: column !important;
+  }
+
+  .player-info {
+    width: 100% !important;
+    height: auto !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    padding: 10px !important;
+  }
+
+  .board-wrapper {
+    padding: 10px !important;
+  }
+
+  .controls-overlay {
+    bottom: 20px !important;
+    right: 20px !important;
+  }
+
+  /* Modal Menu Mobile Fix */
+  .menu-modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .menu-modal-content {
+    max-width: 100% !important;
+    max-height: 95vh !important;
+    border-radius: 30px 30px 0 0 !important;
+    margin: 0 !important;
+  }
+
+  .modal-body {
+    padding: 20px 20px 40px 20px !important;
+    max-height: 75vh !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .player-config-item {
+    padding: 15px !important;
+    gap: 15px !important;
+  }
+
+  .player-inputs input {
+    font-size: 14px !important;
+    padding: 10px !important;
+  }
+
+  .start-btn {
+    margin-top: 20px !important;
+    width: 100% !important;
+    height: 56px !important;
+  }
+}

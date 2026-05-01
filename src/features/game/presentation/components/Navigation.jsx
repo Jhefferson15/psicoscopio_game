@@ -22,9 +22,9 @@ const Navigation = () => {
         {isOpen && (
           <motion.div 
             className="nav-expanded-bar glass-panel"
-            initial={{ x: -10, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -10, opacity: 0 }}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 20, opacity: 0 }}
           >
             {navItems.map((item) => (
               <button 

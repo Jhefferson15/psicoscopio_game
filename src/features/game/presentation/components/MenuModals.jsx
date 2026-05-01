@@ -289,7 +289,7 @@ export const AboutModal = ({ onClose }) => (
       <div className="about-footer">
         <p>© 2026 Psicoscópio Team</p>
         <div className="credits">
-          Desenvolvido com ❤️ para a Jornada do Conhecimento
+          Desenvolvido com dedicação para a Jornada do Conhecimento
         </div>
       </div>
     </div>

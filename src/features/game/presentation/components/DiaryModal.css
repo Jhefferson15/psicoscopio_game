@@ -152,6 +152,7 @@
 
 .new-entry-form textarea {
   width: 100%;
+  box-sizing: border-box;
   min-height: 120px;
   border: none;
   background: #f8fafc;
@@ -381,6 +382,7 @@
 
 .edit-area textarea {
   width: 100%;
+  box-sizing: border-box;
   min-height: 80px;
   border: 1.5px solid #7B4BB1;
   border-radius: 12px;
@@ -438,4 +440,77 @@
 .diary-content::-webkit-scrollbar-thumb {
   background: rgba(0,0,0,0.1);
   border-radius: 10px;
+}
+
+@media (max-width: 768px) {
+  .diary-modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .diary-modal-container {
+    max-height: 95vh;
+    border-radius: 32px 32px 0 0;
+  }
+
+  .diary-header {
+    padding: 20px;
+  }
+
+  .diary-icon-wrapper {
+    width: 44px;
+    height: 44px;
+  }
+
+  .diary-title h2 {
+    font-size: 18px;
+  }
+
+  .diary-content {
+    padding: 20px;
+    gap: 16px;
+  }
+
+  .new-entry-form {
+    padding: 20px;
+  }
+
+  .selectors {
+    gap: 12px;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .mood-selector, .type-selector {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .form-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-save-entry {
+    width: 100%;
+    justify-content: center;
+    height: 48px;
+  }
+
+  .diary-entry-item {
+    padding: 16px;
+  }
+
+  .entry-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .entry-footer {
+    opacity: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
 }

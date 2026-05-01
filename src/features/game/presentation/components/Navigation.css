@@ -1,8 +1,9 @@
 .global-nav-container {
   position: fixed;
-  top: 15px;
-  left: 15px;
+  bottom: 30px;
+  left: 30px;
   display: flex;
+  flex-direction: column-reverse;
   align-items: center;
   gap: 15px;
   z-index: 4000; /* Ainda mais alto para garantir que fique acima de tudo */
@@ -68,7 +69,6 @@
 @media (max-width: 768px) {
   .global-nav-container {
     bottom: 20px;
-    left: 20px;
   }
   
   .nav-item span {

@@ -34,7 +34,8 @@ const TabletopView = () => {
     activeCardSet,
     players,
     currentPlayerIndex,
-    toggleFullScreen
+    toggleFullScreen,
+    isBoardFullScreen
   } = useGame();
 
   const [showHourglassDetails, setShowHourglassDetails] = React.useState(false);
@@ -102,7 +103,7 @@ const TabletopView = () => {
         </aside>
 
         {/* Center Piece: The Board */}
-        <section className="dashboard-center">
+        <section className={`dashboard-center ${isBoardFullScreen ? 'is-fullscreen' : ''}`}>
           <motion.div 
             className="board-hero-wrapper"
           >
@@ -134,9 +135,6 @@ const TabletopView = () => {
                        <p>{entry.text}</p>
                      </motion.div>
                    ))}
-                </div>
-                <div className="journal-footer">
-                   <input placeholder="Anote uma reflexão..." className="journal-quick-input" />
                 </div>
               </div>
 
