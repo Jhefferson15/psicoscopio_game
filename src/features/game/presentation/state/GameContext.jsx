@@ -6,6 +6,8 @@ import { FirebaseGameSyncRepository } from '../../data/repositories/FirebaseGame
 import { MovePlayerUseCase } from '../../domain/usecases/MovePlayerUseCase';
 import { CardSetRepository } from '../../data/repositories/CardSetRepository';
 import { CardSet } from '../../domain/entities/CardSet';
+import { DiaryEntry } from '../../domain/entities/DiaryEntry';
+
 
 const syncRepository = new FirebaseGameSyncRepository();
 
@@ -57,9 +59,20 @@ export const GameProvider = ({ children }) => {
     2: { memory: 30, reflection: 15, challenge: 50 }
   });
 
-  const [diaryEntries, setDiaryEntries] = useState([
-    { id: 1, type: 'reflexao', text: 'Iniciei a jornada com foco em autoconhecimento.', timestamp: new Date().toLocaleTimeString() }
-  ]);
+  const [diaryEntries, setDiaryEntries] = useState(() => {
+    const saved = localStorage.getItem('psicoscopio_diary');
+    if (saved) {
+      return JSON.parse(saved).map(e => DiaryEntry.fromJSON(e));
+    }
+    return [
+      new DiaryEntry(1, 'Iniciei a jornada com foco em autoconhecimento.', 'reflexao', new Date().toISOString(), 'happy')
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('psicoscopio_diary', JSON.stringify(diaryEntries));
+  }, [diaryEntries]);
+
 
   // O tempo agora é gerenciado dentro de cada objeto Player (timeLeft)
 
@@ -384,7 +397,18 @@ export const GameProvider = ({ children }) => {
       setPlayerAttributes,
       diaryEntries,
       setDiaryEntries,
+      addDiaryEntry: (text, type, mood) => {
+        const newEntry = new DiaryEntry(Date.now(), text, type, new Date().toISOString(), mood);
+        setDiaryEntries(prev => [newEntry, ...prev]);
+      },
+      removeDiaryEntry: (id) => {
+        setDiaryEntries(prev => prev.filter(e => e.id !== id));
+      },
+      updateDiaryEntry: (id, text) => {
+        setDiaryEntries(prev => prev.map(e => e.id === id ? { ...e, text } : e));
+      },
       setCurrentScreen,
+
       goToCustomCards: () => setCurrentScreen('custom_cards'),
       roomId,
       isOnline,

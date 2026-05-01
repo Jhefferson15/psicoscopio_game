@@ -23,6 +23,8 @@ import {
 import Hourglass from './Hourglass';
 import { GAME_RULES, GAME_CARDS } from '../../domain/gameConstants';
 import { CustomCardsModal } from './MenuModals';
+import DiaryModal from './DiaryModal';
+
 const TabletopView = () => {
   const { 
     boardRotation,
@@ -37,6 +39,8 @@ const TabletopView = () => {
 
   const [showHourglassDetails, setShowHourglassDetails] = React.useState(false);
   const [showCollection, setShowCollection] = React.useState(false);
+  const [showDiary, setShowDiary] = React.useState(false);
+
 
   const currentPlayer = players[currentPlayerIndex];
   const gameTime = currentPlayer.timeLeft;
@@ -109,9 +113,15 @@ const TabletopView = () => {
           <div className="bottom-dashboard-row-large">
               <div className="narrative-journal glass-light">
                 <div className="panel-header">
-                  <MessageSquare size={18} className="text-purple" />
-                  <h3>DIÁRIO DE BORDO</h3>
+                  <div className="header-with-action">
+                    <MessageSquare size={18} className="text-purple" />
+                    <h3>DIÁRIO DE BORDO</h3>
+                  </div>
+                  <button className="btn-expand-journal" onClick={() => setShowDiary(true)} title="Expandir Diário">
+                    <Maximize2 size={14} />
+                  </button>
                 </div>
+
                 <div className="journal-content-scroll">
                    {diaryEntries.map(entry => (
                      <motion.div 
@@ -293,7 +303,14 @@ const TabletopView = () => {
           <CustomCardsModal onClose={() => setShowCollection(false)} />
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {showDiary && (
+          <DiaryModal onClose={() => setShowDiary(false)} />
+        )}
+      </AnimatePresence>
     </motion.div>
+
   );
 };
 

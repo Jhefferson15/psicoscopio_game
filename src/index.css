@@ -1900,6 +1900,33 @@ body {
   max-height: 300px;
 }
 
+.header-with-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-expand-journal {
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-expand-journal:hover {
+  background: var(--text);
+  color: white;
+  transform: scale(1.1);
+}
+
+
 .journal-content-scroll {
   flex: 1;
   overflow-y: auto;
