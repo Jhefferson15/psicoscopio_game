@@ -2,6 +2,7 @@ import { useMotionValue, useSpring } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
 import { useGame } from '../state/useGame';
 import { boardData } from '../../data/repositories/boardRepository';
+import './BoardView.css';
 
 const BoardView = ({ boardRotation = 0 }) => {
   const { setBoardRotation, players } = useGame();

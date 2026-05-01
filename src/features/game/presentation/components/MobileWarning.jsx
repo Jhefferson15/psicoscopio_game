@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { Monitor, Tablet, Smartphone, ChevronRight } from 'lucide-react';
+import './MobileWarning.css';
 
 const MobileWarning = ({ onConfirm }) => {
   const [isVertical, setIsVertical] = useState(false);

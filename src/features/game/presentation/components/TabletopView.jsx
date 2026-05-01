@@ -1,10 +1,12 @@
 import React from 'react';
+import './TabletopView.css';
+import './GameFeatures.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../state/useGame';
 import BoardView from './BoardView';
 import GameCard from './GameCard';
 import PlayerCard from './PlayerCard';
-import DiceArea from './DiceArea';
+import Dice from './Dice';
 import ProfileGallery from './ProfileGallery';
 import { 
   Maximize2, 
@@ -203,7 +205,7 @@ const TabletopView = () => {
           </div>
 
           <div className="action-area-modern glass-light">
-            <DiceArea />
+            <Dice />
           </div>
 
           <div className="special-tiles-panel glass-light">

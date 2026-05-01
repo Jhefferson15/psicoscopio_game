@@ -1,50 +1,102 @@
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../state/useGame';
-import { Dices } from 'lucide-react';
+import { Dices, User } from 'lucide-react';
+import './Dice.css'; // Vamos criar os estilos na próxima etapa
 
 const Dice = () => {
-  const { rollDice, isMoving, isRolling, lastDiceRoll } = useGame();
+  const { rollDice, isMoving, isRolling, isOnline, currentPlayerIndex, myPlayerIndex, players } = useGame();
+  
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  // Escuta o movimento do mouse no window para o tooltip flutuante
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (showTooltip) {
+        setMousePos({ x: e.clientX, y: e.clientY });
+      }
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [showTooltip]);
+
+  if (!players || players.length === 0) return null;
 
   return (
     <div className="dice-container">
-      <motion.button
-        whileHover={{ scale: 1.05, y: -2 }}
-        whileTap={{ scale: 0.95 }}
-        className={`dice-button ${isMoving || isRolling ? 'disabled' : ''}`}
-        onClick={rollDice}
-        disabled={isMoving || isRolling}
-        animate={isRolling ? { 
-          x: [0, -2, 2, -2, 2, 0],
-          transition: { repeat: Infinity, duration: 0.15 }
-        } : {}}
-      >
-        <motion.div
-          animate={isRolling ? { rotate: 360 } : {}}
-          transition={{ repeat: Infinity, duration: 0.5, ease: "linear" }}
+      <div className="all-dice-wrapper">
+        {players.map((player, index) => {
+          const isThisPlayerTurn = currentPlayerIndex === index;
+          const isMyTurn = !isOnline || currentPlayerIndex === myPlayerIndex;
+          
+          const canRollThisDice = isThisPlayerTurn && isMyTurn && !isMoving && !isRolling;
+
+          return (
+            <div 
+              key={player.id}
+              className={`player-dice-wrapper ${isThisPlayerTurn ? 'active-turn' : 'inactive-turn'}`}
+              onMouseEnter={() => {
+                if (!isMyTurn) setShowTooltip(true);
+              }}
+              onMouseLeave={() => setShowTooltip(false)}
+            >
+              <div className="player-dice-badge" style={{ backgroundColor: player.color }}>
+                 <User size={12} color="white" />
+              </div>
+
+              <motion.button
+                whileHover={canRollThisDice ? { scale: 1.05, y: -2 } : {}}
+                whileTap={canRollThisDice ? { scale: 0.95 } : {}}
+                className={`dice-button-multi ${!isThisPlayerTurn ? 'grayscale' : ''} ${!canRollThisDice ? 'not-allowed' : ''}`}
+                onClick={() => {
+                  if (canRollThisDice) rollDice();
+                }}
+                disabled={!canRollThisDice}
+                animate={isRolling && isThisPlayerTurn ? { 
+                  x: [0, -2, 2, -2, 2, 0],
+                  transition: { repeat: Infinity, duration: 0.15 }
+                } : {}}
+                style={{ 
+                  borderColor: isThisPlayerTurn ? player.color : 'rgba(255,255,255,0.2)',
+                  filter: !isThisPlayerTurn ? 'grayscale(100%) opacity(0.5)' : 'none'
+                }}
+              >
+                <motion.div
+                  animate={isRolling && isThisPlayerTurn ? { rotate: 360 } : {}}
+                  transition={{ repeat: Infinity, duration: 0.5, ease: "linear" }}
+                  className="dice-icon-wrapper"
+                >
+                  {isRolling && isThisPlayerTurn ? (
+                    <Dices size={isThisPlayerTurn ? 32 : 24} color={player.color} />
+                  ) : player.lastRoll ? (
+                    <span className="dice-number-large" style={{ color: player.color }}>
+                      {player.lastRoll}
+                    </span>
+                  ) : (
+                    <Dices size={isThisPlayerTurn ? 32 : 24} color={player.color} />
+                  )}
+                </motion.div>
+              </motion.button>
+              
+              {/* Nome do jogador abaixo do dado */}
+              <span className="dice-player-name" style={{ color: isThisPlayerTurn ? 'white' : '#888' }}>
+                {player.name.split(' ')[0]}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Tooltip seguindo o mouse */}
+      {showTooltip && (
+        <div 
+          className="dice-mouse-tooltip"
+          style={{ left: mousePos.x + 15, top: mousePos.y + 15 }}
         >
-          <Dices size={32} />
-        </motion.div>
-        <span>{isRolling ? 'Rolando...' : 'Rolar Dado'}</span>
-      </motion.button>
-      
-      <AnimatePresence mode="wait">
-        {lastDiceRoll > 0 && !isRolling && (
-          <motion.div 
-            key={lastDiceRoll}
-            initial={{ scale: 0, rotate: -180, opacity: 0 }}
-            animate={{ 
-              scale: [0, 1.2, 1], 
-              rotate: 0, 
-              opacity: 1,
-              boxShadow: "0 0 30px rgba(216, 75, 66, 0.4)"
-            }}
-            exit={{ scale: 0, opacity: 0 }}
-            className="dice-result"
-          >
-            {lastDiceRoll}
-          </motion.div>
-        )}
-      </AnimatePresence>
+          Vez de {players[currentPlayerIndex]?.name}
+        </div>
+      )}
     </div>
   );
 };

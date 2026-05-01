@@ -1,3 +1,5 @@
+import React from 'react';
+import './App.css';
 import Board from './features/game/presentation/components/Board';
 import Dice from './features/game/presentation/components/Dice';
 import TabletopView from './features/game/presentation/components/TabletopView';
@@ -11,7 +13,10 @@ import { Minimize2, X } from 'lucide-react';
 import Navigation from './features/game/presentation/components/Navigation';
 import CustomCardsGallery from './features/game/presentation/components/CustomCardsGallery';
 import StandardCardsSettings from './features/game/presentation/components/StandardCardsSettings';
+import Lobby from './features/game/presentation/components/Lobby';
+import WaitingPlayers from './features/game/presentation/components/WaitingPlayers';
 import { AuthProvider } from './features/auth/presentation/state/AuthContext.jsx';
+import { UserProvider } from './features/user/presentation/state/UserContext.jsx';
 
 
 const GameContent = () => {
@@ -60,6 +65,24 @@ const GameContent = () => {
             transition={{ duration: 0.3 }}
           >
             <StandardCardsSettings />
+          </motion.div>
+        ) : currentScreen === 'lobby' ? (
+          <motion.div
+            key="lobby"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <Lobby />
+          </motion.div>
+        ) : currentScreen === 'waiting_players' ? (
+          <motion.div
+            key="waiting_players"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <WaitingPlayers />
           </motion.div>
         ) : !isBoardFullScreen ? (
           <motion.div
@@ -172,9 +195,11 @@ const GameContent = () => {
 function App() {
   return (
     <AuthProvider>
-      <GameProvider>
-        <GameContent />
-      </GameProvider>
+      <UserProvider>
+        <GameProvider>
+          <GameContent />
+        </GameProvider>
+      </UserProvider>
     </AuthProvider>
   );
 }

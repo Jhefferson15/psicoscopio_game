@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Brain, Zap, HelpCircle } from 'lucide-react';
+import './GameCard.css';
 import { getRandomCardContent } from '../../data/repositories/cardRepository';
 import { useGame } from '../state/useGame';
 

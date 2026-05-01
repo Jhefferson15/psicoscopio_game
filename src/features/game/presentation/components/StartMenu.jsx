@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useGame } from '../state/useGame';
 import { Play, Settings, Info, Package } from 'lucide-react';
+import './StartMenu.css';
 import { AnimatePresence } from 'framer-motion';
 import { LoginButton } from '../../../auth/presentation/components/LoginButton.jsx';
 import { PlayerSetupModal, SettingsModal, AboutModal } from './MenuModals';

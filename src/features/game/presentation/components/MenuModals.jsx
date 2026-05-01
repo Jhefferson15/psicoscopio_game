@@ -4,6 +4,7 @@ import { useState } from 'react';
 import CustomCardsGallery from './CustomCardsGallery';
 import { useGame } from '../state/useGame';
 import { useAuth } from '../../../auth/presentation/state/useAuth';
+import './MenuModals.css';
 
 
 const ModalWrapper = ({ title, onClose, children }) => (

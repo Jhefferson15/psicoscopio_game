@@ -1,0 +1,147 @@
+.waiting-players-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.waiting-card {
+  background: white;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 32px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+}
+
+.waiting-header {
+  padding: 32px;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.timer-icon {
+  color: #3b82f6;
+  filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
+}
+
+.timer-display h2 {
+  font-size: 1.2rem;
+  margin: 0;
+  opacity: 0.8;
+}
+
+.countdown {
+  font-size: 2.5rem;
+  font-weight: 800;
+  font-family: monospace;
+}
+
+.waiting-body {
+  padding: 32px;
+}
+
+.waiting-body p {
+  color: #64748b;
+  margin-bottom: 24px;
+}
+
+.ready-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ready-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s;
+}
+
+.ready-item.is-ready {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.player-avatar-small {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-img-small {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ready-status {
+  margin-left: auto;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.is-ready .ready-status {
+  color: #16a34a;
+}
+
+.spin {
+  animation: spin 2s linear infinite;
+}
+
+.waiting-footer {
+  padding: 24px 32px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn-force-start {
+  width: 100%;
+  padding: 14px;
+  background: #1e293b;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-force-start:hover:not(:disabled) {
+  background: #0f172a;
+}
+
+.btn-force-start:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

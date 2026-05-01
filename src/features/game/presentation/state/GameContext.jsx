@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { ref, onValue, set } from 'firebase/database';
+import { database } from '../../../../config/firebase';
 import { GameContext } from './useGame';
 import { boardData } from '../../data/repositories/boardRepository';
 import { Player } from '../../domain/entities/Player';
@@ -7,6 +9,8 @@ import { MovePlayerUseCase } from '../../domain/usecases/MovePlayerUseCase';
 import { CardSetRepository } from '../../data/repositories/CardSetRepository';
 import { CardSet } from '../../domain/entities/CardSet';
 import { DiaryEntry } from '../../domain/entities/DiaryEntry';
+import { useAuth } from '../../../auth/presentation/state/useAuth';
+import { useUser } from '../../../user/presentation/state/UserContext';
 
 
 const syncRepository = new FirebaseGameSyncRepository();
@@ -14,6 +18,7 @@ const syncRepository = new FirebaseGameSyncRepository();
 const generateDiceRoll = () => Math.floor(Math.random() * 6) + 1;
 
 export const GameProvider = ({ children }) => {
+  const { user } = useAuth();
   const [players, setPlayers] = useState([
     new Player(1, 'Jogador 1', '#D84B42', 0),
     new Player(2, 'Jogador 2', '#4885CE', 0)
@@ -51,6 +56,11 @@ export const GameProvider = ({ children }) => {
   const [roomId, setRoomId] = useState(null);
   const [isOnline, setIsOnline] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [roomStatus, setRoomStatus] = useState('waiting'); // 'waiting' | 'playing'
+  const [myPlayerIndex, setMyPlayerIndex] = useState(-1);
+  const [roomParticipants, setRoomParticipants] = useState([]);
+  const [readyPlayers, setReadyPlayers] = useState({});
+  const [ownerId, setOwnerId] = useState(null);
 
 
   // Novos estados para Grandes Implementações
@@ -59,19 +69,14 @@ export const GameProvider = ({ children }) => {
     2: { memory: 30, reflection: 15, challenge: 50 }
   });
 
-  const [diaryEntries, setDiaryEntries] = useState(() => {
-    const saved = localStorage.getItem('psicoscopio_diary');
-    if (saved) {
-      return JSON.parse(saved).map(e => DiaryEntry.fromJSON(e));
-    }
-    return [
-      new DiaryEntry(1, 'Iniciei a jornada com foco em autoconhecimento.', 'reflexao', new Date().toISOString(), 'happy')
-    ];
-  });
+  const { diary: firestoreDiary, addDiaryEntry: firestoreAddDiary } = useUser();
+  const [diaryEntries, setDiaryEntries] = useState([]);
 
   useEffect(() => {
-    localStorage.setItem('psicoscopio_diary', JSON.stringify(diaryEntries));
-  }, [diaryEntries]);
+    if (firestoreDiary) {
+      setDiaryEntries(firestoreDiary.map(e => DiaryEntry.fromJSON(e)));
+    }
+  }, [firestoreDiary]);
 
 
   // O tempo agora é gerenciado dentro de cada objeto Player (timeLeft)
@@ -88,13 +93,24 @@ export const GameProvider = ({ children }) => {
     setCurrentScreen('card_creation');
   };
 
-  const finishCardCreation = () => {
-    setCurrentScreen('game');
+  const finishCardCreation = async () => {
+    if (isOnline) {
+      try {
+        const readyRef = ref(database, `rooms/${roomId}/readyPlayers/${user.id}`);
+        await set(readyRef, true);
+        setCurrentScreen('waiting_players');
+      } catch (error) {
+        console.error("Erro ao marcar como pronto:", error);
+      }
+    } else {
+      setCurrentScreen('game');
+    }
   };
 
   const goToMenu = () => {
     setRoomId(null);
     setIsOnline(false);
+    localStorage.removeItem('psicoscopio_online_room');
     setCurrentScreen('menu');
   };
 
@@ -113,41 +129,135 @@ export const GameProvider = ({ children }) => {
     };
 
     try {
-      const id = await syncRepository.createRoom(gameState);
+      const id = await syncRepository.createRoom(gameState, user?.id);
+      if (user) {
+        // Atualiza nome do anfitrião
+        await set(ref(database, `rooms/${id}/participants/${user.id}`), {
+          id: user.id,
+          name: user.name || 'Anfitrião',
+          photoURL: user.photoURL || null
+        });
+      }
       setRoomId(id);
       setIsOnline(true);
       setPlayers(initialPlayers);
       setCurrentPlayerIndex(0);
-      setCurrentScreen('card_creation');
+      setCurrentScreen('lobby');
       return id;
     } catch (error) {
       console.error("Erro ao criar sala:", error);
-      alert("Erro ao criar sala online");
+      alert(`Erro ao criar sala online: ${error.message}`);
     }
   };
 
   const joinOnlineGame = async (id) => {
     try {
-      const room = await syncRepository.joinRoom(id);
+      const room = await syncRepository.joinRoom(id, user);
       setRoomId(id);
       setIsOnline(true);
-      setPlayers(room.gameState.players);
-      setCurrentPlayerIndex(room.gameState.currentPlayerIndex);
-      setPlayerAttributes(room.gameState.playerAttributes);
-      setCurrentScreen('game');
+      setRoomStatus(room.status);
+      setOwnerId(room.ownerId);
+      setRoomParticipants(room.participants || {});
+      
+      if (room.gameState) {
+        setPlayers(room.gameState.players.map(p => new Player(p.id, p.name, p.color, p.position, p.timeLeft, p.lastRoll)));
+        setCurrentPlayerIndex(room.gameState.currentPlayerIndex);
+        setPlayerAttributes(room.gameState.playerAttributes);
+      }
+
+      if (room.status === 'playing') {
+        setCurrentScreen('game');
+      } else if (room.status === 'setup_cards') {
+        setCurrentScreen('card_creation');
+      } else {
+        setCurrentScreen('lobby');
+      }
     } catch (error) {
       console.error("Erro ao entrar na sala:", error);
-      alert("Sala não encontrada");
+      alert(`Erro ao entrar na sala: ${error.message}`);
+      // Se falhou ao reconectar a uma sala salva, limpa o cache para não travar
+      if (localStorage.getItem('psicoscopio_online_room') === id) {
+        localStorage.removeItem('psicoscopio_online_room');
+      }
+    }
+  };
+
+  // Persistência da sala online (Reconexão no F5)
+  useEffect(() => {
+    if (roomId) {
+      localStorage.setItem('psicoscopio_online_room', roomId);
+    }
+  }, [roomId]);
+
+  useEffect(() => {
+    const savedRoomId = localStorage.getItem('psicoscopio_online_room');
+    // Só tenta reconectar se o usuário já estiver logado, se não estiver numa sala e não for online
+    if (savedRoomId && user && !roomId && !isOnline) {
+      console.log('Tentando reconectar à sala salva:', savedRoomId);
+      joinOnlineGame(savedRoomId);
+    }
+  }, [user, roomId, isOnline]);
+
+  const startOnlineGame = async () => {
+    if (ownerId !== user?.id) return;
+    
+    // Dupla verificação para impedir que o jogo inicie sem participantes
+    const participantsArray = Object.values(roomParticipants);
+    if (participantsArray.length < 2) {
+      alert("A sala precisa ter pelo menos 2 jogadores para iniciar.");
+      return;
+    }
+
+    try {
+      // Inicializa a lista de jogadores baseada nos participantes reais
+      const colors = ['#D84B42', '#4885CE', '#7B4BB1', '#F59E0B', '#10B981', '#6366F1'];
+      
+      const initialPlayers = participantsArray.map((p, i) => ({
+        id: p.id,
+        name: p.name,
+        color: colors[i % colors.length],
+        position: 0,
+        timeLeft: 120,
+        lastRoll: null
+      }));
+
+      const gameStateRef = ref(database, `rooms/${roomId}/gameState`);
+      await set(gameStateRef, {
+        players: initialPlayers,
+        currentPlayerIndex: 0,
+        lastDiceRoll: 0,
+        boardRotation: 0,
+        playerAttributes: initialPlayers.reduce((acc, p) => {
+          acc[p.id] = { memory: 20, reflection: 20, challenge: 20 };
+          return acc;
+        }, {})
+      });
+
+      const statusRef = ref(database, `rooms/${roomId}/status`);
+      await set(statusRef, 'setup_cards');
+    } catch (error) {
+      console.error("Erro ao iniciar jogo:", error);
+    }
+  };
+
+  const startPlayingGame = async () => {
+    if (ownerId !== user?.id) return;
+    try {
+      const statusRef = ref(database, `rooms/${roomId}/status`);
+      await set(statusRef, 'playing');
+    } catch (error) {
+      console.error("Erro ao iniciar jogo:", error);
     }
   };
 
   const syncStateToFirebase = useCallback(async (overrides = {}) => {
-    if (!isOnline || !roomId || isSyncing) return;
+    if (!isOnline || !roomId || isSyncing || players.length === 0) return;
     
     const gameState = {
       players: overrides.players || players,
       currentPlayerIndex: overrides.currentPlayerIndex !== undefined ? overrides.currentPlayerIndex : currentPlayerIndex,
-      lastDiceRoll: overrides.lastDiceRoll || lastDiceRoll,
+      lastDiceRoll: overrides.lastDiceRoll !== undefined ? overrides.lastDiceRoll : lastDiceRoll,
+      isRolling: overrides.isRolling !== undefined ? overrides.isRolling : isRolling,
       boardRotation: boardRotation,
       playerAttributes: playerAttributes
     };
@@ -157,22 +267,70 @@ export const GameProvider = ({ children }) => {
     } catch (error) {
       console.error("Erro ao sincronizar:", error);
     }
-  }, [isOnline, roomId, players, currentPlayerIndex, lastDiceRoll, boardRotation, playerAttributes, isSyncing]);
+  }, [isOnline, roomId, players, currentPlayerIndex, lastDiceRoll, isRolling, boardRotation, playerAttributes, isSyncing]);
 
   useEffect(() => {
     if (isOnline && roomId) {
       const unsubscribe = syncRepository.listenToGameState(roomId, (newState) => {
         setIsSyncing(true);
-        if (newState.players) setPlayers(newState.players.map(p => new Player(p.id, p.name, p.color, p.position, p.timeLeft)));
+        if (newState.players) setPlayers(newState.players.map(p => new Player(p.id, p.name, p.color, p.position, p.timeLeft, p.lastRoll)));
         if (newState.currentPlayerIndex !== undefined) setCurrentPlayerIndex(newState.currentPlayerIndex);
         if (newState.lastDiceRoll !== undefined) setLastDiceRoll(newState.lastDiceRoll);
+        if (newState.isRolling !== undefined) setIsRolling(newState.isRolling);
         if (newState.boardRotation !== undefined) setBoardRotation(newState.boardRotation);
         if (newState.playerAttributes) setPlayerAttributes(newState.playerAttributes);
-        setTimeout(() => setIsSyncing(false), 100);
+        
+        setTimeout(() => setIsSyncing(false), 500);
       });
-      return () => unsubscribe();
+
+      // Listener para o status e participantes da sala
+      const roomRef = ref(database, `rooms/${roomId}`);
+      const unsubscribeRoom = onValue(roomRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const room = snapshot.val();
+          if (!room) return;
+          
+          setRoomStatus(room.status || 'waiting');
+          
+          // Normalização para suportar salas antigas (arrays misturados com objetos)
+          const rawParticipants = room.participants || {};
+          const normalizedParticipants = {};
+          Object.values(rawParticipants).forEach(val => {
+            if (typeof val === 'string') {
+              // Formato antigo (apenas o ID do usuário como string)
+              normalizedParticipants[val] = { id: val, name: 'Convidado', photoURL: null };
+            } else if (val && typeof val === 'object' && val.id) {
+              // Formato novo (objeto com id, name, photoURL)
+              normalizedParticipants[val.id] = val;
+            }
+          });
+          
+          setRoomParticipants(normalizedParticipants);
+          setReadyPlayers(room.readyPlayers || {});
+          setOwnerId(room.ownerId || null);
+          
+          if (room.status === 'playing' && (currentScreen === 'lobby' || currentScreen === 'card_creation' || currentScreen === 'waiting_players')) {
+            setCurrentScreen('game');
+          }
+          
+          if (room.status === 'setup_cards' && currentScreen === 'lobby') {
+            setCurrentScreen('card_creation');
+          }
+
+          // Determina meu índice de jogador usando os dados normalizados
+          if (user && normalizedParticipants) {
+            const index = Object.keys(normalizedParticipants).indexOf(user.id);
+            setMyPlayerIndex(index);
+          }
+        }
+      });
+
+      return () => {
+        unsubscribe();
+        unsubscribeRoom();
+      };
     }
-  }, [isOnline, roomId]);
+  }, [isOnline, roomId, user, currentScreen]);
 
 
   const changeActiveCardSet = (id) => {
@@ -270,10 +428,15 @@ export const GameProvider = ({ children }) => {
 
   const rollDice = async () => {
     if (isMoving || isRolling) return;
+    if (isOnline && currentPlayerIndex !== myPlayerIndex) return; // Trava de segurança backend
     
     setIsRolling(true);
     setIsMoving(true);
     setLastDiceRoll(0);
+    
+    if (isOnline) {
+      syncStateToFirebase({ isRolling: true, lastDiceRoll: 0 });
+    }
     
     // Simula tempo de "rolagem" do dado (animação do botão/shaker)
     await new Promise(r => setTimeout(r, 1500));
@@ -282,8 +445,16 @@ export const GameProvider = ({ children }) => {
     setLastDiceRoll(roll);
     setIsRolling(false); // Agora o resultado deve aparecer na UI
     
+    // Atualiza o lastRoll do jogador atual
+    const updatedPlayers = players.map((p, i) => i === currentPlayerIndex ? { ...p, lastRoll: roll } : p);
+    setPlayers(updatedPlayers);
+    
     if (isOnline) {
-      syncStateToFirebase({ lastDiceRoll: roll });
+      syncStateToFirebase({ 
+        lastDiceRoll: roll, 
+        isRolling: false,
+        players: updatedPlayers
+      });
     }
 
     // O número está na tela. Esperamos o tempo solicitado pelo usuário
@@ -299,11 +470,16 @@ export const GameProvider = ({ children }) => {
     let newPlayers = [...players];
     let player = { ...newPlayers[currentPlayerIndex] };
     
-    // Movimento passo a passo para animação
+    // Movimento passo a passo para animação global
     for (let i = 0; i < steps; i++) {
       player.position = MovePlayerUseCase.execute(player.position, 1, boardData.length);
       newPlayers[currentPlayerIndex] = player;
       setPlayers([...newPlayers]);
+      
+      // Sincroniza cada passo imediatamente com o Firebase para que os outros vejam a animação
+      if (isOnline && roomId) {
+        syncRepository.updateGameState(roomId, { players: newPlayers }).catch(e => console.error("Erro sync passo", e));
+      }
       
       // Atraso entre passos (ajustado para 400ms para ser mais visível)
       await new Promise(r => setTimeout(r, 400));
@@ -398,8 +574,7 @@ export const GameProvider = ({ children }) => {
       diaryEntries,
       setDiaryEntries,
       addDiaryEntry: (text, type, mood) => {
-        const newEntry = new DiaryEntry(Date.now(), text, type, new Date().toISOString(), mood);
-        setDiaryEntries(prev => [newEntry, ...prev]);
+        firestoreAddDiary(text, type, mood);
       },
       removeDiaryEntry: (id) => {
         setDiaryEntries(prev => prev.filter(e => e.id !== id));
@@ -412,8 +587,15 @@ export const GameProvider = ({ children }) => {
       goToCustomCards: () => setCurrentScreen('custom_cards'),
       roomId,
       isOnline,
+      roomStatus,
+      roomParticipants,
+      readyPlayers,
+      myPlayerIndex,
+      ownerId,
       createOnlineGame,
       joinOnlineGame,
+      startOnlineGame,
+      startPlayingGame,
       closeModal,
       closeFocusedCard,
       isRolling,
