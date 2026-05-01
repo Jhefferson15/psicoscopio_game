@@ -1,10 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { AuthContext } from './useAuth.js';
 import { FirebaseAuthRepository } from '../../data/repositories/FirebaseAuthRepository.js';
 import { isFirebaseConfigured } from '../../../../config/firebase.js';
 
-import { LoginWithGoogleUseCase, LogoutUseCase, GetCurrentUserUseCase } from '../../domain/usecases/AuthUseCases.js';
-
-const AuthContext = createContext();
+import { LoginWithGoogleUseCase, LogoutUseCase } from '../../domain/usecases/AuthUseCases.js';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -13,7 +12,6 @@ export const AuthProvider = ({ children }) => {
   const authRepository = new FirebaseAuthRepository();
   const loginUseCase = new LoginWithGoogleUseCase(authRepository);
   const logoutUseCase = new LogoutUseCase(authRepository);
-  const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
 
   useEffect(() => {
     const unsubscribe = authRepository.onAuthStateChanged((user) => {
@@ -51,4 +49,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+

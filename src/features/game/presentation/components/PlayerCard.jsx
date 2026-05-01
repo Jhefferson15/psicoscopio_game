@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { User, Award, TrendingUp, Clock } from 'lucide-react';
 

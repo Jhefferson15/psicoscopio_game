@@ -1108,7 +1108,7 @@ body {
 }
 
 .game-logo-modern {
-  margin-left: 60px; /* Espaço para o menu de navegação */
+  margin-left: 80px; /* Garante espaço para o botão de navegação global */
 }
 
 .game-logo-modern h1 {
@@ -1125,18 +1125,61 @@ body {
   text-transform: uppercase;
 }
 
-.btn-fullscreen-modern {
-  background: var(--secondary);
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-rotate-modern {
+  background: white;
+  color: var(--text);
+  border: 1px solid rgba(0,0,0,0.1);
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.btn-rotate-modern:hover {
+  background: var(--text);
   color: white;
-  border: none;
-  padding: 10px 20px;
+  transform: rotate(90deg);
+}
+
+.btn-fullscreen-modern {
+  background: white;
+  color: var(--text);
+  border: 1px solid rgba(0,0,0,0.1);
+  height: 42px;
+  padding: 0 20px;
   border-radius: 12px;
   display: flex;
   align-items: center;
   gap: 10px;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 13px;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(72, 133, 206, 0.2);
+  transition: all 0.2s;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  white-space: nowrap;
+}
+
+.btn-fullscreen-modern:hover {
+  background: #f1f5f9;
+  border-color: var(--secondary);
+  color: var(--secondary);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(72, 133, 206, 0.15);
+}
+
+.btn-fullscreen-modern i, .btn-fullscreen-modern svg {
+  color: var(--secondary);
 }
 
 .tabletop-dashboard-grid {

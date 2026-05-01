@@ -1,4 +1,4 @@
-import { useGame } from '../state/GameContext';
+import { useGame } from '../state/useGame';
 import BoardView from './BoardView';
 
 const Board = () => {

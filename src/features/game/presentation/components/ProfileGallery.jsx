@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LEARNING_PROFILES } from '../../domain/gameConstants';
 import { ChevronRight, Award, Zap, Brain, Target, RefreshCw } from 'lucide-react';

@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGame } from '../state/GameContext';
+import { useGame } from '../state/useGame';
 import { customCardRepository } from '../../data/repositories/LocalStorageCardRepository';
-import { Trash2, ChevronLeft, Calendar, Brain, Sprout, Puzzle, RotateCcw, Image as ImageIcon } from 'lucide-react';
+import { Trash2, ChevronLeft, Brain, Sprout, Puzzle, RotateCcw, Image as ImageIcon } from 'lucide-react';
 import './CustomCardsGallery.css';
 
 const CustomCardsGallery = ({ isModal = false, onClose }) => {
@@ -11,15 +11,17 @@ const CustomCardsGallery = ({ isModal = false, onClose }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadCards();
+    let isMounted = true;
+    const initLoad = async () => {
+      const savedCards = await customCardRepository.getCards();
+      if (isMounted) {
+        setCards(savedCards.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+        setIsLoading(false);
+      }
+    };
+    initLoad();
+    return () => { isMounted = false; };
   }, []);
-
-  const loadCards = async () => {
-    setIsLoading(true);
-    const savedCards = await customCardRepository.getCards();
-    setCards(savedCards.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
-    setIsLoading(false);
-  };
 
   const handleDelete = async (id) => {
     if (window.confirm('Tem certeza que deseja excluir esta carta?')) {

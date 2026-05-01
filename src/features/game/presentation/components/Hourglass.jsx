@@ -1,5 +1,12 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+
+// Gerar partículas de areia fixas para o efeito de "fio" fora do componente para manter pureza
+const STATIC_PARTICLES = Array.from({ length: 12 }).map((_, i) => ({
+  id: i,
+  delay: i * 0.1,
+  x: 50 + (Math.random() * 4 - 2)
+}));
 
 const Hourglass = ({ progress = 0.5, isCritical = false, onClick }) => {
   const [rotation, setRotation] = useState(0);
@@ -17,13 +24,7 @@ const Hourglass = ({ progress = 0.5, isCritical = false, onClick }) => {
   // Garantir que o progresso seja um número válido entre 0 e 1
   const safeProgress = Math.max(0, Math.min(1, Number(progress) || 0));
   
-  // Gerar partículas de areia fixas para o efeito de "fio"
-  const particles = useMemo(() => 
-    Array.from({ length: 12 }).map((_, i) => ({
-      id: i,
-      delay: i * 0.1,
-      x: 50 + (Math.random() * 4 - 2)
-    })), []);
+  const particles = STATIC_PARTICLES;
 
   return (
     <motion.div 

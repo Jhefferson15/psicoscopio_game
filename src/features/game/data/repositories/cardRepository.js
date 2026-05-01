@@ -51,7 +51,8 @@ export const cardContent = {
   ]
 };
 
-export const getRandomCardContent = (type) => {
-  const contentList = cardContent[type] || cardContent.reflexao;
+export const getRandomCardContent = (type, customContent = null) => {
+  const contentList = (customContent && customContent[type]) || cardContent[type] || cardContent.reflexao;
+  if (!contentList || contentList.length === 0) return "Nenhum conteúdo disponível.";
   return contentList[Math.floor(Math.random() * contentList.length)];
 };

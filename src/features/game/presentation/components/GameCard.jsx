@@ -1,8 +1,8 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Brain, Zap, HelpCircle } from 'lucide-react';
 import { getRandomCardContent } from '../../data/repositories/cardRepository';
-import { useGame } from '../state/GameContext';
+import { useGame } from '../state/useGame';
 
 const cardTypes = {
   reflexao: {
@@ -44,19 +44,19 @@ const cardTypes = {
 };
 
 const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = false }) => {
-  const { setFocusedCard } = useGame();
+  const { setFocusedCard, closeFocusedCard, activeCardSet } = useGame();
   const config = cardTypes[type] || cardTypes.default;
   const Icon = config.icon;
   const layoutId = `card-${type}-${index}`;
 
-  const [cardText] = React.useState(() => getRandomCardContent(type));
+  const [cardText] = useState(() => getRandomCardContent(type, activeCardSet?.content));
 
   // Controla a rotacao CSS (com delay para permitir a CSS transition animar)
-  const [shouldFlip, setShouldFlip] = React.useState(false);
+  const [shouldFlip, setShouldFlip] = useState(false);
   // Controla QUAL conteudo mostrar (troca no momento edge-on da rotacao)
-  const [showFront, setShowFront] = React.useState(false);
+  const [showFront, setShowFront] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isFocused) {
       // 300ms: inicia a rotacao CSS (540deg em 1.2s)
       const flipTimer = setTimeout(() => setShouldFlip(true), 300);
@@ -65,18 +65,22 @@ const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = 
       return () => {
         clearTimeout(flipTimer);
         clearTimeout(swapTimer);
+        setShouldFlip(false);
+        setShowFront(false);
       };
-    } else {
-      setShouldFlip(false);
-      setShowFront(false);
     }
   }, [isFocused]);
 
   const handleClick = () => {
     if (isFocused) {
-      setFocusedCard(null);
+      closeFocusedCard();
     } else {
-      setFocusedCard({ type, index, id: layoutId });
+      const typeMap = { 'reflexao': 3, 'desafio': 2, 'memoria': 0, 'experiencia': 1 };
+      setFocusedCard({ 
+        type: type, 
+        index: typeMap[type] !== undefined ? typeMap[type] : index, 
+        id: layoutId 
+      });
     }
   };
 

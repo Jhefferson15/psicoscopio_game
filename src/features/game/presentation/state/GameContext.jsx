@@ -1,13 +1,15 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { GameContext } from './useGame';
 import { boardData } from '../../data/repositories/boardRepository';
 import { Player } from '../../domain/entities/Player';
 import { FirebaseGameSyncRepository } from '../../data/repositories/FirebaseGameSyncRepository.js';
 import { MovePlayerUseCase } from '../../domain/usecases/MovePlayerUseCase';
+import { CardSetRepository } from '../../data/repositories/CardSetRepository';
+import { CardSet } from '../../domain/entities/CardSet';
 
 const syncRepository = new FirebaseGameSyncRepository();
 
-
-const GameContext = createContext();
+const generateDiceRoll = () => Math.floor(Math.random() * 6) + 1;
 
 export const GameProvider = ({ children }) => {
   const [players, setPlayers] = useState([
@@ -20,7 +22,7 @@ export const GameProvider = ({ children }) => {
   const [showModal, setShowModal] = useState(null); // { type: 'reflexao', tile: ... }
   const [isBoardFullScreen, setIsBoardFullScreen] = useState(false);
   const [currentScreen, setCurrentScreen] = useState('menu');
-  const [focusedCard, setFocusedCard] = useState(null); // { type, index, id }
+  const [focusedCard, setFocusedCard] = useState(null); // { type, index, id, fromTileAction }
   const [boardRotation, setBoardRotation] = useState(0);
   const [confirmedMobileWarning, setConfirmedMobileWarning] = useState(false);
   const [settings, setSettings] = useState({
@@ -28,6 +30,20 @@ export const GameProvider = ({ children }) => {
     vibration: true
   });
   const [isRolling, setIsRolling] = useState(false);
+
+  // Estados para Conjuntos de Cartas
+  const [availableCardSets, setAvailableCardSets] = useState(() => {
+    const saved = CardSetRepository.getSavedSets();
+    return [CardSetRepository.getDefaultSet(), ...saved];
+  });
+
+  const [activeCardSet, setActiveCardSet] = useState(() => {
+    const saved = CardSetRepository.getSavedSets();
+    const activeId = CardSetRepository.getActiveSetId();
+    const defaultSet = CardSetRepository.getDefaultSet();
+    const allSets = [defaultSet, ...saved];
+    return allSets.find(s => s.id === activeId) || defaultSet;
+  });
 
   // Estado Online
   const [roomId, setRoomId] = useState(null);
@@ -145,6 +161,55 @@ export const GameProvider = ({ children }) => {
     }
   }, [isOnline, roomId]);
 
+
+  const changeActiveCardSet = (id) => {
+    const set = availableCardSets.find(s => s.id === id);
+    if (set) {
+      setActiveCardSet(set);
+      CardSetRepository.setActiveSetId(id);
+    }
+  };
+
+  const saveNewCardSet = (name, content) => {
+    const newSet = new CardSet(Date.now().toString(), name, content);
+    const saved = CardSetRepository.getSavedSets();
+    const updated = [...saved, newSet];
+    CardSetRepository.saveSets(updated);
+    setAvailableCardSets([CardSetRepository.getDefaultSet(), ...updated]);
+    return newSet.id;
+  };
+
+  const updateCardSet = (id, content, name) => {
+    if (id === 'default') return;
+    const saved = CardSetRepository.getSavedSets();
+    const index = saved.findIndex(s => s.id === id);
+    if (index >= 0) {
+      if (content) saved[index].content = content;
+      if (name) saved[index].name = name;
+      saved[index].updatedAt = Date.now();
+      
+      CardSetRepository.saveSets(saved);
+      setAvailableCardSets([CardSetRepository.getDefaultSet(), ...saved]);
+      if (activeCardSet.id === id) {
+        setActiveCardSet(CardSet.fromJSON(saved[index]));
+      }
+    }
+  };
+
+  const deleteCardSet = (id) => {
+    if (id === 'default') return;
+    CardSetRepository.deleteSet(id);
+    const saved = CardSetRepository.getSavedSets();
+    setAvailableCardSets([CardSetRepository.getDefaultSet(), ...saved]);
+    if (activeCardSet.id === id) {
+      setActiveCardSet(CardSetRepository.getDefaultSet());
+    }
+  };
+
+  const resetToDefault = () => {
+    changeActiveCardSet('default');
+  };
+
   const passTurn = useCallback((overrides = {}) => {
     const nextIndex = (currentPlayerIndex + 1) % players.length;
     
@@ -200,7 +265,7 @@ export const GameProvider = ({ children }) => {
     // Simula tempo de "rolagem" do dado (animação do botão/shaker)
     await new Promise(r => setTimeout(r, 1500));
     
-    const roll = Math.floor(Math.random() * 6) + 1;
+    const roll = generateDiceRoll();
     setLastDiceRoll(roll);
     setIsRolling(false); // Agora o resultado deve aparecer na UI
     
@@ -251,7 +316,13 @@ export const GameProvider = ({ children }) => {
     let modalOpened = false;
     
     if (tile.type === 'reflexao' || tile.type === 'desafio') {
-      setShowModal({ type: tile.type, tile });
+      const typeMap = { 'reflexao': 3, 'desafio': 2, 'memoria': 0, 'experiencia': 1 };
+      setFocusedCard({ 
+        type: tile.type, 
+        index: typeMap[tile.type] || 0, 
+        id: `card-${tile.type}-${typeMap[tile.type] || 0}`,
+        fromTileAction: true 
+      });
       modalOpened = true;
     }
 
@@ -275,6 +346,14 @@ export const GameProvider = ({ children }) => {
     // Após fechar o modal da casa, passa o turno
     passTurn();
   };
+
+  const closeFocusedCard = useCallback(() => {
+    const wasFromTile = focusedCard?.fromTileAction;
+    setFocusedCard(null);
+    if (wasFromTile) {
+      passTurn();
+    }
+  }, [focusedCard, passTurn]);
 
   return (
     <GameContext.Provider value={{ 
@@ -312,7 +391,15 @@ export const GameProvider = ({ children }) => {
       createOnlineGame,
       joinOnlineGame,
       closeModal,
-      isRolling
+      closeFocusedCard,
+      isRolling,
+      activeCardSet,
+      availableCardSets,
+      changeActiveCardSet,
+      saveNewCardSet,
+      updateCardSet,
+      deleteCardSet,
+      resetToDefault
     }}>
 
       {children}
@@ -320,4 +407,4 @@ export const GameProvider = ({ children }) => {
   );
 };
 
-export const useGame = () => useContext(GameContext);
+

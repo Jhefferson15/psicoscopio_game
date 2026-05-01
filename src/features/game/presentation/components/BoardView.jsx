@@ -1,6 +1,6 @@
-import { useMotionValue, useSpring, motion } from 'framer-motion';
+import { useMotionValue, useSpring } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
-import { useGame } from '../state/GameContext';
+import { useGame } from '../state/useGame';
 import { boardData } from '../../data/repositories/boardRepository';
 
 const BoardView = ({ boardRotation = 0 }) => {
@@ -214,7 +214,7 @@ const BoardView = ({ boardRotation = 0 }) => {
               const baseMarkerSize = 25;
               const markerSize = samePosCount > 1 ? Math.max(18, baseMarkerSize - (samePosCount - 1) * 3) : baseMarkerSize;
               
-              let r = 0;
+              let r;
               switch (tile.ring) {
                 case 'inner': r = 180 + (baseMarkerSize - markerSize); break;
                 case 'middle': r = 255 + (baseMarkerSize - markerSize); break;

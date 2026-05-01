@@ -1,9 +1,9 @@
 import { Globe, ShieldCheck, Copy, X, Users, ChevronRight, User, Volume2, VolumeX, RotateCcw, Image as ImageIcon } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useState } from 'react';
 import CustomCardsGallery from './CustomCardsGallery';
-import { useGame } from '../state/GameContext';
-import { useAuth } from '../../../auth/presentation/state/AuthContext.jsx';
+import { useGame } from '../state/useGame';
+import { useAuth } from '../../../auth/presentation/state/useAuth';
 
 
 const ModalWrapper = ({ title, onClose, children }) => (
@@ -215,7 +215,7 @@ export const PlayerSetupModal = ({ onClose }) => {
 };
 
 export const SettingsModal = ({ onClose }) => {
-  const { settings, setSettings } = useGame();
+  const { settings, setSettings, setCurrentScreen } = useGame();
 
   const toggleSound = () => setSettings(prev => ({ ...prev, sound: !prev.sound }));
 
@@ -238,6 +238,17 @@ export const SettingsModal = ({ onClose }) => {
           >
             <div className="toggle-handle" />
           </button>
+        </div>
+
+        <div className="setting-item" onClick={() => { setCurrentScreen('settings'); onClose(); }}>
+          <div className="setting-info">
+            <div className="setting-icon"><ImageIcon size={20} /></div>
+            <div className="setting-text">
+              <h3>Cartas Padronizadas</h3>
+              <p>Personalizar textos e desafios</p>
+            </div>
+          </div>
+          <ChevronRight size={20} className="text-muted" />
         </div>
 
         <div className="setting-item danger">

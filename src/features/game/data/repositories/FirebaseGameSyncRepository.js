@@ -1,4 +1,4 @@
-import { ref, set, onValue, update } from "firebase/database";
+import { ref, set, onValue } from "firebase/database";
 import { database } from "../../../../config/firebase.js";
 import { GameSyncRepository } from "../../domain/repositories/GameSyncRepository.js";
 

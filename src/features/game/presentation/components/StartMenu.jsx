@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useGame } from '../state/GameContext';
+import { useGame } from '../state/useGame';
 import { Play, Settings, Info, Package } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { LoginButton } from '../../../auth/presentation/components/LoginButton.jsx';

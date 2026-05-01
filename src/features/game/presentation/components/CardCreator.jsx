@@ -1,7 +1,7 @@
-import React, { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGame } from '../state/GameContext';
-import { Palette, Trash2, CheckCircle, ChevronLeft, Brush, Square, Plus, Brain, Sprout, Puzzle, RotateCcw, Image as ImageIcon, Type, Upload, Layers } from 'lucide-react';
+import { useGame } from '../state/useGame';
+import { Trash2, Brush, Plus, Brain, Sprout, Puzzle, Image as ImageIcon, Type, Upload, Layers, RotateCcw, CheckCircle } from 'lucide-react';
 import { GAME_CARDS } from '../../domain/gameConstants';
 import { CustomCard } from '../../domain/entities/CustomCard';
 import { customCardRepository } from '../../data/repositories/LocalStorageCardRepository';
@@ -9,7 +9,7 @@ import { CustomCardsModal } from './MenuModals';
 import './CardCreator.css';
 
 const CardCreator = () => {
-  const { finishCardCreation, goToMenu } = useGame();
+  const { finishCardCreation } = useGame();
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
   
@@ -26,12 +26,6 @@ const CardCreator = () => {
    const [isCanvasDirty, setIsCanvasDirty] = useState(false);
    const [showCollection, setShowCollection] = useState(false);
 
-  useEffect(() => {
-    if (creationMode === 'drawing') {
-      initCanvas();
-    }
-  }, [creationMode]);
-
   const initCanvas = () => {
     setTimeout(() => {
       const canvas = canvasRef.current;
@@ -45,6 +39,12 @@ const CardCreator = () => {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }, 0);
   };
+
+  useEffect(() => {
+    if (creationMode === 'drawing') {
+      initCanvas();
+    }
+  }, [creationMode]);
 
   const startDrawing = (e) => {
     if (creationMode !== 'drawing') return;

@@ -1,21 +1,22 @@
-import React from 'react';
 import Board from './features/game/presentation/components/Board';
 import Dice from './features/game/presentation/components/Dice';
 import TabletopView from './features/game/presentation/components/TabletopView';
 import StartMenu from './features/game/presentation/components/StartMenu';
 import CardCreator from './features/game/presentation/components/CardCreator';
 import GameCard from './features/game/presentation/components/GameCard';
-import { GameProvider, useGame } from './features/game/presentation/state/GameContext';
+import { GameProvider } from './features/game/presentation/state/GameContext';
+import { useGame } from './features/game/presentation/state/useGame';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Minimize2, X } from 'lucide-react';
 import MobileWarning from './features/game/presentation/components/MobileWarning';
 import Navigation from './features/game/presentation/components/Navigation';
 import CustomCardsGallery from './features/game/presentation/components/CustomCardsGallery';
+import StandardCardsSettings from './features/game/presentation/components/StandardCardsSettings';
 import { AuthProvider } from './features/auth/presentation/state/AuthContext.jsx';
 
 
 const GameContent = () => {
-  const { players, currentPlayerIndex, showModal, closeModal, isBoardFullScreen, toggleFullScreen, currentScreen, focusedCard, setFocusedCard, confirmedMobileWarning, setConfirmedMobileWarning } = useGame();
+  const { players, currentPlayerIndex, showModal, closeModal, closeFocusedCard, isBoardFullScreen, toggleFullScreen, currentScreen, focusedCard, confirmedMobileWarning, setConfirmedMobileWarning, activeCardSet } = useGame();
 
   return (
     <div className="game-wrapper">
@@ -53,6 +54,16 @@ const GameContent = () => {
             transition={{ duration: 0.3 }}
           >
             <CustomCardsGallery />
+          </motion.div>
+        ) : currentScreen === 'settings' ? (
+          <motion.div
+            key="settings"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.05 }}
+            transition={{ duration: 0.3 }}
+          >
+            <StandardCardsSettings />
           </motion.div>
         ) : !isBoardFullScreen ? (
           <motion.div
@@ -136,10 +147,11 @@ const GameContent = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="focused-card-overlay"
-            onClick={() => setFocusedCard(null)}
+            onClick={closeFocusedCard}
           >
             <div className="focused-card-container">
               <GameCard 
+                key={`${activeCardSet.id}-${activeCardSet.updatedAt}-${focusedCard.index}`}
                 type={focusedCard.type} 
                 index={focusedCard.index} 
                 isFocused={true} 
@@ -148,7 +160,7 @@ const GameContent = () => {
                 className="close-focused-card"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                onClick={() => setFocusedCard(null)}
+                onClick={closeFocusedCard}
               >
                 <X size={24} />
                 <span>Fechar</span>

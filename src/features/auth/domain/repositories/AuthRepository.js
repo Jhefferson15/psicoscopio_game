@@ -11,7 +11,7 @@ export class AuthRepository {
     throw new Error('Method not implemented');
   }
 
-  onAuthStateChanged(callback) {
+  onAuthStateChanged(_callback) { // eslint-disable-line no-unused-vars
     throw new Error('Method not implemented');
   }
 }

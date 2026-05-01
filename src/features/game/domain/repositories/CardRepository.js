@@ -2,7 +2,7 @@
  * @interface CardRepository
  */
 export class CardRepository {
-  async saveCard(card) {
+  async saveCard(_card) { // eslint-disable-line no-unused-vars
     throw new Error('Method not implemented');
   }
 
@@ -10,7 +10,7 @@ export class CardRepository {
     throw new Error('Method not implemented');
   }
 
-  async deleteCard(id) {
+  async deleteCard(_id) { // eslint-disable-line no-unused-vars
     throw new Error('Method not implemented');
   }
 }

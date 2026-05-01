@@ -1,7 +1,6 @@
-import React from 'react';
 import { motion } from 'framer-motion';
-import { useAuth } from '../state/AuthContext.jsx';
-import { LogIn, LogOut, User as UserIcon } from 'lucide-react';
+import { useAuth } from '../state/useAuth';
+import { LogOut, User as UserIcon } from 'lucide-react';
 
 export const LoginButton = () => {
   const { user, login, logout, loading, isFirebaseConfigured } = useAuth();

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGame } from '../state/GameContext';
+import { useGame } from '../state/useGame';
 import BoardView from './BoardView';
 import GameCard from './GameCard';
 import PlayerCard from './PlayerCard';
@@ -8,14 +8,9 @@ import DiceArea from './DiceArea';
 import ProfileGallery from './ProfileGallery';
 import { 
   Maximize2, 
-  History, 
   BookOpen, 
-  Target, 
   Layers, 
-  Award, 
   PlayCircle,
-  ClipboardList,
-  PenTool,
   ArrowRight,
   ArrowLeft,
   Shuffle,
@@ -24,22 +19,20 @@ import {
   TrendingUp,
   MessageSquare,
   Clock,
-  Home,
-  Hourglass as HourglassIcon
 } from 'lucide-react';
 import Hourglass from './Hourglass';
-import { LEARNING_PROFILES, SPECIAL_TILES, GAME_RULES, GAME_CARDS } from '../../domain/gameConstants';
+import { GAME_RULES, GAME_CARDS } from '../../domain/gameConstants';
 import { CustomCardsModal } from './MenuModals';
 const TabletopView = () => {
   const { 
-    players, 
-    currentPlayerIndex, 
-    toggleFullScreen,
     boardRotation,
     rotateBoard,
     playerAttributes,
     diaryEntries,
-    goToMenu
+    activeCardSet,
+    players,
+    currentPlayerIndex,
+    toggleFullScreen
   } = useGame();
 
   const [showHourglassDetails, setShowHourglassDetails] = React.useState(false);
@@ -189,14 +182,15 @@ const TabletopView = () => {
               <h3>CARTAS</h3>
             </div>
             <div className="cards-stack-modern">
-               {GAME_CARDS.map((c, i) => (
-                 <div key={i} className="card-stack-item">
-                   <GameCard 
-                     type={c.type.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")} 
-                     index={i} 
-                   />
-                 </div>
-               ))}
+                {GAME_CARDS.map((c, i) => (
+                  <div key={i} className="card-stack-item">
+                    <GameCard 
+                      key={`${activeCardSet.id}-${activeCardSet.updatedAt}-${i}`}
+                      type={c.type.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")} 
+                      index={i} 
+                    />
+                  </div>
+                ))}
             </div>
           </div>
 

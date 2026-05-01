@@ -1,6 +1,5 @@
-import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGame } from '../state/GameContext';
+import { useGame } from '../state/useGame';
 import { Dices } from 'lucide-react';
 
 const DiceArea = () => {
