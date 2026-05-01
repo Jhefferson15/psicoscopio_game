@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useGame } from '../state/GameContext';
-import { Play, Settings, Info, Package, Image as ImageIcon } from 'lucide-react';
+import { Play, Settings, Info, Package } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { LoginButton } from '../../../auth/presentation/components/LoginButton.jsx';
 import { PlayerSetupModal, SettingsModal, AboutModal } from './MenuModals';
 
 
 const StartMenu = () => {
-  const { startGame, goToCustomCards } = useGame();
+  useGame();
   const [activeModal, setActiveModal] = useState(null); // 'playerSetup' | 'settings' | 'about'
 
   return (
@@ -57,16 +57,6 @@ const StartMenu = () => {
             >
               <Play size={20} fill="currentColor" />
                <span>Iniciar Jornada</span>
-            </motion.button>
-
-            <motion.button 
-              className="btn-secondary full-width"
-              onClick={goToCustomCards}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <ImageIcon size={20} />
-              <span>Minha Coleção</span>
             </motion.button>
 
             <div className="menu-grid">

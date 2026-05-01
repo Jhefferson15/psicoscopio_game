@@ -8,6 +8,10 @@ export class LocalStorageCardRepository extends CardRepository {
   }
 
   async saveCard(card) {
+    if (!card.isValid()) {
+      console.warn('Attempted to save an invalid card', card);
+      return null;
+    }
     const cards = await this.getCards();
     cards.push(card);
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(cards));
@@ -19,7 +23,10 @@ export class LocalStorageCardRepository extends CardRepository {
     if (!data) return [];
     try {
       const parsed = JSON.parse(data);
-      return parsed.map(c => new CustomCard(c));
+      // Filter out invalid cards (legacy cleanup)
+      return parsed
+        .map(c => new CustomCard(c))
+        .filter(card => card.isValid());
     } catch (e) {
       console.error('Error parsing custom cards', e);
       return [];

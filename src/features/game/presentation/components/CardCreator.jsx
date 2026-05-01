@@ -1,10 +1,11 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../state/GameContext';
-import { Palette, Trash2, CheckCircle, ChevronLeft, Brush, Square, Plus, Brain, Sprout, Puzzle, RotateCcw, Image as ImageIcon, Type, Upload } from 'lucide-react';
+import { Palette, Trash2, CheckCircle, ChevronLeft, Brush, Square, Plus, Brain, Sprout, Puzzle, RotateCcw, Image as ImageIcon, Type, Upload, Layers } from 'lucide-react';
 import { GAME_CARDS } from '../../domain/gameConstants';
 import { CustomCard } from '../../domain/entities/CustomCard';
 import { customCardRepository } from '../../data/repositories/LocalStorageCardRepository';
+import { CustomCardsModal } from './MenuModals';
 import './CardCreator.css';
 
 const CardCreator = () => {
@@ -19,9 +20,11 @@ const CardCreator = () => {
   const [createdCount, setCreatedCount] = useState(0);
   
   // New States for Modes
-  const [creationMode, setCreationMode] = useState('drawing'); // 'drawing' | 'text' | 'image'
-  const [cardText, setCardText] = useState('');
-  const [uploadedImage, setUploadedImage] = useState(null);
+   const [creationMode, setCreationMode] = useState('drawing'); // 'drawing' | 'text' | 'image'
+   const [cardText, setCardText] = useState('');
+   const [uploadedImage, setUploadedImage] = useState(null);
+   const [isCanvasDirty, setIsCanvasDirty] = useState(false);
+   const [showCollection, setShowCollection] = useState(false);
 
   useEffect(() => {
     if (creationMode === 'drawing') {
@@ -57,6 +60,7 @@ const CardCreator = () => {
     ctx.strokeStyle = color;
     ctx.lineWidth = lineWidth;
     setIsDrawing(true);
+    setIsCanvasDirty(true);
   };
 
   const draw = (e) => {
@@ -77,8 +81,35 @@ const CardCreator = () => {
     setIsDrawing(false);
   };
 
+  useEffect(() => {
+    const handleGlobalMouseMove = (e) => {
+      if (isDrawing) draw(e);
+    };
+    
+    const handleGlobalMouseUp = () => {
+      if (isDrawing) stopDrawing();
+    };
+
+    if (isDrawing) {
+      window.addEventListener('mousemove', handleGlobalMouseMove);
+      window.addEventListener('mouseup', handleGlobalMouseUp);
+      window.addEventListener('touchmove', handleGlobalMouseMove, { passive: false });
+      window.addEventListener('touchend', handleGlobalMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+      window.removeEventListener('touchmove', handleGlobalMouseMove);
+      window.removeEventListener('touchend', handleGlobalMouseUp);
+    };
+  }, [isDrawing]);
+
   const clearCanvas = () => {
-    if (creationMode === 'drawing') initCanvas();
+    if (creationMode === 'drawing') {
+      initCanvas();
+      setIsCanvasDirty(false);
+    }
     else if (creationMode === 'text') setCardText('');
     else if (creationMode === 'image') setUploadedImage(null);
   };
@@ -94,6 +125,13 @@ const CardCreator = () => {
     }
   };
 
+  const isCurrentCardValid = () => {
+    if (creationMode === 'drawing') return isCanvasDirty;
+    if (creationMode === 'text') return cardText.trim().length > 0;
+    if (creationMode === 'image') return !!uploadedImage;
+    return false;
+  };
+
   const saveCurrentCard = async () => {
     let content = '';
     if (creationMode === 'drawing' && canvasRef.current) {
@@ -104,7 +142,7 @@ const CardCreator = () => {
       content = uploadedImage;
     }
 
-    if (!content && creationMode !== 'drawing') return; // Don't save empty text/image
+    if (!isCurrentCardValid()) return;
 
     const newCard = new CustomCard({
       type: selectedType.type,
@@ -124,7 +162,7 @@ const CardCreator = () => {
 
   const handleFinish = async () => {
     // Save last card if it has content
-    if (cardText || uploadedImage || (creationMode === 'drawing')) {
+    if (isCurrentCardValid()) {
       await saveCurrentCard();
     }
     finishCardCreation();
@@ -161,9 +199,19 @@ const CardCreator = () => {
             <h1>Ateliê de Cartas</h1>
           </div>
 
-          <div className="creation-progress">
-             <div className="progress-label">Cartas Criadas</div>
-             <div className="progress-badge">{createdCount}</div>
+          <div className="creator-header-actions">
+            <button 
+              className="btn-collection-minimal" 
+              onClick={() => setShowCollection(true)}
+              title="Ver Minha Coleção"
+            >
+              <Layers size={18} />
+              <span>Coleção</span>
+            </button>
+            <div className="creation-progress">
+               <div className="progress-label">Cartas Criadas</div>
+               <div className="progress-badge">{createdCount}</div>
+            </div>
           </div>
         </header>
 
@@ -190,15 +238,11 @@ const CardCreator = () => {
                       {creationMode === 'drawing' && (
                         <canvas
                           ref={canvasRef}
-                          width={320}
-                          height={440}
+                          width={380}
+                          height={520}
                           onMouseDown={startDrawing}
-                          onMouseMove={draw}
-                          onMouseUp={stopDrawing}
-                          onMouseLeave={stopDrawing}
                           onTouchStart={startDrawing}
-                          onTouchMove={draw}
-                          onTouchEnd={stopDrawing}
+                          className="drawing-canvas"
                         />
                       )}
                       {creationMode === 'text' && (
@@ -220,11 +264,6 @@ const CardCreator = () => {
                            )}
                         </div>
                       )}
-                    </div>
-                    
-                    <div className="card-footer-decoration">
-                      <div className="footer-line"></div>
-                      <div className="footer-dot"></div>
                     </div>
                   </div>
                 </motion.div>
@@ -340,16 +379,26 @@ const CardCreator = () => {
         </div>
 
         <footer className="creator-action-bar">
-           <button className="btn-premium-secondary" onClick={handleCreateMore}>
+           <button 
+             className={`btn-premium-secondary ${!isCurrentCardValid() ? 'disabled' : ''}`} 
+             onClick={handleCreateMore}
+             disabled={!isCurrentCardValid()}
+           >
               <Plus size={20} />
               <span>Adicionar ao Baralho</span>
            </button>
             <button className="btn-premium-primary" onClick={handleFinish}>
-              <span>Finalizar e Jogar</span>
+              <span>{isCurrentCardValid() ? 'Finalizar e Jogar' : 'Concluir sem salvar atual'}</span>
               <CheckCircle size={20} />
             </button>
         </footer>
       </div>
+
+      <AnimatePresence>
+        {showCollection && (
+          <CustomCardsModal onClose={() => setShowCollection(false)} />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

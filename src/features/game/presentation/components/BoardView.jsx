@@ -1,9 +1,11 @@
-import { useMotionValue, useSpring } from 'framer-motion';
-import { useRef, useEffect } from 'react';
+import { useMotionValue, useSpring, motion } from 'framer-motion';
+import { useRef, useEffect, useState } from 'react';
 import { useGame } from '../state/GameContext';
+import { boardData } from '../../data/repositories/boardRepository';
 
 const BoardView = ({ boardRotation = 0 }) => {
-  const { setBoardRotation } = useGame();
+  const { setBoardRotation, players } = useGame();
+  const [showNameId, setShowNameId] = useState(null);
   const isDragging = useRef(false);
   const lastAngle = useRef(0);
   const rotGRef = useRef(null);
@@ -96,14 +98,14 @@ const BoardView = ({ boardRotation = 0 }) => {
   };
 
   const arc = (fill, icon, angle, ring, r) => (
-    <g transform={`rotate(${angle})`}>
+    <g transform={`rotate(${angle})`} style={{ pointerEvents: 'none' }}>
       <use href={`#arc-${ring}`} fill={fill} stroke={fill} strokeWidth="16" strokeLinejoin="round" filter="url(#shadow)" />
       <use href={`#${icon}`} transform={`translate(0, -${r}) rotate(0)`} />
     </g>
   );
 
   const arcText = (fill, label, angle, ring, yOff, fontSize = 13) => (
-    <g transform={`rotate(${angle})`}>
+    <g transform={`rotate(${angle})`} style={{ pointerEvents: 'none' }}>
       <use href={`#arc-${ring}`} fill={fill} stroke={fill} strokeWidth="16" strokeLinejoin="round" filter="url(#shadow)" />
       <text x="0" y={yOff} transform={flip(angle, yOff)} textAnchor="middle" fill="#FFF" fontSize={fontSize} fontWeight="600" letterSpacing="0.5">{label}</text>
     </g>
@@ -118,7 +120,7 @@ const BoardView = ({ boardRotation = 0 }) => {
       onPointerLeave={onPointerUp}
     >
       <svg viewBox="0 0 800 800" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"
-        style={{ backgroundColor: '#f4f7f8', fontFamily: "'Segoe UI', Roboto, sans-serif", display: 'block', pointerEvents: 'none' }}>
+        style={{ backgroundColor: '#f4f7f8', fontFamily: "'Segoe UI', Roboto, sans-serif", display: 'block' }}>
         <defs>
           <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
             <feDropShadow dx="2" dy="4" stdDeviation="4" floodColor="#000" floodOpacity="0.15" />
@@ -168,6 +170,10 @@ const BoardView = ({ boardRotation = 0 }) => {
           <g id="icon-star">
             <path d="M0 -11 L3.2 -3.5 L11 -2.5 L5 3 L6.5 10.5 L0 6.5 L-6.5 10.5 L-5 3 L-11 -2.5 L-3.2 -3.5 Z" fill="#1f2937" />
           </g>
+          <g id="icon-user">
+            <path d="M-8 8 Q-8 1, 0 1 Q 8 1, 8 8" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+            <circle cx="0" cy="-5" r="5" fill="currentColor" />
+          </g>
         </defs>
 
         {/* GRUPO ROTACIONADO: controlado via setAttribute direto no DOM */}
@@ -196,6 +202,57 @@ const BoardView = ({ boardRotation = 0 }) => {
           {/* Aneis - todos relativos ao centro (400,400) */}
           <g transform="translate(400, 400)">
 
+            {/* JOGADORES - Renderizados antes para ficarem "atrás" das casas */}
+            {players.map((player, idx) => {
+              const tile = boardData[player.position];
+              if (!tile) return null;
+              
+              const samePosCount = players.filter(p => p.position === player.position).length;
+              const samePosIdx = players.filter((p, i) => p.position === player.position && i < idx).length;
+              
+              // Tamanho dinâmico para evitar sobreposição excessiva
+              const baseMarkerSize = 25;
+              const markerSize = samePosCount > 1 ? Math.max(18, baseMarkerSize - (samePosCount - 1) * 3) : baseMarkerSize;
+              
+              let r = 0;
+              switch (tile.ring) {
+                case 'inner': r = 180 + (baseMarkerSize - markerSize); break;
+                case 'middle': r = 255 + (baseMarkerSize - markerSize); break;
+                case 'outer': r = 330 + (baseMarkerSize - markerSize); break;
+                case 'special': r = 375 + (baseMarkerSize - markerSize); break;
+                case 'center': r = 0; break;
+                default: r = 0;
+              }
+
+              // Offset de ângulo baseado no tamanho atual para manter a separação (reduzido para ficarem mais juntos)
+              const angleOffset = samePosCount > 1 ? (samePosIdx - (samePosCount - 1) / 2) * (markerSize * 0.25) : 0;
+
+              return (
+                <g key={player.id} transform={`rotate(${tile.angle + angleOffset})`} 
+                   style={{ cursor: 'pointer', pointerEvents: 'auto' }}
+                   onClick={(e) => {
+                     e.stopPropagation();
+                     setShowNameId(showNameId === player.id ? null : player.id);
+                   }}>
+                  {/* Marcador Base */}
+                  <circle cx="0" cy={-r} r={markerSize} fill={player.color} stroke="#FFF" strokeWidth="3" filter="url(#shadow)" />
+                  
+                  {/* Ícone do Jogador */}
+                  <g transform={`translate(0, ${-r}) scale(${markerSize / 15})`} style={{ pointerEvents: 'none', color: '#FFF' }}>
+                    <use href="#icon-user" />
+                  </g>
+                  
+                  {showNameId === player.id && (
+                    <g transform={`translate(0, ${-r - markerSize - 15}) rotate(${- (tile.angle + angleOffset + boardRotation)})`}>
+                      <rect x="-50" y="-14" width="100" height="28" rx="14" fill="#FFF" filter="url(#shadow)" />
+                      <text y="5" textAnchor="middle" fill="#333" fontSize="13" fontWeight="bold">{player.name}</text>
+                      <path d="M -6 14 L 0 20 L 6 14 Z" fill="#FFF" />
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+
             {/* ANEL INTERIOR */}
             {arc('#D84B42','icon-brain', 18,'inner',150)}
             {arcText('#4885CE','MEMÓRIA',  54,'inner',-145,12)}
@@ -221,46 +278,46 @@ const BoardView = ({ boardRotation = 0 }) => {
             {arcText('#7B4BB1','REFLEXÃO',244.2,'middle',-220)}
             {arc('#6FB05E','icon-puzzle',270,  'middle',225)}
             {arc('#D84B42','icon-target',295.7,'middle',225)}
-            {arcText('#4885CE','MEMÓRIA', 321.4,'middle',-220)}
-            {arc('#D84B42','icon-brain', 347.1,'middle',225)}
+            {arcText('#4885CE', 'MEMÓRIA', 321.4, 'middle', -220)}
+            {arc('#D84B42', 'icon-brain', 347.1, 'middle', 225)}
 
             {/* ANEL EXTERIOR - omite 0,90,180,270 para cards brancos */}
-            {arc('#D84B42','icon-brain',  18,'outer',300)}
-            {arcText('#7B4BB1','REFLEXÃO', 36,'outer',-295,14)}
-            {arc('#EEDCC0','icon-star',    54,'outer',300)}
-            {arc('#4885CE','icon-mag',     72,'outer',300)}
-            {arc('#6FB05E','icon-cycle',  108,'outer',300)}
-            {arcText('#7B4BB1','REFLEXÃO',126,'outer',-295,14)}
-            {arc('#F4C746','icon-bulb',   144,'outer',300)}
-            {arc('#4885CE','icon-eye',    162,'outer',300)}
-            {arcText('#D84B42','DESAFIO', 198,'outer',-295,14)}
-            {arc('#7B4BB1','icon-mag',    216,'outer',300)}
-            {arc('#6FB05E','icon-brain',  234,'outer',300)}
-            {arcText('#4885CE','MEMÓRIA', 252,'outer',-295,14)}
-            {arcText('#7B4BB1','REFLEXÃO',288,'outer',-295,14)}
-            {arc('#D84B42','icon-target', 306,'outer',300)}
-            {arc('#4885CE','icon-eye',    324,'outer',300)}
-            {arc('#D84B42','icon-brain',  342,'outer',300)}
+            {arc('#D84B42', 'icon-brain', 18, 'outer', 300)}
+            {arcText('#7B4BB1', 'REFLEXÃO', 36, 'outer', -295, 14)}
+            {arc('#EEDCC0', 'icon-star', 54, 'outer', 300)}
+            {arc('#4885CE', 'icon-mag', 72, 'outer', 300)}
+            {arc('#6FB05E', 'icon-cycle', 108, 'outer', 300)}
+            {arcText('#7B4BB1', 'REFLEXÃO', 126, 'outer', -295, 14)}
+            {arc('#F4C746', 'icon-bulb', 144, 'outer', 300)}
+            {arc('#4885CE', 'icon-eye', 162, 'outer', 300)}
+            {arcText('#D84B42', 'DESAFIO', 198, 'outer', -295, 14)}
+            {arc('#7B4BB1', 'icon-mag', 216, 'outer', 300)}
+            {arc('#6FB05E', 'icon-brain', 234, 'outer', 300)}
+            {arcText('#4885CE', 'MEMÓRIA', 252, 'outer', -295, 14)}
+            {arcText('#7B4BB1', 'REFLEXÃO', 288, 'outer', -295, 14)}
+            {arc('#D84B42', 'icon-target', 306, 'outer', 300)}
+            {arc('#4885CE', 'icon-eye', 324, 'outer', 300)}
+            {arc('#D84B42', 'icon-brain', 342, 'outer', 300)}
           </g>
         </g>
 
         {/* CARDS BRANCOS - camada estatica, posicionados via DOM */}
-        <g ref={cardTopRef} filter="url(#shadow)">
+        <g ref={cardTopRef} filter="url(#shadow)" style={{ pointerEvents: 'none' }}>
           <rect x="-60" y="-35" width="120" height="70" rx="8" fill="#FFFFFF" stroke="#e0e0e0" strokeWidth="1" />
           <text y="-4" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700">VOLTE</text>
           <text y="16" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700">2 CASAS</text>
         </g>
-        <g ref={cardRightRef} filter="url(#shadow)">
+        <g ref={cardRightRef} filter="url(#shadow)" style={{ pointerEvents: 'none' }}>
           <rect x="-55" y="-45" width="110" height="90" rx="8" fill="#FFFFFF" stroke="#e0e0e0" strokeWidth="1" />
           <text y="-5" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700">AVANCE</text>
           <text y="15" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700">2 CASAS</text>
         </g>
-        <g ref={cardBottomRef} filter="url(#shadow)">
+        <g ref={cardBottomRef} filter="url(#shadow)" style={{ pointerEvents: 'none' }}>
           <rect x="-70" y="-35" width="140" height="70" rx="8" fill="#FFFFFF" stroke="#e0e0e0" strokeWidth="1" />
           <text y="-4" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700">DESAFIO EM</text>
           <text y="16" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700">EQUIPA</text>
         </g>
-        <g ref={cardLeftRef} filter="url(#shadow)">
+        <g ref={cardLeftRef} filter="url(#shadow)" style={{ pointerEvents: 'none' }}>
           <rect x="-55" y="-50" width="110" height="100" rx="8" fill="#FFFFFF" stroke="#e0e0e0" strokeWidth="1" />
           <text y="-12" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700">TROQUE</text>
           <text y="8" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700">DE</text>
@@ -268,7 +325,7 @@ const BoardView = ({ boardRotation = 0 }) => {
         </g>
 
         {/* CENTRO - estatico */}
-        <g transform="translate(400, 400)">
+        <g transform="translate(400, 400)" style={{ pointerEvents: 'none' }}>
           <circle cx="0" cy="0" r="115" fill="#FFFFFF" filter="url(#shadow)" />
           <g fill="#aab5b9" opacity="0.6">
             <path d="M -20 -80 Q -10 -90 0 -80 Q -10 -70 -20 -80 Z" />

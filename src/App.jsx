@@ -15,7 +15,7 @@ import { AuthProvider } from './features/auth/presentation/state/AuthContext.jsx
 
 
 const GameContent = () => {
-  const { players, currentPlayerIndex, showModal, setShowModal, isBoardFullScreen, toggleFullScreen, currentScreen, focusedCard, setFocusedCard, confirmedMobileWarning, setConfirmedMobileWarning } = useGame();
+  const { players, currentPlayerIndex, showModal, closeModal, isBoardFullScreen, toggleFullScreen, currentScreen, focusedCard, setFocusedCard, confirmedMobileWarning, setConfirmedMobileWarning } = useGame();
 
   return (
     <div className="game-wrapper">
@@ -103,7 +103,7 @@ const GameContent = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="modal-overlay"
-            onClick={() => setShowModal(null)}
+            onClick={closeModal}
           >
             <motion.div 
               initial={{ scale: 0.8, y: 20 }}
@@ -120,7 +120,7 @@ const GameContent = () => {
               </p>
               <button 
                 className="dice-button modal-btn" 
-                onClick={() => setShowModal(null)}
+                onClick={closeModal}
               >
                 Continuar a Jornada
               </button>

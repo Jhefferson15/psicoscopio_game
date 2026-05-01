@@ -4,13 +4,13 @@ import { useGame } from '../state/GameContext';
 import { Dices } from 'lucide-react';
 
 const DiceArea = () => {
-  const { rollDice, lastDiceRoll, isMoving } = useGame();
+  const { rollDice, lastDiceRoll, isMoving, isRolling } = useGame();
 
   return (
     <div className="dice-area">
       <div className="dice-shaker">
         <AnimatePresence mode="wait">
-          {lastDiceRoll > 0 && !isMoving && (
+          {lastDiceRoll > 0 && !isRolling && (
             <motion.div
               key={lastDiceRoll}
               initial={{ scale: 0, rotate: -45 }}
@@ -24,16 +24,16 @@ const DiceArea = () => {
         </AnimatePresence>
         
         <motion.button
-          className={`dice-roll-btn ${isMoving ? 'disabled' : ''}`}
+          className={`dice-roll-btn ${isMoving || isRolling ? 'disabled' : ''}`}
           onClick={rollDice}
-          disabled={isMoving}
+          disabled={isMoving || isRolling}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          animate={isMoving ? { rotate: [0, -10, 10, -10, 10, 0] } : {}}
-          transition={{ repeat: isMoving ? Infinity : 0, duration: 0.5 }}
+          animate={isRolling ? { rotate: [0, -10, 10, -10, 10, 0] } : {}}
+          transition={{ repeat: isRolling ? Infinity : 0, duration: 0.5 }}
         >
           <Dices size={32} />
-          <span>Lançar Dados</span>
+          <span>{isRolling ? 'Rolando...' : 'Lançar Dados'}</span>
         </motion.button>
       </div>
       

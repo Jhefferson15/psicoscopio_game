@@ -7,4 +7,10 @@ export class CustomCard {
     this.color = color;
     this.createdAt = createdAt || new Date().toISOString();
   }
+
+  isValid() {
+    if (!this.content) return false;
+    if (this.contentType === 'text' && this.content.trim().length === 0) return false;
+    return true;
+  }
 }

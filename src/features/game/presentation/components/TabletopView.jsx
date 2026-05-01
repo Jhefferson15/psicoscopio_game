@@ -39,21 +39,14 @@ const TabletopView = () => {
     rotateBoard,
     playerAttributes,
     diaryEntries,
-    gameTime,
-    setGameTime,
     goToMenu
   } = useGame();
 
   const [showHourglassDetails, setShowHourglassDetails] = React.useState(false);
   const [showCollection, setShowCollection] = React.useState(false);
 
-  // Efeito de timer para a ampulheta
-  React.useEffect(() => {
-    const timer = setInterval(() => {
-      setGameTime(prev => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const currentPlayer = players[currentPlayerIndex];
+  const gameTime = currentPlayer.timeLeft;
 
   const activePlayerAttr = playerAttributes[players[currentPlayerIndex].id] || { memory: 0, reflection: 0, challenge: 0 };
 
@@ -231,10 +224,10 @@ const TabletopView = () => {
           <span className="status-dot green"></span>
           <span className="status-text">O aprendizado é um ciclo, não uma linha de chegada.</span>
         </div>
-        <div className={`timer-atmosphere ${gameTime < 15 ? 'critical' : ''}`}>
+        <div className={`timer-atmosphere ${gameTime < 20 ? 'critical' : ''}`}>
           <Hourglass 
-            progress={gameTime / 60} 
-            isCritical={gameTime < 15}
+            progress={gameTime / 120} 
+            isCritical={gameTime < 20}
             onClick={() => setShowHourglassDetails(true)} 
           />
           <div className="time-remaining">
@@ -264,7 +257,7 @@ const TabletopView = () => {
             >
               <div className="hourglass-detail-header">
                 <div style={{ transform: 'scale(2.5)', marginBottom: '60px' }}>
-                  <Hourglass progress={gameTime / 60} />
+                  <Hourglass progress={gameTime / 120} />
                 </div>
                 <h2 style={{ fontSize: '32px', fontWeight: '900', color: 'var(--text)', marginBottom: '10px' }}>
                   Tempo de Reflexão
@@ -284,7 +277,7 @@ const TabletopView = () => {
                 <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '20px' }}>
                   <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total da Rodada</span>
                   <div style={{ fontSize: '24px', fontWeight: '900', color: 'var(--secondary)' }}>
-                    01:00
+                    02:00
                   </div>
                 </div>
               </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { User, Award, TrendingUp } from 'lucide-react';
+import { User, Award, TrendingUp, Clock } from 'lucide-react';
 
 const PlayerCard = ({ player, isActive }) => {
   return (
@@ -27,6 +27,10 @@ const PlayerCard = ({ player, isActive }) => {
           <div className="stat-item">
             <Award size={14} />
             <span>Pos: {player.position}</span>
+          </div>
+          <div className={`stat-item ${player.timeLeft < 20 ? 'text-critical' : ''}`}>
+            <Clock size={14} />
+            <span>{Math.floor(player.timeLeft / 60)}:{(player.timeLeft % 60).toString().padStart(2, '0')}</span>
           </div>
           <div className="stat-item">
             <TrendingUp size={14} />

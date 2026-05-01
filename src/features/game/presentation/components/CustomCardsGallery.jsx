@@ -106,19 +106,16 @@ const CustomCardsGallery = ({ isModal = false, onClose }) => {
                       )}
                     </div>
 
-                    <div className="gallery-card-footer">
-                      <div className="card-date">
-                        <Calendar size={12} />
-                        {new Date(card.createdAt).toLocaleDateString()}
-                      </div>
-                      <button 
-                        className="btn-delete-card" 
-                        onClick={() => handleDelete(card.id)}
-                        title="Excluir carta"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                    <button 
+                      className="btn-delete-card-floating" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(card.id);
+                      }}
+                      title="Excluir carta"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 </motion.div>
               ))}
