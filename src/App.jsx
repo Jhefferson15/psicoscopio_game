@@ -10,6 +10,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Minimize2, X } from 'lucide-react';
 import MobileWarning from './features/game/presentation/components/MobileWarning';
 import Navigation from './features/game/presentation/components/Navigation';
+import CustomCardsGallery from './features/game/presentation/components/CustomCardsGallery';
+import { AuthProvider } from './features/auth/presentation/state/AuthContext.jsx';
+
 
 const GameContent = () => {
   const { players, currentPlayerIndex, showModal, setShowModal, isBoardFullScreen, toggleFullScreen, currentScreen, focusedCard, setFocusedCard, confirmedMobileWarning, setConfirmedMobileWarning } = useGame();
@@ -40,6 +43,16 @@ const GameContent = () => {
             transition={{ duration: 0.3 }}
           >
             <CardCreator />
+          </motion.div>
+        ) : currentScreen === 'custom_cards' ? (
+          <motion.div
+            key="custom_cards"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <CustomCardsGallery />
           </motion.div>
         ) : !isBoardFullScreen ? (
           <motion.div
@@ -150,9 +163,11 @@ const GameContent = () => {
 
 function App() {
   return (
-    <GameProvider>
-      <GameContent />
-    </GameProvider>
+    <AuthProvider>
+      <GameProvider>
+        <GameContent />
+      </GameProvider>
+    </AuthProvider>
   );
 }
 

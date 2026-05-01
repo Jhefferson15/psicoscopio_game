@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { useGame } from '../state/GameContext';
 import { Palette, Trash2, CheckCircle, ChevronLeft, Brush, Square, Plus, Brain, Sprout, Puzzle, RotateCcw, Image as ImageIcon, Type, Upload } from 'lucide-react';
 import { GAME_CARDS } from '../../domain/gameConstants';
+import { CustomCard } from '../../domain/entities/CustomCard';
+import { customCardRepository } from '../../data/repositories/LocalStorageCardRepository';
 import './CardCreator.css';
 
 const CardCreator = () => {
@@ -92,9 +94,40 @@ const CardCreator = () => {
     }
   };
 
-  const handleCreateMore = () => {
+  const saveCurrentCard = async () => {
+    let content = '';
+    if (creationMode === 'drawing' && canvasRef.current) {
+      content = canvasRef.current.toDataURL();
+    } else if (creationMode === 'text') {
+      content = cardText;
+    } else if (creationMode === 'image') {
+      content = uploadedImage;
+    }
+
+    if (!content && creationMode !== 'drawing') return; // Don't save empty text/image
+
+    const newCard = new CustomCard({
+      type: selectedType.type,
+      content: content,
+      contentType: creationMode,
+      color: selectedType.color
+    });
+
+    await customCardRepository.saveCard(newCard);
+  };
+
+  const handleCreateMore = async () => {
+    await saveCurrentCard();
     setCreatedCount(prev => prev + 1);
     clearCanvas();
+  };
+
+  const handleFinish = async () => {
+    // Save last card if it has content
+    if (cardText || uploadedImage || (creationMode === 'drawing')) {
+      await saveCurrentCard();
+    }
+    finishCardCreation();
   };
 
   const colors = [
@@ -311,10 +344,10 @@ const CardCreator = () => {
               <Plus size={20} />
               <span>Adicionar ao Baralho</span>
            </button>
-           <button className="btn-premium-primary" onClick={finishCardCreation}>
+            <button className="btn-premium-primary" onClick={handleFinish}>
               <span>Finalizar e Jogar</span>
               <CheckCircle size={20} />
-           </button>
+            </button>
         </footer>
       </div>
     </motion.div>

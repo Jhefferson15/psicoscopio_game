@@ -1,0 +1,54 @@
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { FirebaseAuthRepository } from '../../data/repositories/FirebaseAuthRepository.js';
+import { isFirebaseConfigured } from '../../../../config/firebase.js';
+
+import { LoginWithGoogleUseCase, LogoutUseCase, GetCurrentUserUseCase } from '../../domain/usecases/AuthUseCases.js';
+
+const AuthContext = createContext();
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const authRepository = new FirebaseAuthRepository();
+  const loginUseCase = new LoginWithGoogleUseCase(authRepository);
+  const logoutUseCase = new LogoutUseCase(authRepository);
+  const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
+
+  useEffect(() => {
+    const unsubscribe = authRepository.onAuthStateChanged((user) => {
+      setUser(user);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const login = async () => {
+    setLoading(true);
+    try {
+      const loggedUser = await loginUseCase.execute();
+      setUser(loggedUser);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    setLoading(true);
+    try {
+      await logoutUseCase.execute();
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, login, logout, loading, isFirebaseConfigured }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => useContext(AuthContext);

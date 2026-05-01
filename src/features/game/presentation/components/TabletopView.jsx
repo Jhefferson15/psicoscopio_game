@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import Hourglass from './Hourglass';
 import { LEARNING_PROFILES, SPECIAL_TILES, GAME_RULES, GAME_CARDS } from '../../domain/gameConstants';
+import { CustomCardsModal } from './MenuModals';
 const TabletopView = () => {
   const { 
     players, 
@@ -44,6 +45,7 @@ const TabletopView = () => {
   } = useGame();
 
   const [showHourglassDetails, setShowHourglassDetails] = React.useState(false);
+  const [showCollection, setShowCollection] = React.useState(false);
 
   // Efeito de timer para a ampulheta
   React.useEffect(() => {
@@ -77,6 +79,10 @@ const TabletopView = () => {
         <div className="header-actions">
           <button className="btn-rotate-modern" onClick={rotateBoard} title="Rotacionar Tabuleiro">
             <RotateCw size={18} />
+          </button>
+          <button className="btn-fullscreen-modern" onClick={() => setShowCollection(true)} title="Minha Coleção">
+            <BookOpen size={18} />
+            <span>Coleção</span>
           </button>
           <button className="btn-fullscreen-modern" onClick={toggleFullScreen}>
             <Maximize2 size={18} />
@@ -292,6 +298,12 @@ const TabletopView = () => {
               </button>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showCollection && (
+          <CustomCardsModal onClose={() => setShowCollection(false)} />
         )}
       </AnimatePresence>
     </motion.div>
