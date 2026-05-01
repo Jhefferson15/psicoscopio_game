@@ -453,7 +453,8 @@
 
   .settings-layout {
     flex-direction: column;
-    overflow-y: auto;
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
   }
 
   .settings-sidebar {
@@ -464,6 +465,11 @@
     border-bottom: 1px solid #f1f5f9;
     flex-shrink: 0;
     background: white;
+    overflow: visible !important;
+  }
+
+  .sidebar-section {
+    overflow: visible !important;
   }
 
   .section-header {
@@ -471,24 +477,36 @@
   }
 
   .sets-list {
-    flex-direction: row;
-    overflow-x: auto;
-    padding-bottom: 15px;
-    gap: 10px;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 5px 5px 15px 5px;
+    gap: 12px;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    scrollbar-width: thin;
+    width: 100%;
   }
 
   .sets-list::-webkit-scrollbar {
-    display: none;
+    height: 6px;
+    display: block;
+  }
+
+  .sets-list::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.15);
+    border-radius: 10px;
   }
 
   .set-item {
-    min-width: 200px;
-    flex-shrink: 0;
-    padding: 12px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    width: 260px !important;
+    min-width: 260px !important;
+    flex-shrink: 0 !important;
+    padding: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     transform: none !important;
+    border: 1px solid #e2e8f0;
   }
 
   .set-actions {
@@ -497,12 +515,14 @@
 
   .settings-editor {
     padding: 20px;
-    flex: 1;
+    flex: none;
     background: #f8fafc;
+    overflow: visible !important;
   }
 
   .editor-content {
     gap: 20px;
+    width: 100%;
   }
 
   .editor-header {
@@ -530,21 +550,34 @@
   }
 
   .category-tabs {
-    overflow-x: auto;
-    padding: 6px;
-    gap: 6px;
-    background: rgba(0,0,0,0.03);
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 12px;
+    gap: 12px;
+    background: rgba(0,0,0,0.04);
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .category-tabs::-webkit-scrollbar {
+    height: 6px;
+    display: block;
   }
 
   .cat-tab {
-    min-width: 90px;
-    padding: 10px 5px;
-    border-radius: 12px;
+    flex: 0 0 110px !important;
+    min-width: 110px !important;
+    padding: 12px 5px;
+    border-radius: 14px;
+    background: white;
   }
 
   .cat-tab span {
-    font-size: 9px;
+    font-size: 10px;
   }
 
   .add-item-row {
