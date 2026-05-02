@@ -65,7 +65,7 @@ const BoardEditor = () => {
     updateBoardConfig, 
     deleteBoardConfig,
     importBoardConfig,
-    goToMenu,
+    handleGoToMenu,
     showSystemPopup
   } = useGame();
 
@@ -170,7 +170,7 @@ const BoardEditor = () => {
         animate={{ opacity: 1, scale: 1 }}
       >
         <header className="board-editor-header">
-          <button className="btn-back-editor" onClick={goToMenu}>
+          <button className="btn-back-editor" onClick={handleGoToMenu}>
             <ChevronLeft size={24} />
           </button>
           <div className="header-title">

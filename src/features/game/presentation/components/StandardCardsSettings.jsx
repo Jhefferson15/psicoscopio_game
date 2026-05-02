@@ -44,7 +44,7 @@ const StandardCardsSettings = () => {
     deleteCardSet,
     importCardSet,
     resetToDefault,
-    goToMenu,
+    handleGoToMenu,
     showSystemPopup
   } = useGame();
 
@@ -161,7 +161,7 @@ const StandardCardsSettings = () => {
       
       <div className="settings-layout">
         <header className="settings-header">
-          <button className="btn-back-settings" onClick={goToMenu} title="Voltar ao Menu">
+          <button className="btn-back-settings" onClick={handleGoToMenu} title="Voltar ao Menu">
             <ChevronLeft size={24} />
           </button>
           <div className="settings-title-group">

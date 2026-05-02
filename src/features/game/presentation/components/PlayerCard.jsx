@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { User, Award, TrendingUp, Clock } from 'lucide-react';
 import { useGame } from '../state/useGame';
 
-const PlayerCard = ({ player, isActive }) => {
+const PlayerCard = ({ player, isActive, onClick }) => {
   const { roomParticipants, isOnline: isGameOnline } = useGame();
   const participant = roomParticipants ? roomParticipants[player.id] : null;
   const isPlayerOnline = participant ? participant.isOnline : true; // Default true para modo offline
@@ -13,6 +13,8 @@ const PlayerCard = ({ player, isActive }) => {
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       whileHover={{ scale: 1.05 }}
+      onClick={onClick}
+      style={{ cursor: onClick ? 'pointer' : 'default' }}
     >
       <div className="player-avatar-relative">
         <div className="player-avatar" style={{ backgroundColor: player.color }}>

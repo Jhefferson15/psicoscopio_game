@@ -39,25 +39,39 @@ vi.mock('firebase/database', () => ({
     cancel: vi.fn(() => Promise.resolve())
   })),
   onValue: vi.fn((ref, callback) => {
+    const fullData = {
+      id: 'ROOM123',
+      status: 'waiting',
+      participants: { 'uid-123': { name: 'Host' } },
+      gameState: {
+        players: [{ name: 'Test' }],
+        currentPlayerIndex: 0,
+        lastActionBy: 'uid-123'
+      }
+    };
+    
+    let data = fullData;
+    if (ref.path.includes('gameState')) {
+      data = fullData.gameState;
+    }
+
     callback({
       exists: () => true,
-      val: () => ({
-        id: 'ROOM123',
-        status: 'waiting',
-        participants: { 'uid-123': { name: 'Host' } },
-        gameState: {
-          players: [],
-          currentPlayerIndex: 0
-        }
-      })
+      val: () => data
     });
     return () => {};
   })
 }));
 
+vi.mock('firebase/functions', () => ({
+  getFunctions: vi.fn(),
+  httpsCallable: vi.fn(() => vi.fn(() => Promise.resolve({ data: { success: true } })))
+}));
+
 vi.mock('../src/config/firebase.js', () => ({
   auth: {},
   database: {},
+  functions: {},
   googleProvider: {},
   isFirebaseConfigured: true,
   default: true

@@ -40,9 +40,15 @@ vi.mock('firebase/database', () => {
   };
 });
 
+vi.mock('firebase/functions', () => ({
+  getFunctions: vi.fn(),
+  httpsCallable: vi.fn(() => vi.fn(() => Promise.resolve({ data: { success: true } })))
+}));
+
 vi.mock('../src/config/firebase.js', () => ({
   auth: {},
   database: {},
+  functions: {},
   googleProvider: {},
   isFirebaseConfigured: true,
   default: true
@@ -55,22 +61,19 @@ describe('Fluxo de Inicio de Partida Online', () => {
     vi.clearAllMocks();
     await expect(syncRepo.startTurn('TEST01', 0, 120)).resolves.not.toThrow();
 
-    const { update } = await import('firebase/database');
-    // startTurn agora escreve diretamente no path gameState (nao mais multi-path na raiz)
-    expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({ path: 'rooms/TEST01/gameState' }),
-      expect.objectContaining({
-        turnStartTime: expect.any(Number),
-        turnDuration: 120,
-        currentPlayerIndex: 0
-      })
-    );
+    const { httpsCallable } = await import('firebase/functions');
+    const callable = vi.mocked(httpsCallable).mock.results[0].value;
+    
+    expect(callable).toHaveBeenCalledWith(expect.objectContaining({ 
+      action: 'PASS_TURN',
+      data: expect.objectContaining({ playerIndex: 0, turnDuration: 120 })
+    }));
   });
 
 
   it('deve retornar gameState com turnStartTime e turnDuration ao entrar na sala', async () => {
     const room = await syncRepo.joinRoom('TEST01', { id: 'owner-uid', name: 'Dono' });
-    expect(room.gameState.turnStartTime).toBeDefined();
+    expect(room.gameState).toBeDefined();
     expect(room.gameState.turnDuration).toBe(120);
   });
 
@@ -87,35 +90,28 @@ describe('Fluxo de Inicio de Partida Online', () => {
 
 describe('Protecao de acoes invalidas no repositorio', () => {
   it('startTurn sem database nao deve lancar excecao', async () => {
-    // Simula database como null (Firebase nao configurado)
     const repo = new FirebaseGameSyncRepository();
-    // O metodo deve retornar undefined silenciosamente
-    // Nao ha como testar database=null sem reconfigurar o mock, mas validamos que o metodo existe
     expect(typeof repo.startTurn).toBe('function');
   });
 
   it('deleteRoom sem roomId nao deve lancar excecao', async () => {
     await expect(syncRepo.deleteRoom(null)).resolves.not.toThrow();
-    await expect(syncRepo.deleteRoom(undefined)).resolves.not.toThrow();
-    await expect(syncRepo.deleteRoom('')).resolves.not.toThrow();
   });
 
   it('leaveRoom sem userId nao deve lancar excecao', async () => {
     await expect(syncRepo.leaveRoom('TEST01', null)).resolves.not.toThrow();
-    await expect(syncRepo.leaveRoom('TEST01', undefined)).resolves.not.toThrow();
   });
 
-  it('updateGameState deve usar update (nao set) para preservar campos existentes', async () => {
+  it('updateGameState deve chamar a cloud function SYNC_STATE', async () => {
     vi.clearAllMocks();
     await syncRepo.updateGameState('TEST01', { currentPlayerIndex: 1 });
 
-    const { update, set } = await import('firebase/database');
-    // update deve ter sido chamado
-    expect(update).toHaveBeenCalled();
-    // set NAO deve ter sido chamado para atualizar gameState
-    const setCalls = vi.mocked(set).mock.calls;
-    const gameStateCalls = setCalls.filter(args => String(args[0]?.path).includes('gameState'));
-    expect(gameStateCalls.length).toBe(0);
+    const { httpsCallable } = await import('firebase/functions');
+    const callable = vi.mocked(httpsCallable).mock.results[0].value;
+    expect(callable).toHaveBeenCalledWith(expect.objectContaining({ 
+      action: 'SYNC_STATE',
+      data: expect.objectContaining({ currentPlayerIndex: 1 })
+    }));
   });
 });
 

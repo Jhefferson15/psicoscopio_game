@@ -18,10 +18,29 @@ import BoardEditor from './features/game/presentation/components/BoardEditor';
 import SystemPopup from './features/game/presentation/components/SystemPopup';
 import { AuthProvider } from './features/auth/presentation/state/AuthContext.jsx';
 import { UserProvider } from './features/user/presentation/state/UserProvider.jsx';
+import ObserverDashboard from './features/game/presentation/components/ObserverDashboard';
+import CardHistoryModal from './features/game/presentation/components/CardHistoryModal';
+import ConfirmLeaveModal from './features/game/presentation/components/ConfirmLeaveModal';
 
 
 const GameContent = () => {
-  const { players, currentPlayerIndex, showModal, closeModal, closeFocusedCard, isBoardFullScreen, toggleFullScreen, currentScreen, focusedCard, activeCardSet } = useGame();
+  const { 
+    players, 
+    currentPlayerIndex, 
+    showModal, 
+    closeModal, 
+    closeFocusedCard, 
+    isBoardFullScreen, 
+    toggleFullScreen, 
+    currentScreen, 
+    focusedCard, 
+    activeCardSet, 
+    showCardHistory, 
+    setShowCardHistory,
+    showLeaveConfirm,
+    setShowLeaveConfirm,
+    confirmGoToMenu
+  } = useGame();
 
   return (
     <div className="game-wrapper">
@@ -94,6 +113,15 @@ const GameContent = () => {
             exit={{ opacity: 0 }}
           >
             <WaitingPlayers />
+          </motion.div>
+        ) : currentScreen === 'observer_dashboard' ? (
+          <motion.div
+            key="observer_dashboard"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <ObserverDashboard />
           </motion.div>
         ) : !isBoardFullScreen ? (
           <motion.div
@@ -181,7 +209,7 @@ const GameContent = () => {
           >
             <div className="focused-card-container">
               <GameCard 
-                key={`${activeCardSet.id}-${activeCardSet.updatedAt}-${focusedCard.index}`}
+                key={`focused-${focusedCard.type}-${focusedCard.index}-${focusedCard.id}`}
                 type={focusedCard.type} 
                 index={focusedCard.index} 
                 isFocused={true} 
@@ -199,6 +227,16 @@ const GameContent = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      <AnimatePresence>
+        {showCardHistory && (
+          <CardHistoryModal onClose={() => setShowCardHistory(false)} />
+        )}
+      </AnimatePresence>
+      <ConfirmLeaveModal 
+        isOpen={showLeaveConfirm} 
+        onConfirm={confirmGoToMenu} 
+        onCancel={() => setShowLeaveConfirm(false)} 
+      />
       <SystemPopup />
     </div>
   );

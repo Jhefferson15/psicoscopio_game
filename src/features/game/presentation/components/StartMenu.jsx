@@ -1,15 +1,14 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useGame } from '../state/useGame';
-import { Play, Settings, Info, Package } from 'lucide-react';
+import { Play, Settings, Package, Users } from 'lucide-react';
 import './StartMenu.css';
 import { AnimatePresence } from 'framer-motion';
 import { LoginButton } from '../../../auth/presentation/components/LoginButton.jsx';
 import { PlayerSetupModal, SettingsModal, AboutModal } from './MenuModals';
+import { ObserverSetupModal } from './ObserverSetupModal';
 
 
 const StartMenu = () => {
-  useGame();
   const [activeModal, setActiveModal] = useState(null); // 'playerSetup' | 'settings' | 'about'
 
   return (
@@ -65,9 +64,9 @@ const StartMenu = () => {
                 <Settings size={20} />
                 <span>Configurações</span>
               </button>
-              <button className="btn-secondary" onClick={() => setActiveModal('about')}>
-                <Info size={20} />
-                <span>Sobre o Jogo</span>
+              <button className="btn-secondary" onClick={() => setActiveModal('observerSetup')}>
+                <Users size={20} />
+                <span>Modo Observador</span>
               </button>
             </div>
           </nav>
@@ -92,6 +91,9 @@ const StartMenu = () => {
         )}
         {activeModal === 'about' && (
           <AboutModal onClose={() => setActiveModal(null)} />
+        )}
+        {activeModal === 'observerSetup' && (
+          <ObserverSetupModal onClose={() => setActiveModal(null)} />
         )}
       </AnimatePresence>
     </motion.div>

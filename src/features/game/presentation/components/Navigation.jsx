@@ -5,14 +5,13 @@ import { Home, Image as ImageIcon, Layout, X, Menu } from 'lucide-react';
 import './Navigation.css';
 
 const Navigation = () => {
-  const { currentScreen, goToMenu, setCurrentScreen } = useGame();
+  const { currentScreen, handleGoToMenu, setCurrentScreen } = useGame();
   const [isOpen, setIsOpen] = useState(false);
 
   if (currentScreen === 'menu') return null;
 
   const navItems = [
-    { id: 'menu', label: 'Início', icon: <Home size={20} />, action: goToMenu },
-    { id: 'card_creation', label: 'Ateliê', icon: <ImageIcon size={20} />, action: () => setCurrentScreen && setCurrentScreen('card_creation') },
+    { id: 'menu', label: 'Início', icon: <Home size={20} />, action: handleGoToMenu },
     { id: 'game', label: 'Tabuleiro', icon: <Layout size={20} />, action: () => setCurrentScreen && setCurrentScreen('game') },
   ];
 

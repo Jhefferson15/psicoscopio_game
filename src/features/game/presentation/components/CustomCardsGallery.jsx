@@ -6,7 +6,7 @@ import { Trash2, ChevronLeft, Brain, Sprout, Puzzle, RotateCcw, Image as ImageIc
 import './CustomCardsGallery.css';
 
 const CustomCardsGallery = ({ isModal = false, onClose }) => {
-  const { goToMenu } = useGame();
+  const { handleGoToMenu } = useGame();
   const [cards, setCards] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -44,7 +44,7 @@ const CustomCardsGallery = ({ isModal = false, onClose }) => {
     <>
       <header className="gallery-top-bar">
         {!isModal && (
-          <button className="btn-back" onClick={goToMenu}>
+          <button className="btn-back" onClick={handleGoToMenu}>
             <ChevronLeft size={24} />
           </button>
         )}

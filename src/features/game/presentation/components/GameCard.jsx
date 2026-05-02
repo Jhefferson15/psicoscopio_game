@@ -45,7 +45,7 @@ const cardTypes = {
 };
 
 const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = false }) => {
-  const { setFocusedCard, closeFocusedCard, activeCardSet } = useGame();
+  const { setFocusedCard, closeFocusedCard, activeCardSet, recordCardDraw } = useGame();
   const config = cardTypes[type] || cardTypes.default;
   const Icon = config.icon;
   const layoutId = `card-${type}-${index}`;
@@ -62,7 +62,13 @@ const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = 
       // 300ms: inicia a rotacao CSS (540deg em 1.2s)
       const flipTimer = setTimeout(() => setShouldFlip(true), 300);
       // 900ms: troca o conteudo no momento edge-on (~270deg, carta de perfil)
-      const swapTimer = setTimeout(() => setShowFront(true), 900);
+      const swapTimer = setTimeout(() => {
+        setShowFront(true);
+        // Registra a carta no histórico para o dashboard do observador
+        if (recordCardDraw) {
+          recordCardDraw({ id: index, type: type, text: cardText });
+        }
+      }, 900);
       return () => {
         clearTimeout(flipTimer);
         clearTimeout(swapTimer);
@@ -70,7 +76,7 @@ const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = 
         setShowFront(false);
       };
     }
-  }, [isFocused]);
+  }, [isFocused, index, type, cardText, recordCardDraw]);
 
   const handleClick = () => {
     if (isFocused) {

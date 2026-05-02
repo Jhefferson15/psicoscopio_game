@@ -21,6 +21,7 @@ import {
   TrendingUp,
   MessageSquare,
   Clock,
+  History,
 } from 'lucide-react';
 import Hourglass from './Hourglass';
 import { GAME_RULES, GAME_CARDS } from '../../domain/gameConstants';
@@ -40,11 +41,14 @@ const TabletopView = () => {
     isBoardFullScreen,
     showDiary,
     setShowDiary,
+    setShowCardHistory,
+    cardHistory,
     activeBoardConfig
   } = useGame();
 
   const [showHourglassDetails, setShowHourglassDetails] = React.useState(false);
   const [showCollection, setShowCollection] = React.useState(false);
+  const [showProfileGallery, setShowProfileGallery] = React.useState(false);
 
 
   const currentPlayer = players[currentPlayerIndex];
@@ -89,10 +93,6 @@ const TabletopView = () => {
       <main className="tabletop-dashboard-grid">
         {/* Left Side Panels */}
         <aside className="dashboard-sidebar left">
-          <div className="info-panel-modern glass-light profile-gallery-area">
-            <ProfileGallery />
-          </div>
-
           <div className="info-panel-modern glass-light players-panel">
             <div className="panel-header">
               <Users size={18} className="text-purple" />
@@ -100,7 +100,7 @@ const TabletopView = () => {
             </div>
             <div className="players-scroll-area">
               {players.map((p, i) => (
-                <PlayerCard key={p.id} player={p} isActive={i === currentPlayerIndex} />
+                <PlayerCard key={p.id} player={p} isActive={i === currentPlayerIndex} onClick={() => setShowProfileGallery(true)} />
               ))}
             </div>
           </div>
@@ -190,9 +190,12 @@ const TabletopView = () => {
 
           <div className="info-panel-modern glass-light">
             <div className="panel-header">
-              <Layers size={18} className="text-blue" />
-              <h3>CARTAS</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Layers size={18} className="text-blue" />
+                <h3>CARTAS</h3>
+              </div>
             </div>
+            
             <div className="cards-stack-modern">
                 {GAME_CARDS.map((c, i) => (
                   <div key={i} className="card-stack-item">
@@ -203,6 +206,36 @@ const TabletopView = () => {
                     />
                   </div>
                 ))}
+            </div>
+
+            <div className="card-history-preview" style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '1px' }}>ÚLTIMA CARTA ABERTA</span>
+              </div>
+              
+              {cardHistory && cardHistory.length > 0 ? (
+                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', marginBottom: '10px', borderLeft: '3px solid var(--primary)' }}>
+                  <p style={{ margin: '0 0 5px 0', fontSize: '12px', lineHeight: '1.4', fontStyle: 'italic', color: 'var(--text)' }}>
+                    "{cardHistory[0].cardText}"
+                  </p>
+                  <span style={{ fontSize: '10px', fontWeight: '600', color: 'var(--text-muted)' }}>
+                    por {cardHistory[0].playerName}
+                  </span>
+                </div>
+              ) : (
+                <div style={{ padding: '10px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                  Nenhuma carta foi sorteada.
+                </div>
+              )}
+
+              <button 
+                className="btn-primary" 
+                onClick={() => setShowCardHistory(true)} 
+                style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '8px', padding: '10px', fontSize: '12px', background: 'white', color: 'var(--text)', border: '1px solid rgba(0,0,0,0.1)' }}
+              >
+                <History size={14} />
+                <span>Ver Histórico Completo</span>
+              </button>
             </div>
           </div>
 
@@ -314,6 +347,12 @@ const TabletopView = () => {
       <AnimatePresence>
         {showDiary && (
           <DiaryModal onClose={() => setShowDiary(false)} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showProfileGallery && (
+          <ProfileGallery onClose={() => setShowProfileGallery(false)} />
         )}
       </AnimatePresence>
     </motion.div>

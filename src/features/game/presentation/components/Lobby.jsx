@@ -4,14 +4,18 @@ import { useAuth } from '../../../auth/presentation/state/useAuth';
 import './Lobby.css';
 
 const Lobby = () => {
-  const { roomId, roomParticipants, ownerId, startOnlineGame, goToMenu, players } = useGame();
+  const { roomId, roomParticipants, ownerId, hostRole, startOnlineGame, handleGoToMenu, players, showSystemPopup } = useGame();
   const { user } = useAuth();
   
   const isOwner = ownerId === user?.id;
   
   const copyRoomId = () => {
     navigator.clipboard.writeText(roomId);
-    alert("Código da sala copiado!");
+    showSystemPopup({
+      title: 'Código Copiado',
+      message: 'O código da sala foi copiado para sua área de transferência.',
+      type: 'info'
+    });
   };
 
   return (
@@ -33,7 +37,7 @@ const Lobby = () => {
               <Copy size={16} />
             </div>
           </div>
-          <button className="close-lobby" onClick={goToMenu} title="Sair da Sala">
+          <button className="close-lobby" onClick={handleGoToMenu} title="Sair da Sala">
             <X size={20} />
           </button>
         </div>
@@ -95,12 +99,12 @@ const Lobby = () => {
           </div>
 
           <div className="lobby-status-area">
-            {isOwner ? (
+            {(isOwner || hostRole === 'observer') ? (
               <div className="owner-panel">
                 <div className="panel-hint">
                   {Object.keys(roomParticipants).length < 2 
-                    ? "Convide mais alguém para começar a jornada." 
-                    : "Todos prontos? Vamos começar!"}
+                    ? "Aguardando mais participantes..." 
+                    : (isOwner ? "Todos prontos? Vamos começar!" : "Você pode iniciar a partida agora.")}
                 </div>
                 <button 
                   className="btn-premium-start" 

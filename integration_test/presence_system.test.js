@@ -27,6 +27,7 @@ vi.mock('firebase/database', () => {
 
 vi.mock('../src/config/firebase.js', () => ({
   database: {},
+  functions: {},
   isFirebaseConfigured: true,
   default: true
 }));

@@ -1,7 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { ref, onValue, set } from 'firebase/database';
-
-import { database } from '../../../../config/firebase';
 import { GameContext } from './useGame';
 import { Player } from '../../domain/entities/Player';
 import { FirebaseGameSyncRepository } from '../../data/repositories/FirebaseGameSyncRepository.js';
@@ -48,6 +45,9 @@ export const GameProvider = ({ children }) => {
   });
   const [isRolling, setIsRolling] = useState(false);
   const [showDiary, setShowDiary] = useState(false);
+  const [cardHistory, setCardHistory] = useState([]);
+  const [showCardHistory, setShowCardHistory] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   // Estados para Conjuntos de Cartas
   const [availableCardSets, setAvailableCardSets] = useState(() => {
@@ -86,6 +86,7 @@ export const GameProvider = ({ children }) => {
   const [roomParticipants, setRoomParticipants] = useState([]);
   const [readyPlayers, setReadyPlayers] = useState({});
   const [ownerId, setOwnerId] = useState(null);
+  const [hostRole, setHostRole] = useState(null); // 'player' | 'observer'
 
 
   // Novos estados para Grandes Implementações
@@ -143,12 +144,7 @@ export const GameProvider = ({ children }) => {
 
   // Sincroniza offset de tempo com o servidor
   useEffect(() => {
-    if (database) {
-      const offsetRef = ref(database, ".info/serverTimeOffset");
-      return onValue(offsetRef, (snap) => {
-        setServerTimeOffset(snap.val() || 0);
-      });
-    }
+    return syncRepository.getServerTimeOffset(setServerTimeOffset);
   }, []);
 
 
@@ -179,11 +175,15 @@ export const GameProvider = ({ children }) => {
   const finishCardCreation = async () => {
     if (isOnline) {
       try {
-        const readyRef = ref(database, `rooms/${roomId}/readyPlayers/${user.id}`);
-        await set(readyRef, true);
+        await syncRepository.setUserReady(roomId, user.id);
         setCurrentScreen('waiting_players');
       } catch (error) {
         console.error("Erro ao marcar como pronto:", error);
+        showSystemPopup({
+          title: 'Erro de Sincronização',
+          message: 'Não foi possível marcar como pronto. Verifique sua conexão.',
+          type: 'error'
+        });
       }
     } else {
       // Inicia o cronometro ao entrar no jogo offline
@@ -195,6 +195,23 @@ export const GameProvider = ({ children }) => {
   };
 
 
+  const handleGoToMenu = () => {
+    // Só mostra confirmação se estiver em jogo ou em telas críticas de preparação de partida online
+    const isCriticalGameScreen = currentScreen === 'game' || 
+                                (isOnline && (currentScreen === 'lobby' || currentScreen === 'waiting_players' || currentScreen === 'card_creation'));
+    
+    if (isCriticalGameScreen) {
+      setShowLeaveConfirm(true);
+    } else {
+      goToMenu();
+    }
+  };
+
+  const confirmGoToMenu = () => {
+    setShowLeaveConfirm(false);
+    goToMenu();
+  };
+
   const goToMenu = async () => {
     if (isOnline && roomId && user) {
       try {
@@ -205,7 +222,7 @@ export const GameProvider = ({ children }) => {
     }
     setRoomId(null);
     setIsOnline(false);
-    localStorage.removeItem('psicoscopio_online_room');
+    syncRepository.clearActiveRoomId();
     setCurrentScreen('menu');
   };
 
@@ -217,7 +234,6 @@ export const GameProvider = ({ children }) => {
       players: initialPlayers,
       currentPlayerIndex: 0,
       lastDiceRoll: 0,
-      boardRotation: 0,
       playerAttributes: {
         1: { memory: 20, reflection: 40, challenge: 10 },
         2: { memory: 30, reflection: 15, challenge: 50 }
@@ -226,14 +242,6 @@ export const GameProvider = ({ children }) => {
 
     try {
       const id = await syncRepository.createRoom(gameState, user?.id);
-      if (user) {
-        // Atualiza nome do anfitrião
-        await set(ref(database, `rooms/${id}/participants/${user.id}`), {
-          id: user.id,
-          name: user.name || 'Anfitrião',
-          photoURL: user.photoURL || null
-        });
-      }
       setRoomId(id);
       setIsOnline(true);
       setPlayers(initialPlayers);
@@ -242,7 +250,11 @@ export const GameProvider = ({ children }) => {
       return id;
     } catch (error) {
       console.error("Erro ao criar sala:", error);
-      alert(`Erro ao criar sala online: ${error.message}`);
+      showSystemPopup({
+        title: 'Falha na Conexão',
+        message: `Não foi possível criar a sala online: ${error.message}`,
+        type: 'error'
+      });
     }
   };
 
@@ -253,10 +265,12 @@ export const GameProvider = ({ children }) => {
       setIsOnline(true);
       setRoomStatus(room.status);
       setOwnerId(room.ownerId);
+      setHostRole(room.metadata?.hostRole || 'player');
       setRoomParticipants(room.participants || {});
       
       if (room.gameState) {
-        setPlayers(room.gameState.players.map(p => new Player(p.id, p.name, p.color, p.position, p.timeLeft, p.lastRoll)));
+        const playersArray = room.gameState.players || [];
+        setPlayers(playersArray.map(p => new Player(p.id, p.name, p.color, p.position, p.timeLeft, p.lastRoll)));
         setCurrentPlayerIndex(room.gameState.currentPlayerIndex);
         setPlayerAttributes(room.gameState.playerAttributes);
 
@@ -278,23 +292,27 @@ export const GameProvider = ({ children }) => {
       }
     } catch (error) {
       console.error("Erro ao entrar na sala:", error);
-      alert(`Erro ao entrar na sala: ${error.message}`);
+      showSystemPopup({
+        title: 'Erro de Entrada',
+        message: `Não foi possível entrar na sala: ${error.message}`,
+        type: 'error'
+      });
       // Se falhou ao reconectar a uma sala salva, limpa o cache para nao travar
-      if (localStorage.getItem('psicoscopio_online_room') === id) {
-        localStorage.removeItem('psicoscopio_online_room');
+      if (syncRepository.getActiveRoomId() === id) {
+        syncRepository.clearActiveRoomId();
       }
     }
-  }, [user]);
+  }, [user, showSystemPopup]);
 
   // Persistência da sala online (Reconexão no F5)
   useEffect(() => {
     if (roomId) {
-      localStorage.setItem('psicoscopio_online_room', roomId);
+      syncRepository.saveActiveRoomId(roomId);
     }
   }, [roomId]);
 
   useEffect(() => {
-    const savedRoomId = localStorage.getItem('psicoscopio_online_room');
+    const savedRoomId = syncRepository.getActiveRoomId();
     // Só tenta reconectar se o usuário já estiver logado, se não estiver numa sala e não for online
     if (savedRoomId && user && !roomId && !isOnline) {
       console.log('Tentando reconectar à sala salva:', savedRoomId);
@@ -304,64 +322,60 @@ export const GameProvider = ({ children }) => {
   }, [user, roomId, isOnline, joinOnlineGame]);
 
   const startOnlineGame = async () => {
-    if (ownerId !== user?.id) return;
+    const isObserverRoom = hostRole === 'observer';
+    if (ownerId !== user?.id && !isObserverRoom) return;
     
     // Dupla verificação para impedir que o jogo inicie sem participantes
     const participantsArray = Object.values(roomParticipants);
     if (participantsArray.length < 2) {
-      alert("A sala precisa ter pelo menos 2 jogadores para iniciar.");
+      showSystemPopup({
+        title: 'Sala Vazia',
+        message: 'A sala precisa ter pelo menos 2 jogadores para iniciar.',
+        type: 'warning'
+      });
       return;
     }
 
     try {
       // Inicializa a lista de jogadores baseada nos participantes reais
       const colors = ['#D84B42', '#4885CE', '#7B4BB1', '#F59E0B', '#10B981', '#6366F1'];
+      const turnTime = activeBoardConfig.mechanics?.turnTime || 120;
       
       const initialPlayers = participantsArray.map((p, i) => ({
         id: p.id,
         name: p.name,
         color: colors[i % colors.length],
         position: 0,
-        timeLeft: activeBoardConfig.mechanics?.turnTime || 120,
+        timeLeft: turnTime,
         lastRoll: null
       }));
 
-      const gameStateRef = ref(database, `rooms/${roomId}/gameState`);
-      const turnTime = activeBoardConfig.mechanics?.turnTime || 120;
-      
-      await set(gameStateRef, {
+      const initialGameState = {
         players: initialPlayers,
-        currentPlayerIndex: 0,
-        lastDiceRoll: 0,
-        boardRotation: 0,
         turnDuration: turnTime,
         playerAttributes: initialPlayers.reduce((acc, p) => {
           acc[p.id] = { memory: 20, reflection: 20, challenge: 20 };
           return acc;
-        }, {})
-      });
+        }, {}),
+        status: 'setup_cards' // Status que a function deve definir
+      };
 
-      // Registra o inicio do primeiro turno com serverTimestamp() via repositorio
-      // (evita usar serverTimestamp diretamente no GameContext — viola Clean Architecture)
-      await syncRepository.startTurn(roomId, 0, turnTime);
-
-
-      const statusRef = ref(database, `rooms/${roomId}/status`);
-      await set(statusRef, 'setup_cards');
+      // Chamada única e atômica via Cloud Functions
+      await syncRepository.startGame(roomId, initialGameState);
     } catch (error) {
       console.error("Erro ao iniciar jogo:", error);
     }
   };
 
-  const startPlayingGame = async () => {
-    if (ownerId !== user?.id) return;
+  const startPlayingGame = useCallback(async () => {
+    const isObserverRoom = hostRole === 'observer';
+    if (ownerId !== user?.id && !isObserverRoom) return;
     try {
-      const statusRef = ref(database, `rooms/${roomId}/status`);
-      await set(statusRef, 'playing');
+      await syncRepository.updateRoomStatus(roomId, 'playing');
     } catch (error) {
       console.error("Erro ao iniciar jogo:", error);
     }
-  };
+  }, [hostRole, ownerId, user?.id, roomId]);
 
   const syncStateToFirebase = useCallback(async (overrides = {}) => {
     if (!isOnline || !roomId || isSyncing || players.length === 0) return;
@@ -374,7 +388,7 @@ export const GameProvider = ({ children }) => {
       players: overrides.players || players,
       currentPlayerIndex: overrides.currentPlayerIndex !== undefined ? overrides.currentPlayerIndex : currentPlayerIndex,
       lastDiceRoll: overrides.lastDiceRoll !== undefined ? overrides.lastDiceRoll : lastDiceRoll,
-      boardRotation: boardRotation,
+      isRolling: overrides.isRolling !== undefined ? overrides.isRolling : isRolling,
       playerAttributes: playerAttributes,
       lastActionBy: user?.id || null
     };
@@ -401,8 +415,8 @@ export const GameProvider = ({ children }) => {
         }
         if (newState.currentPlayerIndex !== undefined) setCurrentPlayerIndex(newState.currentPlayerIndex);
         if (newState.lastDiceRoll !== undefined) setLastDiceRoll(newState.lastDiceRoll);
-        // isRolling e isMoving NAO sao sincronizados. Cada cliente gerencia sua propria animacao.
-        if (newState.boardRotation !== undefined) setBoardRotation(newState.boardRotation);
+        if (newState.isRolling !== undefined) setIsRolling(newState.isRolling);
+        // isMoving NAO e sincronizado. Cada cliente gerencia sua propria animacao de movimento baseada nos players.
         if (newState.playerAttributes) setPlayerAttributes(newState.playerAttributes);
         if (newState.turnStartTime !== undefined && newState.turnStartTime !== null) {
           const maxAgeMs = ((newState.turnDuration || turnDuration || 120) + 30) * 1000;
@@ -424,47 +438,52 @@ export const GameProvider = ({ children }) => {
       });
 
       // Listener para o status e participantes da sala
-      const roomRef = ref(database, `rooms/${roomId}`);
-      const unsubscribeRoom = onValue(roomRef, (snapshot) => {
-        if (snapshot.exists()) {
-          const room = snapshot.val();
-          if (!room) return;
-          
-          setRoomStatus(room.status || 'waiting');
-          
-          // Normalização para suportar salas antigas (arrays misturados com objetos)
-          const rawParticipants = room.participants || {};
-          const normalizedParticipants = {};
-          Object.values(rawParticipants).forEach(val => {
-            if (typeof val === 'string') {
-              // Formato antigo (apenas o ID do usuário como string)
-              normalizedParticipants[val] = { id: val, name: 'Convidado', photoURL: null };
-            } else if (val && typeof val === 'object' && val.id) {
-              // Formato novo (objeto com id, name, photoURL)
-              normalizedParticipants[val.id] = val;
-            }
-          });
-          
-          setRoomParticipants(normalizedParticipants);
-          setReadyPlayers(room.readyPlayers || {});
-          setOwnerId(room.ownerId || null);
-          
-          if (room.status === 'playing' && (currentScreen === 'lobby' || currentScreen === 'card_creation' || currentScreen === 'waiting_players')) {
-            setCurrentScreen('game');
+      const unsubscribeRoom = syncRepository.listenToRoomData(roomId, (room) => {
+        if (!room) return;
+        
+        setRoomStatus(room.status || 'waiting');
+        
+        // Normalização para suportar salas antigas (arrays misturados com objetos)
+        const rawParticipants = room.participants || {};
+        const normalizedParticipants = {};
+        Object.values(rawParticipants).forEach(val => {
+          if (typeof val === 'string') {
+            // Formato antigo (apenas o ID do usuário como string)
+            normalizedParticipants[val] = { id: val, name: 'Convidado', photoURL: null };
+          } else if (val && typeof val === 'object' && val.id) {
+            // Formato novo (objeto com id, name, photoURL)
+            normalizedParticipants[val.id] = val;
           }
-          
-          if (room.status === 'setup_cards' && currentScreen === 'lobby') {
-            setCurrentScreen('card_creation');
-          }
+        });
+        
+        setRoomParticipants(normalizedParticipants);
+        setReadyPlayers(room.readyPlayers || {});
+        setOwnerId(room.ownerId || null);
+        
+        if (room.status === 'playing' && (currentScreen === 'lobby' || currentScreen === 'card_creation' || currentScreen === 'waiting_players')) {
+          setCurrentScreen('game');
+        }
+        
+        if (room.status === 'setup_cards' && currentScreen === 'lobby') {
+          setCurrentScreen('card_creation');
         }
       });
 
       // Monitoramento de Presença
       const unsubscribePresence = syncRepository.updatePlayerPresence(roomId, user?.id);
 
+      // Listener para o histórico da sala (cartas sorteada)
+      const unsubscribeHistory = syncRepository.listenToRoomHistory(roomId, (history) => {
+        if (history && history.cards) {
+          const sortedCards = Object.values(history.cards).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+          setCardHistory(sortedCards);
+        }
+      });
+
       return () => {
         unsubscribe();
         unsubscribeRoom();
+        unsubscribeHistory();
         if (typeof unsubscribePresence === 'function') unsubscribePresence();
       };
     }
@@ -481,6 +500,26 @@ export const GameProvider = ({ children }) => {
       }
     }
   }, [isOnline, user, players, myPlayerIndex]);
+
+  // Início Automático em Salas de Observador (quando todos estão prontos)
+  useEffect(() => {
+    if (!isOnline || !roomId || roomStatus !== 'setup_cards' || hostRole !== 'observer') return;
+
+    const participantsArray = Object.keys(roomParticipants);
+    const readyIds = Object.keys(readyPlayers);
+
+    // Consideramos apenas os IDs que estão tanto em participants quanto em readyPlayers
+    const activeReadyCount = participantsArray.filter(id => readyIds.includes(id)).length;
+
+    if (participantsArray.length >= 2 && activeReadyCount >= participantsArray.length) {
+      // Todos estão prontos. Para evitar concorrência, o jogador com o ID alfabeticamente menor inicia.
+      const sortedIds = [...participantsArray].sort();
+      if (user?.id === sortedIds[0]) {
+        console.log("Todos os jogadores estão prontos. Iniciando partida automaticamente...");
+        startPlayingGame();
+      }
+    }
+  }, [isOnline, roomId, roomStatus, hostRole, roomParticipants, readyPlayers, user?.id, startPlayingGame]);
 
 
   const changeActiveCardSet = (id) => {
@@ -674,7 +713,10 @@ export const GameProvider = ({ children }) => {
     if (isOnline && roomId) {
       // startTurn grava turnStartTime com serverTimestamp().
       // O listener onValue recebe o novo turnStartTime e reseta isTurnBeingPassedRef.
-      syncRepository.startTurn(roomId, nextIndex, turnTime);
+      syncRepository.startTurn(roomId, nextIndex, turnTime).catch(e => {
+        console.warn("[PASS_TURN] Falha silenciosa (provavelmente já processado):", e.message);
+        isTurnBeingPassedRef.current = false;
+      });
       syncStateToFirebase({ 
         ...overrides,
         players: updatedPlayers, 
@@ -691,9 +733,11 @@ export const GameProvider = ({ children }) => {
   // Refs de passagem: as declaracoes foram movidas para antes de passTurn
   // isMovingRef: permite o listener ignorar atualizacoes de players durante animacao local
   const isMovingRef = useRef(false);
+  const playersRef = useRef(players);
   
   useEffect(() => { passTurnRef.current = passTurn; }, [passTurn]);
   useEffect(() => { myPlayerIndexRef.current = myPlayerIndex; }, [myPlayerIndex]);
+  useEffect(() => { playersRef.current = players; }, [players]);
   // Mantém isMovingRef sincronizado com o estado isMoving
   // eslint-disable-next-line react-hooks/immutability
   useEffect(() => { isMovingRef.current = isMoving; }, [isMoving]);
@@ -724,10 +768,15 @@ export const GameProvider = ({ children }) => {
           
           if (remaining <= 0) {
             clearInterval(interval);
-            // Apenas o jogador da vez (ou modo offline) tem autoridade para passar o turno por tempo.
-            // isTurnBeingPassedRef garante que nao haja chamada dupla com movePlayer.
-            if (!isOnline || currentPlayerIndex === myPlayerIndexRef.current) {
-              console.log("[Timer] Tempo esgotado! Passando turno...");
+            // Autoridade para passar o turno por tempo:
+            // 1. O próprio jogador da vez (se estiver online)
+            // 2. O Anfitrião (Host) como backup (caso o jogador da vez caia ou demore)
+            // 3. Modo offline (sempre passa)
+            const isMyTurn = currentPlayerIndex === myPlayerIndexRef.current;
+            const isHost = user?.id === ownerId;
+            
+            if (!isOnline || isMyTurn || isHost) {
+              console.log("[Timer] Tempo esgotado! Tentando passar turno...");
               passTurnRef.current();
             }
           }
@@ -739,7 +788,7 @@ export const GameProvider = ({ children }) => {
     }, 500);
 
     return () => clearInterval(interval);
-  }, [currentScreen, isMoving, currentPlayerIndex, showModal, isOnline, turnStartTime, turnDuration, serverTimeOffset]);
+  }, [currentScreen, isMoving, currentPlayerIndex, showModal, isOnline, turnStartTime, turnDuration, serverTimeOffset, ownerId, user?.id]);
 
 
 
@@ -752,8 +801,13 @@ export const GameProvider = ({ children }) => {
     setIsRolling(true);
     setIsMoving(true);
     setLastDiceRoll(0);
-    // NAO sincroniza aqui: enviar o estado completo agora causaria rollback
-    // pois o Firebase devolveria via listener com as posicoes antigas dos jogadores.
+    
+    // Sincroniza o inicio da rolagem para todos verem a animacao
+    if (isOnline) {
+      syncRepository.updateGameState(roomId, { isRolling: true, lastActionBy: user?.id || null }).catch(
+        e => console.error("Erro sync inicio rolagem", e)
+      );
+    }
     
     // Simula tempo de "rolagem" do dado (animacao do botao/shaker)
     await new Promise(r => setTimeout(r, 1500));
@@ -767,10 +821,13 @@ export const GameProvider = ({ children }) => {
     const updatedPlayers = players.map((p, i) => i === currentPlayerIndex ? { ...p, lastRoll: roll } : p);
     setPlayers(updatedPlayers);
     
-    // Sincroniza apenas o resultado do dado — sem enviar players completos
-    // (posicoes serao sincronizadas passo-a-passo em movePlayer)
+    // Sincroniza o resultado e para a animacao para todos
     if (isOnline) {
-      syncRepository.updateGameState(roomId, { lastDiceRoll: roll, lastActionBy: user?.id || null }).catch(
+      syncRepository.updateGameState(roomId, { 
+        isRolling: false, 
+        lastDiceRoll: roll, 
+        lastActionBy: user?.id || null 
+      }).catch(
         e => console.error("Erro sync dado", e)
       );
     }
@@ -843,6 +900,10 @@ export const GameProvider = ({ children }) => {
   };
 
 
+  const rotateBoard = useCallback(() => {
+    setBoardRotation(prev => (prev + 90) % 360);
+  }, []);
+
   const handleTileAction = (tile, player, allPlayers) => {
     let modalOpened = false;
     
@@ -853,7 +914,7 @@ export const GameProvider = ({ children }) => {
       setFocusedCard({ 
         type: cardType, 
         index: typeMap[cardType] || 0, 
-        id: `card-${cardType}-${typeMap[cardType] || 0}`,
+        id: `card-${cardType}-${Date.now()}`,
         fromTileAction: true 
       });
 
@@ -866,7 +927,11 @@ export const GameProvider = ({ children }) => {
     }
 
     if (tile.action === 'TEAM_CHALLENGE') {
-       alert("DESAFIO EM EQUIPA! Todos os jogadores participam.");
+       showSystemPopup({
+         title: 'Desafio em Equipe!',
+         message: 'Todos os jogadores participam. Unam suas forças para avançar!',
+         type: 'info'
+       });
        // Futura implementação: abrir modal específico de desafio em equipe
     }
 
@@ -899,23 +964,39 @@ export const GameProvider = ({ children }) => {
        }
     } else if (tile.action === 'SKIP_TURN') {
        player.skipNextTurn = true;
-       alert(`${player.name} vai pular a próxima vez!`);
+       showSystemPopup({
+         title: 'Pausa Reflexiva',
+         message: `${player.name} vai pular a próxima vez para meditar.`,
+         type: 'warning'
+       });
     } else if (tile.action === 'SHARE_CARD') {
-       alert("Mecânica de Compartilhar Carta: Escolha uma carta para mostrar!");
+       showSystemPopup({
+         title: 'Compartilhamento',
+         message: 'Mecânica de Compartilhar Carta: Escolha uma carta para mostrar aos outros!',
+         type: 'info'
+       });
        // Por enquanto, apenas abre uma carta aleatória como simulação
        setFocusedCard({ 
          type: 'reflexao', 
          index: 0, 
-         id: 'card-share-temp',
+         id: `card-share-${Date.now()}`,
          fromTileAction: true 
        });
        modalOpened = true;
     } else if (tile.action === 'CREATE_CARD') {
-       alert("Mecânica Criar Carta: Use sua criatividade!");
+       showSystemPopup({
+         title: 'Criatividade!',
+         message: 'Mecânica Criar Carta: Use sua criatividade para inspirar os outros.',
+         type: 'info'
+       });
        setCurrentScreen('card_creation');
        modalOpened = true;
     } else if (tile.action === 'WRITE_DIARY') {
-       alert("Mecânica Diário: Registre seus pensamentos.");
+       showSystemPopup({
+         title: 'Diário',
+         message: 'Mecânica Diário: Registre seus pensamentos e reflexões.',
+         type: 'info'
+       });
        setShowDiary(true);
        modalOpened = true;
     }
@@ -978,7 +1059,7 @@ export const GameProvider = ({ children }) => {
       setSettings,
       initializeGame,
       finishCardCreation,
-      rotateBoard: () => setBoardRotation(prev => prev + 90),
+      rotateBoard,
       goToMenu,
       playerAttributes,
       setPlayerAttributes,
@@ -997,6 +1078,52 @@ export const GameProvider = ({ children }) => {
       setShowDiary,
 
       goToCustomCards: () => setCurrentScreen('custom_cards'),
+      
+      createObserverRooms: async (count, batchName) => {
+        try {
+          const result = await syncRepository.createRoomBatch(
+            count,
+            activeBoardConfig.toJSON(),
+            activeCardSet.toJSON(),
+            batchName
+          );
+          return result;
+        } catch (error) {
+          console.error("Erro ao criar batch de salas:", error);
+          showSystemPopup({
+            title: "Erro na Criação",
+            message: "Não foi possível criar as salas simultâneas.",
+            type: "error"
+          });
+          return null;
+        }
+      },
+
+      recordCardDraw: useCallback(async (card) => {
+        const cardEntry = {
+          id: card.id || Date.now(),
+          cardId: card.id,
+          cardType: card.type,
+          cardText: card.text,
+          playerName: playersRef.current[myPlayerIndexRef.current]?.name || 'Jogador',
+          timestamp: Date.now()
+        };
+
+        if (isOnline && roomId) {
+          await syncRepository.recordCardAction(roomId, {
+            cardId: card.id,
+            cardType: card.type,
+            cardText: card.text
+          });
+        } else {
+          setCardHistory(prev => [cardEntry, ...prev]);
+        }
+      }, [isOnline, roomId]),
+
+      showCardHistory,
+      setShowCardHistory,
+      cardHistory,
+
       roomId,
       isOnline,
       roomStatus,
@@ -1004,6 +1131,7 @@ export const GameProvider = ({ children }) => {
       readyPlayers,
       myPlayerIndex,
       ownerId,
+      hostRole,
       createOnlineGame,
       joinOnlineGame,
       startOnlineGame,
@@ -1029,7 +1157,11 @@ export const GameProvider = ({ children }) => {
       importBoardConfig,
       systemPopup,
       showSystemPopup,
-      closeSystemPopup
+      closeSystemPopup,
+      showLeaveConfirm,
+      setShowLeaveConfirm,
+      handleGoToMenu,
+      confirmGoToMenu
     }}>
 
       {children}

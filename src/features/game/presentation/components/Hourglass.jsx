@@ -1,160 +1,155 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// Gerar partículas de areia fixas para o efeito de "fio" fora do componente para manter pureza
-const STATIC_PARTICLES = Array.from({ length: 12 }).map((_, i) => ({
+const STATIC_PARTICLES = Array.from({ length: 6 }).map((_, i) => ({
   id: i,
-  delay: i * 0.1,
-  x: 50 + (Math.random() * 4 - 2)
+  delay: i * 0.15,
 }));
 
 const Hourglass = ({ progress = 0.5, isCritical = false, onClick, activePlayerIndex }) => {
   const [rotation, setRotation] = useState(0);
+  const [isFlipping, setIsFlipping] = useState(false);
   const prevPlayerRef = useRef(activePlayerIndex);
-  
-  // Detectar mudança de turno para girar a ampulheta
+
+  // Detectar mudança de turno para girar a ampulheta 2D (Eixo Z)
   useEffect(() => {
     if (activePlayerIndex !== undefined && activePlayerIndex !== prevPlayerRef.current) {
       setRotation(prev => prev + 180);
+      setIsFlipping(true);
       prevPlayerRef.current = activePlayerIndex;
+
+      const timer = setTimeout(() => {
+        setIsFlipping(false);
+      }, 600); // Duração do flip
+      return () => clearTimeout(timer);
     }
   }, [activePlayerIndex]);
 
   // Garantir que o progresso seja um número válido entre 0 e 1
   const safeProgress = Math.max(0, Math.min(1, Number(progress) || 0));
 
-  // Lógica para compensar a rotação de 180 graus na visualização da areia
+  // Lógica para manter a areia no mesmo lugar físico durante e após o giro de 180 graus
   const isUpsideDown = Math.round(rotation / 180) % 2 !== 0;
   const visualSafeProgress = isUpsideDown ? (1 - safeProgress) : safeProgress;
-  
-  const particles = STATIC_PARTICLES;
 
   return (
-    <motion.div 
-      className={`hourglass-wrapper ${isCritical ? 'animate-shake' : ''}`}
-      style={{ 
-        cursor: 'pointer', 
-        display: 'inline-flex', 
-        alignItems: 'center', 
+    <motion.div
+      className={`hourglass-wrapper ${isCritical && !isFlipping ? 'animate-shake' : ''}`}
+      style={{
+        cursor: 'pointer',
+        display: 'inline-flex',
+        alignItems: 'center',
         justifyContent: 'center',
         background: 'transparent',
-        overflow: 'visible' 
       }}
       onClick={onClick}
-      animate={{ 
-        rotate: rotation,
-        scale: isCritical ? [1, 1.1, 1] : 1
+      animate={{
+        rotate: rotation
       }}
-      transition={{ 
-        rotate: { duration: 1.2, ease: "backInOut" },
-        scale: { duration: 0.5, repeat: Infinity }
+      transition={{
+        rotate: { duration: 0.6, ease: "easeInOut" }
       }}
     >
-      <svg 
-        viewBox="-10 -10 120 180" 
-        width="60" 
-        height="90" 
-        xmlns="http://www.w3.org/2000/svg" 
-        className="hourglass-premium"
-        style={{ overflow: 'visible', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.2))' }}
-      >
-        <defs>
-          <linearGradient id="sand-gradient-v4" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#FDE68A" />
-            <stop offset="50%" stopColor="#F59E0B" />
-            <stop offset="100%" stopColor="#D97706" />
-          </linearGradient>
-          
-          <clipPath id="top-glass-v4">
-            <path d="M 15 15 L 85 15 L 50 80 Z" />
-          </clipPath>
-          <clipPath id="bottom-glass-v4">
-            <path d="M 50 80 L 15 145 L 85 145 Z" />
-          </clipPath>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
 
-          <filter id="glow-v4">
-            <feGaussianBlur stdDeviation="1.5" result="blur"/>
-            <feMerge>
-              <feMergeNode in="blur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
-        
-        {/* Vidro de Fundo */}
-        <path d="M 15 15 L 85 15 L 50 80 L 15 145 L 85 145 Z" fill="rgba(255,255,255,0.05)" />
-        
-        {/* Areia Superior - Diminuindo */}
-        <motion.rect
-          x="15"
-          y={15 + (1 - visualSafeProgress) * 65}
-          width="70"
-          height={visualSafeProgress * 65}
-          fill="url(#sand-gradient-v4)"
-          clipPath="url(#top-glass-v4)"
-        />
-        
-        {/* Areia Inferior - Aumentando */}
-        <motion.rect
-          x="15"
-          y={145 - ((1 - visualSafeProgress) * 65)}
-          width="70"
-          height={(1 - visualSafeProgress) * 65}
-          fill="url(#sand-gradient-v4)"
-          clipPath="url(#bottom-glass-v4)"
-        />
-        
-        {/* Grupo de Partículas e Fio que compensam a rotação para cair sempre "para baixo" */}
-        <g transform={`rotate(${-rotation}, 50, 80)`}>
-          {safeProgress > 0 && safeProgress < 1 && particles.map(p => (
-            <motion.circle
-              key={p.id}
-              cx={p.x}
-              cy="80"
-              r="1.2"
-              fill="#F59E0B"
-              animate={{ 
-                y: [0, 65],
-                opacity: [0, 1, 0]
-              }}
-              transition={{ 
-                duration: 0.6, 
-                repeat: Infinity, 
-                delay: p.delay,
-                ease: "linear"
-              }}
-            />
-          ))}
+        {/* Top Extenssion / Base */}
+        <div style={{ width: '42px', height: '4px', background: '#1e293b', borderRadius: '2px', zIndex: 10 }} />
 
-          {/* Fio de Areia */}
-          {safeProgress > 0 && safeProgress < 1 && (
-            <motion.line 
-              x1="50" y1="80" x2="50" y2="145" 
-              stroke="#F59E0B" 
-              strokeWidth="2" 
-              strokeDasharray="4,4"
-              filter="url(#glow-v4)"
-              animate={{ strokeDashoffset: [0, -20] }}
-              transition={{ repeat: Infinity, duration: 0.3, ease: "linear" }}
-            />
+        {/* Vidro Superior (Triângulo apontando para baixo) */}
+        <div style={{
+          width: '40px', height: '31px',
+          clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
+          overflow: 'hidden',
+          position: 'relative',
+          background: 'rgba(255,255,255,0.2)', // Vidro Transparente/Fosco
+          backdropFilter: 'blur(3px)',
+        }}>
+          {/* Areia Superior */}
+          <motion.div style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            ...(isUpsideDown ? { top: 0 } : { bottom: 0 }),
+            background: 'linear-gradient(to bottom, #FDE68A, #F59E0B)',
+            height: `${visualSafeProgress * 100}%`
+          }} transition={{ duration: isFlipping ? 0 : 0.3 }} />
+        </div>
+
+        {/* Fio e Partículas - Renderizados quando NÃO está girando */}
+        <AnimatePresence>
+          {!isFlipping && safeProgress > 0 && safeProgress < 1 && (
+            <motion.div
+              initial={{ opacity: 0, rotate: isUpsideDown ? 180 : 0 }}
+              animate={{ opacity: 1, rotate: isUpsideDown ? 180 : 0 }}
+              exit={{ opacity: 0 }}
+              style={{ 
+                position: 'absolute', 
+                top: '50%', 
+                left: '50%', 
+                x: '-50%', 
+                transformOrigin: 'top center',
+                zIndex: 0, 
+                height: '31px' 
+              }}
+            >
+              {/* Linha contínua do fio */}
+              <div style={{
+                position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+                width: '2px', height: '100%',
+                background: '#F59E0B',
+                boxShadow: '0 0 4px #F59E0B',
+                opacity: 0.8
+              }} />
+
+              {/* Partículas caindo */}
+              {STATIC_PARTICLES.map(p => (
+                <motion.div
+                  key={p.id}
+                  style={{
+                    position: 'absolute', left: '50%', marginLeft: '-1.5px',
+                    width: '3px', height: '3px', borderRadius: '50%',
+                    background: '#FDE68A'
+                  }}
+                  animate={{
+                    y: [0, 28],
+                    opacity: [0, 1, 0]
+                  }}
+                  transition={{
+                    duration: 0.5,
+                    repeat: Infinity,
+                    delay: p.delay,
+                    ease: "linear"
+                  }}
+                />
+              ))}
+            </motion.div>
           )}
-        </g>
+        </AnimatePresence>
 
-        {/* Contorno do Vidro */}
-        <path 
-          d="M 15 15 L 85 15 L 50 80 L 15 145 L 85 145" 
-          fill="none" 
-          stroke="rgba(255,255,255,0.3)" 
-          strokeWidth="2" 
-          strokeLinejoin="round" 
-        />
-        
-        {/* Estrutura Externa */}
-        <rect x="5" y="5" width="90" height="10" rx="3" fill="#1e293b" />
-        <rect x="5" y="145" width="90" height="10" rx="3" fill="#1e293b" />
-        <line x1="12" y1="15" x2="12" y2="145" stroke="#1e293b" strokeWidth="4" strokeLinecap="round" />
-        <line x1="88" y1="15" x2="88" y2="145" stroke="#1e293b" strokeWidth="4" strokeLinecap="round" />
-      </svg>
+        {/* Vidro Inferior (Triângulo apontando para cima) */}
+        <div style={{
+          width: '40px', height: '31px',
+          clipPath: 'polygon(50% 0, 100% 100%, 0 100%)',
+          overflow: 'hidden',
+          position: 'relative',
+          background: 'rgba(255,255,255,0.2)', // Vidro Transparente/Fosco
+          backdropFilter: 'blur(3px)',
+        }}>
+          {/* Areia Inferior */}
+          <motion.div style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            ...(isUpsideDown ? { top: 0 } : { bottom: 0 }),
+            background: 'linear-gradient(to bottom, #F59E0B, #D97706)',
+            height: `${(1 - visualSafeProgress) * 100}%`
+          }} transition={{ duration: isFlipping ? 0 : 0.3 }} />
+        </div>
+
+        {/* Bottom Extenssion / Base */}
+        <div style={{ width: '42px', height: '4px', background: '#1e293b', borderRadius: '2px', zIndex: 10 }} />
+
+      </div>
     </motion.div>
   );
 };

@@ -54,11 +54,12 @@ const Dice = () => {
                 }}
                 disabled={!canRollThisDice}
                 animate={isRolling && isThisPlayerTurn ? { 
-                  x: [0, -2, 2, -2, 2, 0],
-                } : { x: 0 }}
+                  x: [0, -5, 5, -5, 5, 0],
+                  rotate: [0, -5, 5, -5, 5, 0]
+                } : { x: 0, rotate: 0 }}
                 transition={isRolling && isThisPlayerTurn ? { 
                   repeat: Infinity, 
-                  duration: 0.15 
+                  duration: 0.1 
                 } : { duration: 0.2 }}
                 style={{ 
                   borderColor: isThisPlayerTurn ? player.color : 'rgba(255,255,255,0.2)',

@@ -1,11 +1,11 @@
-import { ref, set, onValue, onDisconnect, serverTimestamp, update } from "firebase/database";
-import { database } from "../../../../config/firebase.js";
+import { ref, set, onValue, onDisconnect, serverTimestamp, query, orderByChild, equalTo } from "firebase/database";
+import { httpsCallable } from "firebase/functions";
+import { database, functions } from "../../../../config/firebase.js";
 import { GameSyncRepository } from "../../domain/repositories/GameSyncRepository.js";
 
 export class FirebaseGameSyncRepository extends GameSyncRepository {
   async createRoom(gameData, ownerId) {
     if (!database) {
-      alert("Firebase não configurado. Não é possível criar salas online.");
       throw new Error("Firebase não configurado");
     }
     const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -17,7 +17,7 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
       ownerId: ownerId || null,
       status: 'waiting',
       createdAt: Date.now(),
-      participants: ownerId ? { [ownerId]: { id: ownerId, name: 'Anfitrião' } } : {}, 
+      participants: ownerId ? { [ownerId]: { id: ownerId, name: 'Anfitrião', isOnline: true } } : {}, 
       gameState: JSON.parse(JSON.stringify(gameData))
     };
 
@@ -25,63 +25,85 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
     return roomId;
   }
 
-  async joinRoom(roomId, user) {
-    if (!database) throw new Error("Firebase não configurado");
-    const roomRef = ref(database, `rooms/${roomId}`);
+  async setUserReady(roomId, userId, isReady = true) {
+    if (!database || !roomId || !userId) return;
+    const readyRef = ref(database, `rooms/${roomId}/readyPlayers/${userId}`);
+    await set(readyRef, isReady);
+  }
 
+  async updateRoomStatus(roomId, status) {
+    if (!database || !roomId || !functions) return;
+    await this._callGameAction(roomId, "UPDATE_STATUS", { status });
+  }
+
+  async _callGameAction(roomId, action, data = {}) {
+    if (!functions) throw new Error("Firebase Functions não configurado");
+    const gameAction = httpsCallable(functions, 'gameAction');
+    try {
+      const result = await gameAction({ roomId, action, data });
+      return result.data;
+    } catch (error) {
+      console.error(`Erro ao executar ação ${action}:`, error);
+      throw error;
+    }
+  }
+
+  getServerTimeOffset(callback) {
+    if (!database) return () => {};
+    const offsetRef = ref(database, ".info/serverTimeOffset");
+    return onValue(offsetRef, (snap) => {
+      callback(snap.val() || 0);
+    });
+  }
+
+  saveActiveRoomId(roomId) {
+    localStorage.setItem('psicoscopio_online_room', roomId);
+  }
+
+  getActiveRoomId() {
+    return localStorage.getItem('psicoscopio_online_room');
+  }
+
+  clearActiveRoomId() {
+    localStorage.removeItem('psicoscopio_online_room');
+  }
+
+  async joinRoom(roomId, user) {
+    if (!database || !functions) throw new Error("Firebase não configurado");
+    
+    // Tenta entrar via function para validar limites e permissões
+    await this._callGameAction(roomId, "JOIN_ROOM", { 
+      name: user.name, 
+      photoURL: user.photoURL 
+    });
+
+    // Após entrar, lê os dados da sala via RTDB (mais eficiente para leitura)
+    const roomRef = ref(database, `rooms/${roomId}`);
     const snapshot = await new Promise((resolve, reject) => {
       onValue(roomRef, (s) => resolve(s), (error) => reject(error), { onlyOnce: true });
     });
 
     if (!snapshot.exists()) throw new Error('Sala não encontrada');
-    
-    const roomData = snapshot.val();
-    const participants = roomData.participants || {};
-    const participantIds = Object.keys(participants);
-    
-    // Se o usuário não está na lista de participantes, adiciona (se houver espaço)
-    if (user && user.id && !participants[user.id]) {
-      if (participantIds.length < 4) {
-        const userData = {
-          id: user.id,
-          name: user.name || `Jogador ${participantIds.length + 1}`,
-          photoURL: user.photoURL || null,
-          isOnline: true,
-          lastSeen: serverTimestamp()
-        };
-        await update(ref(database, `rooms/${roomId}/participants`), { [user.id]: userData });
-        participants[user.id] = userData;
-      } else {
-        throw new Error('Sala cheia');
-      }
-    }
-
-    return { ...roomData, participants };
+    return snapshot.val();
   }
 
-  async startGame(roomId) {
-    if (!database) return;
-    const roomRef = ref(database, `rooms/${roomId}`);
-    await update(roomRef, { status: 'playing' });
+  async startGame(roomId, initialData = {}) {
+    if (!functions || !roomId) return;
+    await this._callGameAction(roomId, "START_GAME", initialData);
   }
 
   async updateGameState(roomId, gameState) {
-    if (!database) return;
-    const gameStateRef = ref(database, `rooms/${roomId}/gameState`);
-
-    // Usamos update para não apagar campos que não foram enviados (como turnStartTime)
-    await update(gameStateRef, gameState);
+    if (!functions || !roomId) return;
+    await this._callGameAction(roomId, "SYNC_STATE", gameState);
   }
 
   async startTurn(roomId, playerIndex, duration) {
-    if (!database || !roomId) return;
-    // Escreve diretamente no path do gameState, nao na raiz.
-    // Multi-path updates na raiz sao bloqueados pelas Security Rules.
-    const gameStateRef = ref(database, `rooms/${roomId}/gameState`);
-    await update(gameStateRef, {
-      currentPlayerIndex: playerIndex,
-      turnStartTime: serverTimestamp(),
-      turnDuration: duration
+    if (!functions || !roomId) return;
+    // O startTurn agora é mapeado para PASS_TURN no servidor,
+    // que lida com a lógica de próximo jogador e timestamps.
+    await this._callGameAction(roomId, "PASS_TURN", { 
+      playerIndex, 
+      turnDuration: duration 
     });
   }
 
@@ -90,6 +112,17 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
     const gameStateRef = ref(database, `rooms/${roomId}/gameState`);
 
     return onValue(gameStateRef, (snapshot) => {
+      if (snapshot.exists()) {
+        callback(snapshot.val());
+      }
+    });
+  }
+
+  listenToRoomData(roomId, callback) {
+    if (!database) return () => {};
+    const roomRef = ref(database, `rooms/${roomId}`);
+
+    return onValue(roomRef, (snapshot) => {
       if (snapshot.exists()) {
         callback(snapshot.val());
       }
@@ -153,6 +186,45 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
     if (!database || !roomId) return;
     const roomRef = ref(database, `rooms/${roomId}`);
     await set(roomRef, null);
+  }
+
+  async recordCardAction(roomId, cardData) {
+    if (!functions || !roomId) return;
+    await this._callGameAction(roomId, "RECORD_CARD_ACTION", cardData);
+  }
+
+  async createRoomBatch(count, boardConfig, cardSet, batchName) {
+    if (!functions) throw new Error("Firebase Functions não configurado");
+    const callable = httpsCallable(functions, "createRoomBatch");
+    const result = await callable({ count, boardConfig, cardSet, batchName });
+    return result.data;
+  }
+
+  /**
+   * Escuta as salas criadas por este anfitrião
+   */
+  listenToOwnerRooms(ownerId, callback) {
+    if (!database || !ownerId) return () => {};
+    const roomsRef = ref(database, 'rooms');
+    const ownerQuery = query(roomsRef, orderByChild('ownerId'), equalTo(ownerId));
+    
+    return onValue(ownerQuery, (snapshot) => {
+      const roomsData = snapshot.val() || {};
+      // Transforma o objeto de objetos em array
+      const ownerRooms = Object.values(roomsData);
+      callback(ownerRooms);
+    });
+  }
+
+  /**
+   * Escuta o histórico de uma sala específica
+   */
+  listenToRoomHistory(roomId, callback) {
+    if (!database || !roomId) return () => {};
+    const historyRef = ref(database, `rooms/${roomId}/history`);
+    return onValue(historyRef, (snapshot) => {
+      callback(snapshot.val() || { turns: {}, cards: {} });
+    });
   }
 }
 
