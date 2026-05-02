@@ -1,10 +1,41 @@
 import { useMotionValue, useSpring } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
 import { useGame } from '../state/useGame';
+import { 
+  Brain, 
+  Sparkles, 
+  Zap, 
+  Search, 
+  MessageSquare, 
+  Eye, 
+  RotateCw, 
+  Target, 
+  Puzzle, 
+  Sliders,
+  Star,
+  Info
+} from 'lucide-react';
 import './BoardView.css';
 
+const TILE_ICONS = {
+  brain: Brain,
+  reflexao: Sparkles,
+  desafio: Zap,
+  memoria: Search,
+  especial: Zap,
+  bulb: Zap,
+  eye: Eye,
+  cycle: RotateCw,
+  target: Target,
+  puzzle: Puzzle,
+  chat: MessageSquare,
+  slider: Sliders,
+  star: Star,
+  center: Info
+};
+
 const BoardView = ({ boardRotation = 0 }) => {
-  const { setBoardRotation, players, activeBoardConfig } = useGame();
+  const { setBoardRotation, players, activeBoardConfig, showDetailPopup } = useGame();
   const boardData = activeBoardConfig.tiles;
   const [showNameId, setShowNameId] = useState(null);
   const isDragging = useRef(false);
@@ -53,9 +84,11 @@ const BoardView = ({ boardRotation = 0 }) => {
   // Sincroniza botao externo com motion value
   useEffect(() => { rotMotion.set(boardRotation); }, [boardRotation, rotMotion]);
 
+  const dragStartPos = useRef(null);
+
   const onPointerDown = (e) => {
     isDragging.current = true;
-    e.currentTarget.setPointerCapture(e.pointerId);
+    dragStartPos.current = { x: e.clientX, y: e.clientY };
     
     const rect = e.currentTarget.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
@@ -69,6 +102,14 @@ const BoardView = ({ boardRotation = 0 }) => {
   const onPointerMove = (e) => {
     if (!isDragging.current) return;
     
+    // Captura o ponteiro apenas se houver movimento real para não bloquear cliques simples
+    if (dragStartPos.current) {
+      const dist = Math.hypot(e.clientX - dragStartPos.current.x, e.clientY - dragStartPos.current.y);
+      if (dist > 5) {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      }
+    }
+
     const rect = e.currentTarget.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
@@ -87,24 +128,31 @@ const BoardView = ({ boardRotation = 0 }) => {
     rotMotion.set(newRot);
     setBoardRotation(newRot);
   };
-  const onPointerUp = () => { isDragging.current = false; };
+
+  const onPointerUp = (e) => {
+    if (isDragging.current) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+      isDragging.current = false;
+      dragStartPos.current = null;
+    }
+  };
 
   const flip = (baseAngle, yOffset) => {
     const total = ((baseAngle + boardRotation) % 360 + 360) % 360;
     return total > 95 && total < 265 ? `rotate(180, 0, ${yOffset})` : '';
   };
 
-  const arc = (fill, icon, angle, ring, r) => (
-    <g transform={`rotate(${angle})`} style={{ pointerEvents: 'none' }}>
+  const arc = (fill, icon, angle, ring, r, onClick) => (
+    <g transform={`rotate(${angle})`} style={{ pointerEvents: 'auto', cursor: 'help' }} onClick={onClick}>
       <use href={`#arc-${ring}`} fill={fill} stroke={fill} strokeWidth="16" strokeLinejoin="round" filter="url(#shadow)" />
-      <use href={`#${icon}`} transform={`translate(0, -${r}) rotate(0)`} />
+      <use href={`#${icon}`} transform={`translate(0, -${r}) rotate(0)`} style={{ pointerEvents: 'none' }} />
     </g>
   );
 
-  const arcText = (fill, label, angle, ring, yOff, fontSize = 13) => (
-    <g transform={`rotate(${angle})`} style={{ pointerEvents: 'none' }}>
+  const arcText = (fill, label, angle, ring, yOff, fontSize = 13, onClick) => (
+    <g transform={`rotate(${angle})`} style={{ pointerEvents: 'auto', cursor: 'help' }} onClick={onClick}>
       <use href={`#arc-${ring}`} fill={fill} stroke={fill} strokeWidth="16" strokeLinejoin="round" filter="url(#shadow)" />
-      <text x="0" y={yOff} transform={flip(angle, yOff)} textAnchor="middle" fill="#FFF" fontSize={fontSize} fontWeight="600" letterSpacing="0.5">{label}</text>
+      <text x="0" y={yOff} transform={flip(angle, yOff)} textAnchor="middle" fill="#FFF" fontSize={fontSize} fontWeight="600" letterSpacing="0.5" style={{ pointerEvents: 'none' }}>{label}</text>
     </g>
   );
 
@@ -224,48 +272,96 @@ const BoardView = ({ boardRotation = 0 }) => {
 
             {/* RENDERIZAÇÃO DINÂMICA DAS CASAS */}
             {boardData.filter(t => t.ring !== 'special' && t.ring !== 'center').map((tile, idx) => {
+               const handleTileClick = (e) => {
+                 e.stopPropagation();
+                 showDetailPopup({
+                   title: tile.label || tile.type.toUpperCase(),
+                   description: tile.description,
+                   icon: TILE_ICONS[tile.type] || Info,
+                   color: tile.color
+                 });
+               };
+
                if (tile.label && tile.label.trim().length > 0) {
                  const yOff = tile.ring === 'inner' ? -145 : (tile.ring === 'middle' ? -220 : -295);
                  const fSize = tile.ring === 'inner' ? 12 : 14;
-                 return <g key={tile.id || idx}>{arcText(tile.color, tile.label, tile.angle, tile.ring, yOff, fSize)}</g>;
+                 return <g key={tile.id || idx}>{arcText(tile.color, tile.label, tile.angle, tile.ring, yOff, fSize, handleTileClick)}</g>;
                } else {
                  const r = tile.ring === 'inner' ? 150 : (tile.ring === 'middle' ? 225 : 300);
-                 return <g key={tile.id || idx}>{arc(tile.color, `icon-${tile.type}`, tile.angle, tile.ring, r)}</g>;
+                 return <g key={tile.id || idx}>{arc(tile.color, `icon-${tile.type}`, tile.angle, tile.ring, r, handleTileClick)}</g>;
                }
             })}
           </g>
         </g>
 
-        {/* CARDS BRANCOS */}
-        <g ref={cardTopRef} filter="url(#shadow)" style={{ pointerEvents: 'none' }}>
-          <rect x="-60" y="-35" width="120" height="70" rx="8" fill="#FFFFFF" stroke="#e0e0e0" strokeWidth="1" />
-          <text y="-4" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700">VOLTE</text>
-          <text y="16" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700">2 CASAS</text>
-        </g>
-        <g ref={cardRightRef} filter="url(#shadow)" style={{ pointerEvents: 'none' }}>
-          <rect x="-55" y="-45" width="110" height="90" rx="8" fill="#FFFFFF" stroke="#e0e0e0" strokeWidth="1" />
-          <text y="-5" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700">AVANCE</text>
-          <text y="15" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700">2 CASAS</text>
-        </g>
-        <g ref={cardBottomRef} filter="url(#shadow)" style={{ pointerEvents: 'none' }}>
-          <rect x="-70" y="-35" width="140" height="70" rx="8" fill="#FFFFFF" stroke="#e0e0e0" strokeWidth="1" />
-          <text y="-4" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700">DESAFIO EM</text>
-          <text y="16" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700">EQUIPA</text>
-        </g>
-        <g ref={cardLeftRef} filter="url(#shadow)" style={{ pointerEvents: 'none' }}>
-          <rect x="-55" y="-50" width="110" height="100" rx="8" fill="#FFFFFF" stroke="#e0e0e0" strokeWidth="1" />
-          <text y="-12" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700">TROQUE</text>
-          <text y="8" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700">DE</text>
-          <text y="28" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700">LUGAR</text>
-        </g>
+        {/* CARDS BRANCOS (CASAS ESPECIAIS) */}
+        {boardData.filter(t => t.ring === 'special').map((tile) => {
+           const handleSpecialClick = (e) => {
+             e.stopPropagation();
+             showDetailPopup({
+               title: tile.label,
+               description: tile.description,
+               icon: TILE_ICONS[tile.type] || Zap,
+               color: tile.color
+             });
+           };
+
+           // Mapeamento manual dos cards brancos baseados nos IDs definidos no boardRepository
+           if (tile.id === 's4') { // VOLTE 2 CASAS (TOP)
+             return (
+               <g key={tile.id} ref={cardTopRef} filter="url(#shadow)" style={{ pointerEvents: 'auto', cursor: 'help' }} onClick={handleSpecialClick}>
+                 <rect x="-60" y="-35" width="120" height="70" rx="8" fill="#FFFFFF" stroke="#e0e0e0" strokeWidth="1" />
+                 <text y="-4" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>VOLTE</text>
+                 <text y="16" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>2 CASAS</text>
+               </g>
+             );
+           }
+           if (tile.id === 's1') { // AVANCE 2 CASAS (RIGHT)
+             return (
+               <g key={tile.id} ref={cardRightRef} filter="url(#shadow)" style={{ pointerEvents: 'auto', cursor: 'help' }} onClick={handleSpecialClick}>
+                 <rect x="-55" y="-45" width="110" height="90" rx="8" fill="#FFFFFF" stroke="#e0e0e0" strokeWidth="1" />
+                 <text y="-5" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>AVANCE</text>
+                 <text y="15" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>2 CASAS</text>
+               </g>
+             );
+           }
+           if (tile.id === 's2') { // DESAFIO EM EQUIPA (BOTTOM)
+             return (
+               <g key={tile.id} ref={cardBottomRef} filter="url(#shadow)" style={{ pointerEvents: 'auto', cursor: 'help' }} onClick={handleSpecialClick}>
+                 <rect x="-70" y="-35" width="140" height="70" rx="8" fill="#FFFFFF" stroke="#e0e0e0" strokeWidth="1" />
+                 <text y="-4" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>DESAFIO EM</text>
+                 <text y="16" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>EQUIPA</text>
+               </g>
+             );
+           }
+           if (tile.id === 's3') { // TROQUE DE LUGAR (LEFT)
+             return (
+               <g key={tile.id} ref={cardLeftRef} filter="url(#shadow)" style={{ pointerEvents: 'auto', cursor: 'help' }} onClick={handleSpecialClick}>
+                 <rect x="-55" y="-50" width="110" height="100" rx="8" fill="#FFFFFF" stroke="#e0e0e0" strokeWidth="1" />
+                 <text y="-12" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>TROQUE</text>
+                 <text y="8" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>DE</text>
+                 <text y="28" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>LUGAR</text>
+               </g>
+             );
+           }
+           return null;
+        })}
 
         {/* CENTRO */}
-        <g transform="translate(400, 400)" style={{ pointerEvents: 'none' }}>
+        <g transform="translate(400, 400)" style={{ pointerEvents: 'auto', cursor: 'help' }} onClick={() => {
+          const centerTile = boardData.find(t => t.id === 'center');
+          showDetailPopup({
+            title: 'CHEGADA',
+            description: centerTile?.description || 'O centro do Psicoscópio.',
+            icon: Info,
+            color: '#1e293b'
+          });
+        }}>
           <circle cx="0" cy="0" r="115" fill="#FFFFFF" filter="url(#shadow)" />
-          <text y="-20" textAnchor="middle" fill="#333" fontSize="15" fontWeight="700" letterSpacing="0.2">A APRENDIZAGEM</text>
-          <text y="3"   textAnchor="middle" fill="#333" fontSize="15" fontWeight="700" letterSpacing="0.2">E UM CICLO,</text>
-          <text y="26"  textAnchor="middle" fill="#333" fontSize="15" fontWeight="700" letterSpacing="0.2">NAO UMA LINHA</text>
-          <text y="49"  textAnchor="middle" fill="#333" fontSize="15" fontWeight="700" letterSpacing="0.2">DE CHEGADA.</text>
+          <text y="-20" textAnchor="middle" fill="#333" fontSize="15" fontWeight="700" letterSpacing="0.2" style={{ pointerEvents: 'none' }}>A APRENDIZAGEM</text>
+          <text y="3"   textAnchor="middle" fill="#333" fontSize="15" fontWeight="700" letterSpacing="0.2" style={{ pointerEvents: 'none' }}>E UM CICLO,</text>
+          <text y="26"  textAnchor="middle" fill="#333" fontSize="15" fontWeight="700" letterSpacing="0.2" style={{ pointerEvents: 'none' }}>NAO UMA LINHA</text>
+          <text y="49"  textAnchor="middle" fill="#333" fontSize="15" fontWeight="700" letterSpacing="0.2" style={{ pointerEvents: 'none' }}>DE CHEGADA.</text>
         </g>
       </svg>
     </div>

@@ -9,7 +9,7 @@ import { CustomCardsModal } from './MenuModals';
 import './CardCreator.css';
 
 const CardCreator = () => {
-  const { finishCardCreation } = useGame();
+  const { finishCardCreation, players } = useGame();
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
   
@@ -486,7 +486,11 @@ const CardCreator = () => {
               <span>Adicionar ao Baralho</span>
            </button>
             <button className="btn-premium-primary" onClick={handleFinish}>
-              <span>{isCurrentCardValid() ? 'Finalizar e Jogar' : 'Concluir sem salvar atual'}</span>
+              <span>
+                {isCurrentCardValid() 
+                  ? (players.length > 0 ? 'Finalizar e Jogar' : 'Concluir e Voltar') 
+                  : 'Sair'}
+              </span>
               <CheckCircle size={20} />
             </button>
         </footer>

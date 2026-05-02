@@ -19,7 +19,8 @@ import {
   BookOpen,
   Users,
   Download,
-  Upload
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useGame } from '../state/useGame';
 import { GenerateRandomBoardConfig } from '../../domain/usecases/GenerateRandomBoardConfig';
@@ -349,6 +350,30 @@ const BoardEditor = () => {
                         />
                       </div>
                     </div>
+                    <div className="mechanic-card" style={{ gridColumn: 'span 2' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <ImageIcon size={16} color="#6366f1" />
+                          <h4 style={{ margin: 0 }}>Ateliê de Cartas no Início</h4>
+                        </div>
+                        <label className="switch-premium">
+                          <input 
+                            type="checkbox" 
+                            checked={!!editingConfig.mechanics.enableCardCreationStep} 
+                            onChange={(e) => {
+                              setEditingConfig({
+                                ...editingConfig,
+                                mechanics: { ...editingConfig.mechanics, enableCardCreationStep: e.target.checked }
+                              });
+                            }}
+                          />
+                          <span className="slider-premium round"></span>
+                        </label>
+                      </div>
+                      <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>
+                        Se habilitado, os jogadores passarão pelo ateliê de criação antes da partida.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -478,6 +503,26 @@ const BoardEditor = () => {
                       className="tile-label-input"
                       placeholder="Ex: Pule 1 casa"
                       autoFocus
+                    />
+                  </div>
+
+                  <div className="popup-field">
+                    <label>Descrição da Casa</label>
+                    <textarea 
+                      value={currentTile.description || ''} 
+                      onChange={(e) => handleTileChange(selectedTileIndex, 'description', e.target.value)}
+                      className="tile-description-input"
+                      placeholder="Explique o que acontece nesta casa..."
+                      rows={3}
+                      style={{ 
+                        width: '100%', 
+                        padding: '12px', 
+                        borderRadius: '12px', 
+                        border: '1px solid #e2e8f0',
+                        fontSize: '0.9rem',
+                        fontFamily: 'inherit',
+                        resize: 'vertical'
+                      }}
                     />
                   </div>
 

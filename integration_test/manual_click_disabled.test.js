@@ -1,9 +1,9 @@
-import { test, expect, vi } from 'vitest';
+import { test, expect } from 'vitest';
 
 test('O componente GameCard não deve disparar setFocusedCard se isFocused for false', () => {
   // Simulação das props e do hook useGame
   let focusedCardSet = null;
-  const setFocusedCard = (card) => { focusedCardSet = card; };
+  
   
   // Simulação simplificada do comportamento do componente
   const handleClick = (isFocused) => {

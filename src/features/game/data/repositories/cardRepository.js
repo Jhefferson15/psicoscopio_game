@@ -51,6 +51,14 @@ export const cardContent = {
   ]
 };
 
+export const categoryDescriptions = {
+  reflexao: "Momento de olhar para dentro. Estas cartas propõem perguntas que convidam você a pensar sobre seus valores, crenças e atitudes diante da vida e do aprendizado.",
+  desafio: "Hora de agir! Desafios práticos que estimulam a interação com o grupo, a expressão de sentimentos e a saída da zona de conforto de forma lúdica.",
+  sorte: "Sincronicidades do caminho. Representam eventos inesperados que podem acelerar sua jornada ou exigir uma pausa estratégica para recalcular a rota.",
+  memoria: "Fortalecendo as conexões. Exercícios rápidos para testar sua atenção e retenção de informações sobre o que está acontecendo aqui e agora na partida.",
+  experiencia: "Compartilhando sabedoria. Espaço para contar histórias reais e aprendizados de vida, transformando vivências pessoais em conhecimento coletivo."
+};
+
 export const getRandomCardContent = (type, customContent = null) => {
   const contentList = (customContent && customContent[type]) || cardContent[type] || cardContent.reflexao;
   if (!contentList || contentList.length === 0) return "Nenhum conteúdo disponível.";

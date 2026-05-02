@@ -1,5 +1,5 @@
 export class Tile {
-  constructor(id, type, label, color, ring, angle, action = null) {
+  constructor(id, type, label, color, ring, angle, action = null, description = '') {
     this.id = id;
     this.type = type; // 'normal', 'reflexao', 'desafio', 'memoria', 'especial'
     this.label = label;
@@ -7,6 +7,7 @@ export class Tile {
     this.ring = ring; // 'outer', 'middle', 'inner', 'center'
     this.angle = angle; // Angle in degrees for SVG positioning
     this.action = action; // Function or type of special action
+    this.description = description;
   }
 
   static fromJSON(json) {
@@ -17,7 +18,8 @@ export class Tile {
       json.color,
       json.ring,
       json.angle,
-      json.action
+      json.action,
+      json.description || ''
     );
   }
 
@@ -29,7 +31,8 @@ export class Tile {
       color: this.color,
       ring: this.ring,
       angle: this.angle,
-      action: this.action
+      action: this.action,
+      description: this.description
     };
   }
 }

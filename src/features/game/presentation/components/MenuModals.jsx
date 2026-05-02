@@ -1,4 +1,4 @@
-import { Globe, ShieldCheck, Copy, X, Users, ChevronRight, User, Volume2, VolumeX, RotateCcw, Image as ImageIcon, Layout } from 'lucide-react';
+import { Globe, ShieldCheck, Copy, X, Users, ChevronRight, User, Volume2, VolumeX, RotateCcw, Image as ImageIcon, Layout, Brush } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import CustomCardsGallery from './CustomCardsGallery';
@@ -228,7 +228,7 @@ export const PlayerSetupModal = ({ onClose }) => {
 };
 
 export const SettingsModal = ({ onClose }) => {
-  const { settings, setSettings, setCurrentScreen } = useGame();
+  const { settings, setSettings, setCurrentScreen, openCardAtelier } = useGame();
 
   const toggleSound = () => setSettings(prev => ({ ...prev, sound: !prev.sound }));
 
@@ -251,6 +251,17 @@ export const SettingsModal = ({ onClose }) => {
           >
             <div className="toggle-handle" />
           </button>
+        </div>
+
+        <div className="setting-item" onClick={() => { openCardAtelier(); onClose(); }}>
+          <div className="setting-info">
+            <div className="setting-icon"><Brush size={20} /></div>
+            <div className="setting-text">
+              <h3>Ateliê de Cartas</h3>
+              <p>Criar e desenhar cartas personalizadas</p>
+            </div>
+          </div>
+          <ChevronRight size={20} className="text-muted" />
         </div>
 
         <div className="setting-item" onClick={() => { setCurrentScreen('settings'); onClose(); }}>

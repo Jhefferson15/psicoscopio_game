@@ -1,12 +1,12 @@
 import { CardSet } from '../../domain/entities/CardSet';
-import { cardContent as defaultContent } from './cardRepository';
+import { cardContent as defaultContent, categoryDescriptions as defaultDescriptions } from './cardRepository';
 
 const STORAGE_KEY = 'psicoscopio_card_sets';
 const ACTIVE_SET_KEY = 'psicoscopio_active_card_set';
 
 export class CardSetRepository {
   static getDefaultSet() {
-    return new CardSet('default', 'Padrão Psicoscópio', { ...defaultContent });
+    return new CardSet('default', 'Padrão Psicoscópio', { ...defaultContent }, { ...defaultDescriptions });
   }
 
   static getSavedSets() {

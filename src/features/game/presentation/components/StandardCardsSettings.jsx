@@ -14,7 +14,8 @@ import {
   ChevronLeft,
   X,
   Download,
-  Upload
+  Upload,
+  Info
 } from 'lucide-react';
 import './StandardCardsSettings.css';
 
@@ -291,6 +292,22 @@ const StandardCardsSettings = () => {
                       </button>
                     );
                   })}
+                </div>
+                <div className="category-description-editor">
+                  <div className="desc-editor-header">
+                    <Info size={16} />
+                    <span>DEFINIÇÃO DA CATEGORIA</span>
+                  </div>
+                  <textarea 
+                    value={editingSet.categoryDescriptions?.[activeCategory] || ''}
+                    onChange={(e) => {
+                      const updatedDesc = { ...editingSet.categoryDescriptions };
+                      updatedDesc[activeCategory] = e.target.value;
+                      setEditingSet({ ...editingSet, categoryDescriptions: updatedDesc });
+                    }}
+                    placeholder={`Descreva o propósito da categoria ${activeCategory}...`}
+                    className="category-desc-input"
+                  />
                 </div>
 
                 <div className="editor-workspace">

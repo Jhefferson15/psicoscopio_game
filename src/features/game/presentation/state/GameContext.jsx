@@ -48,6 +48,8 @@ export const GameProvider = ({ children }) => {
   const [cardHistory, setCardHistory] = useState([]);
   const [showCardHistory, setShowCardHistory] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [detailPopup, setDetailPopup] = useState(null); // { title, description, icon, color }
+  const [atelierContext, setAtelierContext] = useState(null); // 'settings' | 'game_start'
 
   // Estados para Conjuntos de Cartas
   const [availableCardSets, setAvailableCardSets] = useState(() => {
@@ -148,6 +150,14 @@ export const GameProvider = ({ children }) => {
   }, []);
 
 
+  const showDetailPopup = useCallback((config) => {
+    setDetailPopup(config);
+  }, []);
+
+  const closeDetailPopup = useCallback(() => {
+    setDetailPopup(null);
+  }, []);
+
   // O tempo agora é gerenciado com base em timestamps do servidor para consistência
 
   const toggleFullScreen = () => setIsBoardFullScreen(prev => !prev);
@@ -165,17 +175,27 @@ export const GameProvider = ({ children }) => {
 
   const initializeGame = (newPlayers) => {
     const turnTime = activeBoardConfig.mechanics?.turnTime || 120;
+    const shouldShowAtelier = !!activeBoardConfig.mechanics?.enableCardCreationStep;
+    
     setPlayers(newPlayers.map((p, i) => new Player(p.id || i + 1, p.name, p.color, 0, turnTime)));
     setCurrentPlayerIndex(0);
     setTurnStartTime(Date.now());
     setTurnDuration(turnTime);
-    setCurrentScreen('card_creation');
+    
+    if (shouldShowAtelier) {
+      setAtelierContext('game_start');
+      setCurrentScreen('card_creation');
+    } else {
+      setAtelierContext(null);
+      setCurrentScreen('game');
+    }
   };
 
   const finishCardCreation = async () => {
     if (isOnline) {
       try {
         await syncRepository.setUserReady(roomId, user.id);
+        setAtelierContext(null);
         setCurrentScreen('waiting_players');
       } catch (error) {
         console.error("Erro ao marcar como pronto:", error);
@@ -186,12 +206,25 @@ export const GameProvider = ({ children }) => {
         });
       }
     } else {
+      // Se viemos das configurações, voltamos para o menu
+      if (atelierContext === 'settings') {
+        setAtelierContext(null);
+        setCurrentScreen('menu');
+        return;
+      }
+
       // Inicia o cronometro ao entrar no jogo offline
       const turnTime = activeBoardConfig.mechanics?.turnTime || 120;
       setTurnStartTime(Date.now());
       setTurnDuration(turnTime);
+      setAtelierContext(null);
       setCurrentScreen('game');
     }
+  };
+
+  const openCardAtelier = () => {
+    setAtelierContext('settings');
+    setCurrentScreen('card_creation');
   };
 
 
@@ -223,6 +256,7 @@ export const GameProvider = ({ children }) => {
     setRoomId(null);
     setIsOnline(false);
     syncRepository.clearActiveRoomId();
+    setAtelierContext(null);
     setCurrentScreen('menu');
   }, [isOnline, roomId, user]);
 
@@ -290,7 +324,15 @@ export const GameProvider = ({ children }) => {
       if (room.status === 'playing') {
         setCurrentScreen('game');
       } else if (room.status === 'setup_cards') {
-        setCurrentScreen('card_creation');
+        const board = room.gameState?.boardConfig || activeBoardConfig;
+        const mechanics = board.mechanics || {};
+        if (mechanics.enableCardCreationStep === true) {
+          setAtelierContext('game_start');
+          setCurrentScreen('card_creation');
+        } else {
+          // Se o tabuleiro não forçar, vai direto para o jogo
+          setCurrentScreen('game');
+        }
       } else {
         setCurrentScreen('lobby');
       }
@@ -306,7 +348,7 @@ export const GameProvider = ({ children }) => {
         syncRepository.clearActiveRoomId();
       }
     }
-  }, [user, showSystemPopup]);
+  }, [user, showSystemPopup, activeBoardConfig]);
 
   // Persistência da sala online (Reconexão no F5)
   useEffect(() => {
@@ -473,7 +515,14 @@ export const GameProvider = ({ children }) => {
         }
         
         if (room.status === 'setup_cards' && currentScreen === 'lobby') {
-          setCurrentScreen('card_creation');
+          const board = room.gameState?.boardConfig || activeBoardConfig;
+          const mechanics = board.mechanics || {};
+          if (mechanics.enableCardCreationStep === true) {
+             setAtelierContext('game_start');
+             setCurrentScreen('card_creation');
+          } else {
+             setCurrentScreen('game');
+          }
         }
       });
 
@@ -495,7 +544,7 @@ export const GameProvider = ({ children }) => {
         if (typeof unsubscribePresence === 'function') unsubscribePresence();
       };
     }
-  }, [isOnline, roomId, user, currentScreen, turnDuration]);
+  }, [isOnline, roomId, user, currentScreen, turnDuration, activeBoardConfig]);
 
   // Sincroniza meu índice de jogador com base no ID do usuário logado
   useEffect(() => {
@@ -1095,6 +1144,7 @@ export const GameProvider = ({ children }) => {
       setSettings,
       initializeGame,
       finishCardCreation,
+      openCardAtelier,
       rotateBoard,
       goToMenu,
       playerAttributes,
@@ -1197,7 +1247,10 @@ export const GameProvider = ({ children }) => {
       showLeaveConfirm,
       setShowLeaveConfirm,
       handleGoToMenu,
-      confirmGoToMenu
+      confirmGoToMenu,
+      detailPopup,
+      showDetailPopup,
+      closeDetailPopup
     }}>
 
       {children}

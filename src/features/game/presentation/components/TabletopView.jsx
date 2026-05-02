@@ -26,6 +26,7 @@ import Hourglass from './Hourglass';
 import { GAME_CARDS } from '../../domain/gameConstants';
 import { CustomCardsModal } from './MenuModals';
 import DiaryModal from './DiaryModal';
+import DetailPopup from './DetailPopup';
 
 const TabletopView = () => {
   const { 
@@ -43,7 +44,9 @@ const TabletopView = () => {
     cardHistory,
     activeBoardConfig,
     isOnline,
-    roomId
+    roomId,
+    detailPopup,
+    closeDetailPopup
   } = useGame();
 
   const [showHourglassDetails, setShowHourglassDetails] = React.useState(false);
@@ -191,6 +194,7 @@ const TabletopView = () => {
                       key={`${activeCardSet.id}-${activeCardSet.updatedAt}-${i}`}
                       type={c.type.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")} 
                       index={i} 
+                      isStacked={true}
                     />
                   </div>
                 ))}
@@ -353,6 +357,12 @@ const TabletopView = () => {
           <ProfileGallery onClose={() => setShowProfileGallery(false)} />
         )}
       </AnimatePresence>
+
+      <DetailPopup 
+        isOpen={!!detailPopup} 
+        onClose={closeDetailPopup} 
+        data={detailPopup} 
+      />
     </motion.div>
 
   );

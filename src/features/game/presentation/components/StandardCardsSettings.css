@@ -901,3 +901,48 @@
   }
 }
 
+.category-description-editor {
+  margin-bottom: 20px;
+  background: white;
+  border-radius: 25px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.desc-editor-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #94a3b8;
+}
+
+.desc-editor-header span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.category-desc-input {
+  width: 100%;
+  min-height: 80px;
+  border: 1px solid #f1f5f9;
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 15px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.category-desc-input:focus {
+  border-color: var(--secondary);
+  background: white;
+  box-shadow: 0 0 0 4px rgba(72, 133, 206, 0.05);
+}

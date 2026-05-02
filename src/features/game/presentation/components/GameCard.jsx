@@ -45,7 +45,7 @@ const cardTypes = {
 };
 
 const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = false }) => {
-  const { setFocusedCard, closeFocusedCard, activeCardSet, recordCardDraw } = useGame();
+  const { closeFocusedCard, activeCardSet, recordCardDraw, showDetailPopup } = useGame();
   const config = cardTypes[type] || cardTypes.default;
   const Icon = config.icon;
   const layoutId = `card-${type}-${index}`;
@@ -81,9 +81,15 @@ const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = 
   const handleClick = () => {
     if (isFocused) {
       closeFocusedCard();
+    } else if (isStacked) {
+      // Se estiver no monte, abre o popup de detalhes da categoria
+      showDetailPopup({
+        title: config.label,
+        description: activeCardSet?.categoryDescriptions?.[type] || "Descrição não disponível.",
+        icon: Icon,
+        color: config.color
+      });
     }
-    // O foco manual (abertura de carta via clique) foi desabilitado 
-    // pois as cartas são disparadas automaticamente pela lógica do jogo.
   };
 
   return (
@@ -94,7 +100,7 @@ const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = 
         '--card-color': config.color,
         '--card-gradient': config.gradient,
         zIndex: isFocused ? 2000 : (isStacked ? 10 - index : 1),
-        cursor: isFocused ? 'pointer' : 'default'
+        cursor: (isFocused || isStacked) ? 'pointer' : 'default'
       }}
       animate={{ 
         y: isFocused ? 0 : (isStacked ? index * -4 : 0),
