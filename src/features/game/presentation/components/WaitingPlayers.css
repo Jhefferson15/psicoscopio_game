@@ -37,14 +37,13 @@
 .waiting-card {
   position: relative;
   z-index: 10;
-  background: rgba(255, 255, 255, 0.7); /* Identidade: Glassmorphism */
-  backdrop-filter: blur(25px);
+  background: rgba(255, 255, 255, 0.95); /* Identidade: Base clara */
   width: 100%;
   max-width: 600px;
   border-radius: 40px; /* Identidade: Raio de 40px */
   overflow: hidden;
   box-shadow: 
-    0 40px 100px rgba(0, 0, 0, 0.08),
+    0 20px 50px rgba(0, 0, 0, 0.05),
     inset 0 0 0 1px rgba(255, 255, 255, 0.5); /* Identidade: Reflexo interno */
   border: 1px solid rgba(0,0,0,0.03);
 }

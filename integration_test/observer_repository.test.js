@@ -36,6 +36,32 @@ vi.mock('firebase/database', () => {
   };
 });
 
+vi.mock('firebase/firestore', () => {
+  return {
+    getFirestore: vi.fn(),
+    collection: vi.fn((db, name) => ({ name })),
+    doc: vi.fn((db, name, id) => ({ name, id })),
+    setDoc: vi.fn(() => Promise.resolve()),
+    onSnapshot: vi.fn((queryRef, callback) => {
+      if (queryRef.name === 'rooms') {
+        const docs = [
+          { id: 'ROOM1', data: () => ({ id: 'ROOM1', ownerId: 'owner1', status: 'waiting' }) },
+          { id: 'ROOM3', data: () => ({ id: 'ROOM3', ownerId: 'owner1', status: 'playing' }) }
+        ];
+        callback({ docs });
+      }
+      if (queryRef.collection?.name === 'roomHistory') {
+         callback({ docs: [] });
+      }
+      return () => {};
+    }),
+    query: vi.fn((ref) => ref),
+    where: vi.fn(),
+    orderBy: vi.fn(),
+    serverTimestamp: vi.fn(() => ({ toMillis: () => Date.now() }))
+  };
+});
+
 vi.mock('firebase/functions', () => ({
   getFunctions: vi.fn(),
   httpsCallable: vi.fn((functions, name) => {
@@ -53,6 +79,7 @@ vi.mock('firebase/functions', () => ({
 
 vi.mock('../src/config/firebase.js', () => ({
   database: {},
+  firestore: {},
   functions: {},
   isFirebaseConfigured: true
 }));

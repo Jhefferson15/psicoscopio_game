@@ -6,10 +6,12 @@ import { AnimatePresence } from 'framer-motion';
 import { LoginButton } from '../../../auth/presentation/components/LoginButton.jsx';
 import { PlayerSetupModal, SettingsModal, AboutModal } from './MenuModals';
 import { ObserverSetupModal } from './ObserverSetupModal';
+import { useAuth } from '../../../auth/presentation/state/useAuth';
 
 
 const StartMenu = () => {
   const [activeModal, setActiveModal] = useState(null); // 'playerSetup' | 'settings' | 'about'
+  const { user } = useAuth();
 
   return (
     <motion.div 
@@ -59,15 +61,18 @@ const StartMenu = () => {
                <span>Iniciar Jornada</span>
             </motion.button>
 
-            <div className="menu-grid">
+            <div className={user ? "menu-grid" : "menu-single"}>
               <button className="btn-secondary" onClick={() => setActiveModal('settings')}>
                 <Settings size={20} />
                 <span>Configurações</span>
               </button>
-              <button className="btn-secondary" onClick={() => setActiveModal('observerSetup')}>
-                <Users size={20} />
-                <span>Modo Observador</span>
-              </button>
+              
+              {user && (
+                <button className="btn-secondary" onClick={() => setActiveModal('observerSetup')}>
+                  <Users size={20} />
+                  <span>Modo Observador</span>
+                </button>
+              )}
             </div>
           </nav>
 
@@ -92,7 +97,7 @@ const StartMenu = () => {
         {activeModal === 'about' && (
           <AboutModal onClose={() => setActiveModal(null)} />
         )}
-        {activeModal === 'observerSetup' && (
+        {activeModal === 'observerSetup' && user && (
           <ObserverSetupModal onClose={() => setActiveModal(null)} />
         )}
       </AnimatePresence>

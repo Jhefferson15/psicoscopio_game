@@ -26,11 +26,10 @@
   width: 95%;
   max-width: 1300px;
   height: 90vh;
-  background: rgba(255, 255, 255, 0.7); /* Identidade: Glassmorphism */
-  backdrop-filter: blur(30px);
+  background: rgba(255, 255, 255, 0.98); /* Identidade: Base clara */
   border-radius: 40px; /* Identidade: Arredondamento 40px */
   box-shadow: 
-    0 50px 100px rgba(0,0,0,0.05),
+    0 20px 50px rgba(0,0,0,0.05),
     inset 0 0 0 1px rgba(255, 255, 255, 0.5); /* Identidade: Reflexo interno */
   display: flex;
   flex-direction: column;
@@ -736,7 +735,7 @@
   height: 150px;
   background: var(--secondary);
   border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-  filter: blur(50px);
+  filter: blur(20px);
   opacity: 0.15;
   animation: blob-float 10s infinite alternate ease-in-out;
 }

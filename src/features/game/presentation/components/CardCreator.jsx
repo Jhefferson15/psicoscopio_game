@@ -32,7 +32,7 @@ const CardCreator = () => {
   const saveToHistory = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     
     const newHistory = history.slice(0, historyStep + 1);
@@ -48,7 +48,7 @@ const CardCreator = () => {
     const newStep = historyStep - 1;
     setHistoryStep(newStep);
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     ctx.putImageData(history[newStep], 0, 0);
   };
 
@@ -57,7 +57,7 @@ const CardCreator = () => {
     const newStep = historyStep + 1;
     setHistoryStep(newStep);
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     ctx.putImageData(history[newStep], 0, 0);
   };
 
@@ -66,7 +66,7 @@ const CardCreator = () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
 
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       
@@ -89,7 +89,7 @@ const CardCreator = () => {
   const startDrawing = (e) => {
     if (creationMode !== 'drawing') return;
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     const rect = canvas.getBoundingClientRect();
     
     const scaleX = canvas.width / rect.width;
@@ -110,7 +110,7 @@ const CardCreator = () => {
     if (!isDrawing || creationMode !== 'drawing') return;
     
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     const rect = canvas.getBoundingClientRect();
     
     const scaleX = canvas.width / rect.width;

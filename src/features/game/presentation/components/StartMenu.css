@@ -44,12 +44,11 @@
 }
 
 .menu-card {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.98);
   padding: 60px 40px;
   border-radius: 40px;
   box-shadow: 
-    0 40px 100px rgba(0,0,0,0.08),
+    0 20px 50px rgba(0,0,0,0.1),
     inset 0 0 0 1px rgba(255,255,255,0.5);
   text-align: center;
   border: 1px solid rgba(0,0,0,0.03);
@@ -107,6 +106,16 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 15px;
+}
+
+.menu-single {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.menu-single .btn-secondary {
+  width: 100%;
 }
 
 .btn-secondary {

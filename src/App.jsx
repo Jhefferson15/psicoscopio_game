@@ -34,7 +34,6 @@ const GameContent = () => {
     toggleFullScreen, 
     currentScreen, 
     focusedCard, 
-    activeCardSet, 
     showCardHistory, 
     setShowCardHistory,
     showLeaveConfirm,

@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { X, History, Brain, Zap, Sparkles, HelpCircle } from 'lucide-react';
 import { useGame } from '../state/useGame';
 import './CardHistoryModal.css';

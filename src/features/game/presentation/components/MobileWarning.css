@@ -5,7 +5,6 @@
     radial-gradient(circle at 0% 0%, rgba(216, 75, 66, 0.1) 0%, transparent 40%),
     radial-gradient(circle at 100% 100%, rgba(72, 133, 206, 0.1) 0%, transparent 40%),
     white;
-  backdrop-filter: blur(20px);
   z-index: 99999;
   display: flex;
   align-items: center;

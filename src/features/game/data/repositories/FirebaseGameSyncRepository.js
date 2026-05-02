@@ -1,6 +1,16 @@
-import { ref, set, onValue, onDisconnect, serverTimestamp, query, orderByChild, equalTo } from "firebase/database";
+import { ref, set, onValue, onDisconnect, serverTimestamp } from "firebase/database";
+import { 
+  collection, 
+  doc, 
+  setDoc, 
+  onSnapshot, 
+  query, 
+  where, 
+  orderBy, 
+  serverTimestamp as firestoreTimestamp 
+} from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
-import { database, functions } from "../../../../config/firebase.js";
+import { database, functions, firestore } from "../../../../config/firebase.js";
 import { GameSyncRepository } from "../../domain/repositories/GameSyncRepository.js";
 
 export class FirebaseGameSyncRepository extends GameSyncRepository {
@@ -22,6 +32,25 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
     };
 
     await set(roomRef, initialData);
+
+    // Espelha metadados essenciais no Firestore para listagem eficiente no Dashboard
+    if (firestore) {
+      try {
+        const fsRoomRef = doc(firestore, "rooms", roomId);
+        await setDoc(fsRoomRef, {
+          id: roomId,
+          ownerId: ownerId || null,
+          status: 'waiting',
+          createdAt: firestoreTimestamp(),
+          metadata: initialData.gameState.metadata || {}
+        });
+      } catch (fsError) {
+        console.error("Erro ao registrar sala no Firestore (Metadados):", fsError);
+        // Não lançamos o erro aqui para não impedir o jogo de começar se o RTDB funcionou,
+        // mas o Dashboard do Observador não verá esta sala.
+      }
+    }
+
     return roomId;
   }
 
@@ -204,14 +233,16 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
    * Escuta as salas criadas por este anfitrião
    */
   listenToOwnerRooms(ownerId, callback) {
-    if (!database || !ownerId) return () => {};
-    const roomsRef = ref(database, 'rooms');
-    const ownerQuery = query(roomsRef, orderByChild('ownerId'), equalTo(ownerId));
+    if (!firestore || !ownerId) return () => {};
     
-    return onValue(ownerQuery, (snapshot) => {
-      const roomsData = snapshot.val() || {};
-      // Transforma o objeto de objetos em array
-      const ownerRooms = Object.values(roomsData);
+    const roomsRef = collection(firestore, 'rooms');
+    const q = query(roomsRef, where('ownerId', '==', ownerId), orderBy('createdAt', 'desc'));
+    
+    return onSnapshot(q, (snapshot) => {
+      const ownerRooms = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      }));
       callback(ownerRooms);
     });
   }
@@ -220,11 +251,48 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
    * Escuta o histórico de uma sala específica
    */
   listenToRoomHistory(roomId, callback) {
-    if (!database || !roomId) return () => {};
-    const historyRef = ref(database, `rooms/${roomId}/history`);
-    return onValue(historyRef, (snapshot) => {
-      callback(snapshot.val() || { turns: {}, cards: {} });
-    });
+    if (!firestore || !roomId) return () => {};
+    
+    const historyState = { turns: {}, cards: {} };
+    
+    const unsubTurns = onSnapshot(
+      query(collection(firestore, "roomHistory", roomId, "turns"), orderBy("timestamp", "asc")),
+      (snapshot) => {
+        const turns = {};
+        snapshot.docs.forEach(doc => {
+          const data = doc.data();
+          turns[doc.id] = { 
+            ...data, 
+            id: doc.id,
+            timestamp: data.timestamp?.toMillis ? data.timestamp.toMillis() : (data.timestamp || Date.now())
+          };
+        });
+        historyState.turns = turns;
+        callback({ ...historyState });
+      }
+    );
+
+    const unsubCards = onSnapshot(
+      query(collection(firestore, "roomHistory", roomId, "cards"), orderBy("timestamp", "desc")),
+      (snapshot) => {
+        const cards = {};
+        snapshot.docs.forEach(doc => {
+          const data = doc.data();
+          cards[doc.id] = { 
+            ...data, 
+            id: doc.id,
+            timestamp: data.timestamp?.toMillis ? data.timestamp.toMillis() : (data.timestamp || Date.now())
+          };
+        });
+        historyState.cards = cards;
+        callback({ ...historyState });
+      }
+    );
+
+    return () => {
+      unsubTurns();
+      unsubCards();
+    };
   }
 }
 

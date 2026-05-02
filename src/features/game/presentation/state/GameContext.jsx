@@ -398,7 +398,7 @@ export const GameProvider = ({ children }) => {
     } catch (error) {
       console.error("Erro ao sincronizar:", error);
     }
-  }, [isOnline, roomId, players, currentPlayerIndex, lastDiceRoll, boardRotation, playerAttributes, isSyncing, user]);
+  }, [isOnline, roomId, players, currentPlayerIndex, lastDiceRoll, playerAttributes, isSyncing, user, isRolling]);
 
 
   useEffect(() => {

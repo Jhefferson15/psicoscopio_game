@@ -10,8 +10,7 @@
 .all-dice-wrapper {
   display: flex;
   gap: 15px;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
   padding: 15px 20px;
   border-radius: 20px;
   border: 1px solid rgba(0, 0, 0, 0.05);
@@ -110,7 +109,6 @@
   z-index: 9999;
   border: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-  backdrop-filter: blur(4px);
   white-space: nowrap;
 }
 

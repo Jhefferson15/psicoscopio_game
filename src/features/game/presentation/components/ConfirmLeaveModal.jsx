@@ -1,8 +1,6 @@
-import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, X } from 'lucide-react';
 import SlideToConfirm from './SlideToConfirm';
-import { useGame } from '../state/useGame';
 import './ConfirmLeaveModal.css';
 
 const ConfirmLeaveModal = ({ isOpen, onConfirm, onCancel }) => {

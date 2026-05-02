@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../state/useGame';
-import { Home, Image as ImageIcon, Layout, X, Menu } from 'lucide-react';
+import { Home, Layout, X, Menu } from 'lucide-react';
 import './Navigation.css';
 
 const Navigation = () => {

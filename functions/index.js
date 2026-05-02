@@ -4,6 +4,7 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 
 const db = admin.database();
+const fs = admin.firestore();
 
 /**
  * Ação centralizada para mecânicas de jogo
@@ -114,8 +115,16 @@ exports.gameAction = onCall({
         };
 
         await roomRef.update(updates);
-        // Grava no histórico (separado para evitar sobrecarga do estado principal)
-        await roomRef.child("history/turns").push(turnMetric);
+        // Atualiza estatísticas no Firestore para o Dashboard
+        await fs.collection("rooms").doc(roomId).update({
+          "gameState.totalTurns": (gameState.totalTurns || 0) + 1,
+          status: room.status || "playing"
+        });
+        // Grava no histórico no Firestore (mais barato que RTDB para dados volumosos)
+        await fs.collection("roomHistory").doc(roomId).collection("turns").add({
+          ...turnMetric,
+          timestamp: admin.firestore.FieldValue.serverTimestamp()
+        });
         
         return { success: true };
       }
@@ -129,7 +138,10 @@ exports.gameAction = onCall({
           cardText: data.cardText,
           timestamp: admin.database.ServerValue.TIMESTAMP
         };
-        await roomRef.child("history/cards").push(cardAction);
+        await fs.collection("roomHistory").doc(roomId).collection("cards").add({
+          ...cardAction,
+          timestamp: admin.firestore.FieldValue.serverTimestamp()
+        });
         return { success: true };
       }
 
@@ -173,6 +185,17 @@ exports.gameAction = onCall({
         };
 
         await roomRef.child("participants").child(uid).set(userData);
+        
+        // Atualiza contagem e resumo de participantes no Firestore
+        await fs.collection("rooms").doc(roomId).update({
+          participantCount: participantIds.length + 1,
+          participantsSummary: admin.firestore.FieldValue.arrayUnion({
+            id: uid,
+            name: userData.name,
+            photoURL: userData.photoURL
+          })
+        });
+
         return { success: true };
       }
 
@@ -220,6 +243,16 @@ exports.createRoomBatch = onCall({ region: "us-central1", cors: true }, async (r
       }
     };
     await db.ref(`rooms/${roomId}`).set(roomData);
+    
+    // Espelha metadados essenciais no Firestore para listagem eficiente no Dashboard
+    await fs.collection("rooms").doc(roomId).set({
+      id: roomId,
+      ownerId: uid,
+      status: "waiting",
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      metadata: roomData.metadata
+    });
+
     roomIds.push(roomId);
   }
 

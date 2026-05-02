@@ -1,14 +1,4 @@
 import { test, expect, vi } from 'vitest';
-import React from 'react';
-
-// Mock de useGame para o teste
-const mockGameContext = {
-  currentScreen: 'game',
-  handleGoToMenu: vi.fn(),
-  confirmGoToMenu: vi.fn(),
-  showLeaveConfirm: false,
-  setShowLeaveConfirm: vi.fn(),
-};
 
 test('Fluxo de confirmação de saída deve abrir o modal quando solicitado', () => {
   // Simula a lógica do handleGoToMenu no GameContext
