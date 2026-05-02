@@ -79,7 +79,6 @@ test('Deve ir para o jogo ao concluir Ateliê se veio do fluxo de início offlin
 
 test('Deve ir para espera de jogadores ao concluir Ateliê no modo online', () => {
   let screen = 'card_creation';
-  let atelierContext = 'game_start';
   let isOnline = true;
   
   const finishCardCreation = () => {

@@ -138,6 +138,12 @@ exports.gameAction = onCall({
           "gameState/isRolling": false,
           "metadata/startedAt": admin.database.ServerValue.TIMESTAMP
         });
+
+        // Atualiza status também no Firestore para o Dashboard do Observador
+        await fs.collection("rooms").doc(roomId).update({
+          status: data.status || "playing",
+          startedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
         return { success: true };
       }
 

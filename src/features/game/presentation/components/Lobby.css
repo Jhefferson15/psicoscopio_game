@@ -208,6 +208,11 @@
   letter-spacing: 1px;
 }
 
+.p-role.leader {
+  color: #3b82f6;
+  opacity: 0.8;
+}
+
 .lobby-status-area {
   margin-top: 40px;
   padding: 40px;

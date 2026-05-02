@@ -162,6 +162,7 @@ vi.mock('firebase/functions', () => ({
 vi.mock('../src/config/firebase.js', () => ({
   auth: {},
   database: {},
+  firestore: {},
   functions: {}, // Mock vazio para satisfazer a verificação if(!functions)
   isFirebaseConfigured: true,
   default: true
@@ -296,7 +297,8 @@ describe('Teste Extensivo de Gameplay Online (Estresse e Sincronização)', () =
           // Simula saída
           await droppingRepo.leaveRoom(roomId, droppingUser.id);
           let roomAfterLeave = getFromPath(globalDatabase, `rooms/${roomId}`);
-          expect(roomAfterLeave.participants[droppingUser.id]).toBeUndefined();
+          expect(roomAfterLeave.participants[droppingUser.id]).toBeDefined();
+          expect(roomAfterLeave.participants[droppingUser.id].isOnline).toBe(false);
 
           // Simula volta imediata
           await droppingRepo.joinRoom(roomId, droppingUser);

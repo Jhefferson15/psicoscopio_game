@@ -1,11 +1,11 @@
 {
   "rules": {
     "rooms": {
-      ".indexOn": ["ownerId"],
-      // Permite que o observador liste apenas suas próprias salas via query
+      ".indexOn": [
+        "ownerId"
+      ],
       ".read": "auth != null && query.orderByChild === 'ownerId' && query.equalTo === auth.uid",
       "$roomId": {
-        // Jogadores individuais ainda precisam ler sua sala específica
         ".read": "auth != null",
         "status": {
           ".write": false
@@ -27,8 +27,7 @@
           ".read": "auth != null",
           ".write": false
         },
-        // Permite criar se não existir OU deletar/editar se for o dono
-        ".write": "auth != null && (!data.exists() || data.child('ownerId').val() === auth.uid)"
+        ".write": "auth != null && ((!data.exists() && newData.child('ownerId').val() === auth.uid) || (data.exists() && data.child('ownerId').val() === auth.uid))"
       }
     }
   }

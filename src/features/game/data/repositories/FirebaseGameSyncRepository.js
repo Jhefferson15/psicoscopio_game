@@ -7,6 +7,7 @@ import {
   query, 
   where, 
   orderBy, 
+  limit,
   serverTimestamp as firestoreTimestamp 
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
@@ -27,7 +28,9 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
       ownerId: ownerId || null,
       status: 'waiting',
       createdAt: Date.now(),
-      participants: ownerId ? { [ownerId]: { id: ownerId, name: 'Anfitrião', isOnline: true } } : {}, 
+      participants: (ownerId && gameData.metadata?.hostRole !== 'observer') 
+        ? { [ownerId]: { id: ownerId, name: 'Anfitrião', isOnline: true } } 
+        : {}, 
       gameState: JSON.parse(JSON.stringify(gameData))
     };
 
@@ -262,7 +265,7 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
     const historyState = { turns: {}, cards: {} };
     
     const unsubTurns = onSnapshot(
-      query(collection(firestore, "roomHistory", roomId, "turns"), orderBy("timestamp", "asc")),
+      query(collection(firestore, "roomHistory", roomId, "turns"), orderBy("timestamp", "desc"), limit(100)),
       (snapshot) => {
         const turns = {};
         snapshot.docs.forEach(doc => {
@@ -279,7 +282,7 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
     );
 
     const unsubCards = onSnapshot(
-      query(collection(firestore, "roomHistory", roomId, "cards"), orderBy("timestamp", "desc")),
+      query(collection(firestore, "roomHistory", roomId, "cards"), orderBy("timestamp", "desc"), limit(100)),
       (snapshot) => {
         const cards = {};
         snapshot.docs.forEach(doc => {

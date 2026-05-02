@@ -11,7 +11,8 @@ service cloud.firestore {
       // Permite criar se estiver autenticado. O ownerId no documento DEVE ser o UID do usuário.
       allow create: if request.auth != null && (request.resource.data.ownerId == request.auth.uid || request.resource.data.ownerId == null);
       allow read: if request.auth != null;
-      allow update, delete: if request.auth != null && (resource.data.ownerId == request.auth.uid || resource.data.ownerId == null);
+      allow update: if request.auth != null && (resource.data.ownerId == request.auth.uid || resource.data.ownerId == null) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['ownerId']));
+      allow delete: if request.auth != null && (resource.data.ownerId == request.auth.uid || resource.data.ownerId == null);
     }
 
     // Regras para Histórico (Escrita via Cloud Functions, leitura via app)

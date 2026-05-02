@@ -48,6 +48,7 @@ vi.mock('firebase/functions', () => ({
 vi.mock('../src/config/firebase.js', () => ({
   auth: {},
   database: {},
+  firestore: {},
   functions: {},
   googleProvider: {},
   isFirebaseConfigured: true,

@@ -76,7 +76,11 @@ const Lobby = () => {
                       <span className="p-name">{p.id === user?.id ? 'Você' : p.name}</span>
                       {p.id === ownerId && <Shield size={14} className="owner-icon" />}
                     </div>
-                    {p.id === ownerId && <span className="p-role">Anfitrião</span>}
+                    {p.id === ownerId ? (
+                      <span className="p-role">Anfitrião</span>
+                    ) : (
+                      hostRole === 'observer' && index === 0 && <span className="p-role leader">Líder</span>
+                    )}
                   </div>
                   
                   {p.id === user?.id && <div className="self-indicator" />}

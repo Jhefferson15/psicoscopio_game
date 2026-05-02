@@ -300,7 +300,9 @@ export const GameProvider = ({ children }) => {
       setIsOnline(true);
       setRoomStatus(room.status);
       setOwnerId(room.ownerId);
-      setHostRole(room.metadata?.hostRole || 'player');
+      const role = room.metadata?.hostRole || 'player';
+      setHostRole(role);
+      console.log(`[Join] Sala ${id} carregada. Dono: ${room.ownerId}, Papel: ${role}`);
       setRoomParticipants(room.participants || {});
       
       if (room.gameState) {
@@ -438,6 +440,7 @@ export const GameProvider = ({ children }) => {
       isRolling: overrides.isRolling !== undefined ? overrides.isRolling : isRolling,
       playerAttributes: playerAttributes,
       lastActionBy: user?.id || null
+      // NUNCA incluir ownerId aqui para não sobrescrever o RTDB
     };
 
     try {
