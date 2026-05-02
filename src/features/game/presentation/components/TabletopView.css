@@ -173,7 +173,7 @@
 .players-sidebar, .actions-sidebar, .dashboard-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 25px;
 }
 
 .dashboard-sidebar {
@@ -319,7 +319,7 @@
 }
 
 .panel-header h3 {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 800;
   margin: 0;
   letter-spacing: 1px;
@@ -336,14 +336,14 @@
 .cards-stack-modern {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 15px;
-  margin-top: 10px;
-  min-height: 150px;
+  gap: 20px;
+  margin-top: 15px;
+  min-height: 180px;
 }
 
 .card-stack-item {
   position: relative;
-  height: 120px;
+  height: 150px;
 }
 
 .steps-list-modern {
@@ -368,43 +368,46 @@
 
 .dice-area {
   margin-top: auto;
-  padding: 20px;
+  padding: 25px 20px;
   background: white;
-  border-radius: 24px;
+  border-radius: 20px;
   text-align: center;
   position: relative;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.02);
+  width: 100%;
+  border: 1px solid rgba(0,0,0,0.02);
 }
 
 .dice-shaker {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 30px;
 }
 
 .dice-result-large {
-  font-size: 64px;
+  font-size: 80px;
   font-weight: 900;
   color: white;
   text-shadow: 0 0 30px var(--primary);
   background: var(--primary);
-  width: 100px;
-  height: 100px;
+  width: 130px;
+  height: 130px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 24px;
-  box-shadow: 0 10px 20px rgba(216, 75, 66, 0.3);
+  border-radius: 28px;
+  box-shadow: 0 15px 30px rgba(216, 75, 66, 0.3);
 }
 
 .dice-roll-btn {
   background: var(--text);
   color: white;
   border: none;
-  padding: 15px 30px;
-  border-radius: 16px;
+  padding: 18px 30px;
+  border-radius: 18px;
   font-weight: 800;
+  font-size: 15px;
   display: flex;
   align-items: center;
   gap: 15px;
@@ -424,24 +427,6 @@
   pointer-events: none;
   z-index: 2;
 }
-
-.game-manual {
-  position: absolute;
-  bottom: 120px;
-  left: 40px;
-  width: 180px;
-  height: 240px;
-  background: #fff;
-  border-radius: 4px 12px 12px 4px;
-  box-shadow: 5px 10px 20px rgba(0,0,0,0.08);
-  transform: rotate(-5deg);
-  padding: 20px;
-  border-left: 10px solid var(--secondary);
-  pointer-events: auto;
-}
-
-.manual-content h5 { margin: 0 0 10px 0; font-size: 14px; }
-.manual-content p { font-size: 10px; line-height: 1.4; color: var(--text-muted); }
 
 .token {
   position: absolute;
@@ -683,17 +668,33 @@
     box-shadow: 0 15px 35px rgba(0,0,0,0.08) !important;
   }
 
-  /* Bring Players directly under the board */
+  /* 2. Dados */
   .action-area-modern {
     order: 2 !important;
   }
 
+  /* 3. Jogadores */
   .players-panel {
     order: 3 !important;
   }
 
-  .bottom-dashboard-row-large {
+  /* 4. Diário */
+  .sidebar-journal {
     order: 4 !important;
+  }
+
+  /* 5. Cartas (Painéis genéricos que sobraram) */
+  .info-panel-modern:not(.players-panel):not(.action-area-modern) {
+    order: 5 !important;
+  }
+
+  /* Hide section titles in mobile to save space and avoid top clutter */
+  .sidebar-section-title {
+    display: none !important;
+  }
+
+  .bottom-dashboard-row-large {
+    order: 6 !important;
     width: 100% !important;
     display: flex !important;
     flex-direction: column !important;
@@ -701,15 +702,11 @@
   }
 
   .profile-gallery-area {
-    order: 5 !important;
-  }
-
-  .info-panel-modern:not(.players-panel):not(.profile-gallery-area) {
-    order: 6 !important;
+    order: 7 !important;
   }
 
   .special-tiles-panel {
-    order: 7 !important;
+    order: 8 !important;
   }
 
   /* Fullscreen Board Logic */
@@ -750,13 +747,16 @@
     display: flex !important;
     flex-direction: row !important;
     overflow-x: auto !important;
-    padding-bottom: 10px !important;
-    gap: 12px !important;
+    padding: 10px 15px !important;
+    gap: 20px !important;
+    justify-content: space-around !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .card-stack-item {
-    flex: 0 0 60px !important;
-    height: 90px !important;
+    flex: 0 0 90px !important;
+    height: 135px !important;
   }
 
   .action-area-modern {

@@ -212,7 +212,7 @@ export const GameProvider = ({ children }) => {
     goToMenu();
   };
 
-  const goToMenu = async () => {
+  const goToMenu = useCallback(async () => {
     if (isOnline && roomId && user) {
       try {
         await syncRepository.leaveRoom(roomId, user.id);
@@ -224,7 +224,7 @@ export const GameProvider = ({ children }) => {
     setIsOnline(false);
     syncRepository.clearActiveRoomId();
     setCurrentScreen('menu');
-  };
+  }, [isOnline, roomId, user]);
 
   // Funções Online
   const createOnlineGame = async (newPlayers) => {
@@ -234,6 +234,7 @@ export const GameProvider = ({ children }) => {
       players: initialPlayers,
       currentPlayerIndex: 0,
       lastDiceRoll: 0,
+      boardConfig: activeBoardConfig.toJSON(),
       playerAttributes: {
         1: { memory: 20, reflection: 40, challenge: 10 },
         2: { memory: 30, reflection: 15, challenge: 50 }
@@ -280,6 +281,9 @@ export const GameProvider = ({ children }) => {
         }
         if (room.gameState.turnDuration) {
           setTurnDuration(room.gameState.turnDuration);
+        }
+        if (room.gameState.boardConfig) {
+          setActiveBoardConfig(BoardConfig.fromJSON(room.gameState.boardConfig));
         }
       }
 
@@ -357,6 +361,7 @@ export const GameProvider = ({ children }) => {
           acc[p.id] = { memory: 20, reflection: 20, challenge: 20 };
           return acc;
         }, {}),
+        boardConfig: activeBoardConfig.toJSON(),
         status: 'setup_cards' // Status que a function deve definir
       };
 
@@ -432,6 +437,9 @@ export const GameProvider = ({ children }) => {
           isTurnBeingPassedRef.current = false;
         }
         if (newState.turnDuration !== undefined) setTurnDuration(newState.turnDuration);
+        if (newState.boardConfig) {
+          setActiveBoardConfig(BoardConfig.fromJSON(newState.boardConfig));
+        }
 
         
         setTimeout(() => setIsSyncing(false), 500);
@@ -504,12 +512,15 @@ export const GameProvider = ({ children }) => {
   // Monitoramento de partida encerrada
   useEffect(() => {
     if (isOnline && roomStatus === 'finished' && currentScreen !== 'menu') {
-      showSystemPopup({
-        title: 'Partida Encerrada',
-        message: 'A partida foi finalizada pois todos os jogadores saíram ou o tempo expirou.',
-        buttonText: 'Voltar ao Menu',
-        onConfirm: goToMenu
-      });
+      const timer = setTimeout(() => {
+        showSystemPopup({
+          title: 'Partida Encerrada',
+          message: 'A partida foi finalizada pois todos os jogadores saíram ou o tempo expirou.',
+          buttonText: 'Voltar ao Menu',
+          onConfirm: goToMenu
+        });
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [roomStatus, isOnline, currentScreen, showSystemPopup, goToMenu]);
 
@@ -750,7 +761,7 @@ export const GameProvider = ({ children }) => {
       // Modo offline: reseta o flag apos um tick para permitir que o estado se atualize
       queueMicrotask(() => { isTurnBeingPassedRef.current = false; });
     }
-  }, [currentPlayerIndex, players, isOnline, roomId, syncStateToFirebase, activeBoardConfig]);
+  }, [currentPlayerIndex, players, isOnline, roomId, syncStateToFirebase, activeBoardConfig, roomParticipants]);
 
   // Refs de passagem: as declaracoes foram movidas para antes de passTurn
   // isMovingRef: permite o listener ignorar atualizacoes de players durante animacao local
@@ -813,7 +824,7 @@ export const GameProvider = ({ children }) => {
     }, 500);
 
     return () => clearInterval(interval);
-  }, [currentScreen, isMoving, currentPlayerIndex, showModal, isOnline, turnStartTime, turnDuration, serverTimeOffset, ownerId, user?.id]);
+  }, [currentScreen, isMoving, currentPlayerIndex, showModal, isOnline, turnStartTime, turnDuration, serverTimeOffset, ownerId, user?.id, roomParticipants]);
 
 
 
@@ -1095,8 +1106,8 @@ export const GameProvider = ({ children }) => {
       removeDiaryEntry: (id) => {
         firestoreRemoveDiary(id);
       },
-      updateDiaryEntry: (id, text) => {
-        firestoreUpdateDiary(id, text);
+      updateDiaryEntry: (id, newData) => {
+        firestoreUpdateDiary(id, newData);
       },
       setCurrentScreen,
       showDiary,

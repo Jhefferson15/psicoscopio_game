@@ -26,6 +26,7 @@ const TYPES = [
   { id: 'reflexao', label: 'Reflexão', color: '#7B4BB1' },
   { id: 'desafio', label: 'Desafio', color: '#D84B42' },
   { id: 'aprendizado', label: 'Aprendizado', color: '#4885CE' },
+  { id: 'nota-rapida', label: 'Nota Rápida', color: '#10B981' },
 ];
 
 const DiaryModal = ({ onClose }) => {
@@ -34,8 +35,11 @@ const DiaryModal = ({ onClose }) => {
   const [newText, setNewText] = useState('');
   const [selectedMood, setSelectedMood] = useState('neutral');
   const [selectedType, setSelectedType] = useState('reflexao');
+  
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState('');
+  const [editMood, setEditMood] = useState('neutral');
+  const [editType, setEditType] = useState('reflexao');
 
   const handleAdd = () => {
     if (newText.trim()) {
@@ -48,11 +52,17 @@ const DiaryModal = ({ onClose }) => {
   const startEditing = (entry) => {
     setEditingId(entry.id);
     setEditText(entry.text);
+    setEditMood(entry.mood || 'neutral');
+    setEditType(entry.type || 'reflexao');
   };
 
   const handleUpdate = (id) => {
     if (editText.trim()) {
-      updateDiaryEntry(id, editText);
+      updateDiaryEntry(id, {
+        text: editText,
+        mood: editMood,
+        type: editType
+      });
       setEditingId(null);
     }
   };
@@ -183,12 +193,12 @@ const DiaryModal = ({ onClose }) => {
                   >
                     <div className="entry-header">
                       <div className="entry-meta">
-                        <span className="entry-date">{formatDate(entry.timestamp)}</span>
-                        <span className="entry-type-tag" style={{ '--type-color': TYPES.find(t => t.id === entry.type)?.color }}>
-                          {TYPES.find(t => t.id === entry.type)?.label}
+                        <span className="entry-date">{formatDate(entry.timestamp || entry.date)}</span>
+                        <span className="entry-type-tag" style={{ '--type-color': TYPES.find(t => t.id === entry.type)?.color || '#64748b' }}>
+                          {TYPES.find(t => t.id === entry.type)?.label || 'Geral'}
                         </span>
                       </div>
-                      <div className="entry-mood" style={{ color: MOODS.find(m => m.id === entry.mood)?.color }}>
+                      <div className="entry-mood" style={{ color: MOODS.find(m => m.id === entry.mood)?.color || '#64748b' }}>
                         {React.createElement(MOODS.find(m => m.id === entry.mood)?.icon || Meh, { size: 18 })}
                       </div>
                     </div>
@@ -201,13 +211,42 @@ const DiaryModal = ({ onClose }) => {
                             onChange={(e) => setEditText(e.target.value)}
                             autoFocus
                           />
-                          <div className="edit-actions">
-                            <button className="btn-icon-save" onClick={() => handleUpdate(entry.id)}>
-                              <Check size={18} />
-                            </button>
-                            <button className="btn-icon-cancel" onClick={() => setEditingId(null)}>
-                              <X size={18} />
-                            </button>
+                          <div className="edit-form-footer">
+                            <div className="selectors">
+                              <div className="mood-selector mini">
+                                {MOODS.map(mood => (
+                                  <button 
+                                    key={mood.id}
+                                    className={`mood-btn mini ${editMood === mood.id ? 'active' : ''}`}
+                                    onClick={() => setEditMood(mood.id)}
+                                    title={mood.label}
+                                    style={{ '--mood-color': mood.color }}
+                                  >
+                                    <mood.icon size={16} />
+                                  </button>
+                                ))}
+                              </div>
+                              <div className="type-selector mini">
+                                {TYPES.map(type => (
+                                  <button 
+                                    key={type.id}
+                                    className={`type-tag mini ${editType === type.id ? 'active' : ''}`}
+                                    onClick={() => setEditType(type.id)}
+                                    style={{ '--type-color': type.color }}
+                                  >
+                                    {type.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="edit-actions">
+                              <button className="btn-icon-save" onClick={() => handleUpdate(entry.id)} title="Salvar">
+                                <Check size={18} />
+                              </button>
+                              <button className="btn-icon-cancel" onClick={() => setEditingId(null)} title="Cancelar">
+                                <X size={18} />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ) : (

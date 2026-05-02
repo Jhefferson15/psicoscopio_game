@@ -73,11 +73,11 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  const updateDiaryEntry = async (id, text) => {
+  const updateDiaryEntry = async (id, newData) => {
     if (!user) return;
     try {
-      await userRepository.updateDiaryEntry(user.id, id, text);
-      setDiary(prev => prev.map(e => e.id === id ? { ...e, text } : e));
+      await userRepository.updateDiaryEntry(user.id, id, newData);
+      setDiary(prev => prev.map(e => e.id === id ? { ...e, ...newData } : e));
     } catch (error) {
       console.error("Erro ao atualizar o diário:", error);
     }

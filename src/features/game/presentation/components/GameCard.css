@@ -54,9 +54,14 @@
   color: white;
   font-weight: 700;
   font-size: 11px;
-  letter-spacing: 2px;
+  letter-spacing: 0.5px;
   opacity: 0.85;
   text-transform: uppercase;
+  width: 90%;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
 }
 
 .card-face .cover-dots {
@@ -88,7 +93,8 @@
   border-bottom: 2px solid;
   font-weight: 800;
   font-size: 10px;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .card-face .card-body-text {
@@ -118,6 +124,21 @@
 }
 
 @media (max-width: 768px) {
+  .game-card:not(.focused) .cover-label {
+    font-size: 11px !important;
+    letter-spacing: 0 !important;
+  }
+
+  .game-card:not(.focused) .card-header-bar {
+    font-size: 9px !important;
+    letter-spacing: 0 !important;
+  }
+
+  .game-card:not(.focused) .logo-symbol svg {
+    width: 45px !important;
+    height: 45px !important;
+  }
+
   .game-card.focused {
     width: 85vw !important;
     height: 60vh !important;
@@ -130,5 +151,6 @@
 
   .game-card.focused .card-header-bar {
     font-size: 14px !important;
+    letter-spacing: 1px !important;
   }
 }

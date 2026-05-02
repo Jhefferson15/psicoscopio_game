@@ -14,9 +14,9 @@ export class FirestoreUserRepository {
   async saveDiaryEntry(userId, entry) {
     if (!firestore) return;
     const userRef = doc(firestore, "users", userId);
-    await updateDoc(userRef, {
+    await setDoc(userRef, {
       diary: arrayUnion(entry)
-    });
+    }, { merge: true });
   }
 
   async syncUserData(userId, data) {
@@ -45,13 +45,13 @@ export class FirestoreUserRepository {
     }
   }
 
-  async updateDiaryEntry(userId, entryId, newText) {
+  async updateDiaryEntry(userId, entryId, newData) {
     if (!firestore) return;
     const userRef = doc(firestore, "users", userId);
     const userDoc = await getDoc(userRef);
     if (userDoc.exists()) {
       const diary = userDoc.data().diary || [];
-      const updatedDiary = diary.map(e => e.id === entryId ? { ...e, text: newText } : e);
+      const updatedDiary = diary.map(e => e.id === entryId ? { ...e, ...newData } : e);
       await updateDoc(userRef, { diary: updatedDiary });
     }
   }

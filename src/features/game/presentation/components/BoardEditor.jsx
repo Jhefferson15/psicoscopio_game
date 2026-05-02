@@ -22,6 +22,8 @@ import {
   Upload
 } from 'lucide-react';
 import { useGame } from '../state/useGame';
+import { GenerateRandomBoardConfig } from '../../domain/usecases/GenerateRandomBoardConfig';
+import { BoardConfigRepository } from '../../data/repositories/BoardConfigRepository';
 import './BoardEditor.css';
 
 const TILE_TYPES = [
@@ -54,7 +56,11 @@ const TILE_ACTIONS = [
   { id: 'WRITE_DIARY', label: 'No Diário', icon: BookOpen }
 ];
 
-const COLORS = ['#D84B42', '#4885CE', '#7B4BB1', '#F59E0B', '#10B981', '#6366F1', '#F4C746', '#6FB05E', '#FFFFFF'];
+const COLORS = [
+  '#D84B42', '#4885CE', '#7B4BB1', '#F59E0B', '#10B981', '#6366F1', '#F4C746', '#6FB05E', '#FFFFFF',
+  '#EC4899', '#F97316', '#8B5CF6', '#06B6D4', '#84CC16', '#3B82F6', '#EF4444', '#14B8A6', '#FACC15',
+  '#A855F7', '#64748B', '#000000', '#FFD700', '#C0C0C0', '#CD7F32', '#FF69B4', '#40E0D0', '#9FE2BF'
+];
 
 const BoardEditor = () => {
   const { 
@@ -86,6 +92,7 @@ const BoardEditor = () => {
       changeActiveBoardConfig(newId);
     } else {
       updateBoardConfig(editingConfig.id, editingConfig.tiles, editingConfig.mechanics, configName);
+      changeActiveBoardConfig(editingConfig.id);
     }
 
     showSystemPopup({
@@ -108,13 +115,43 @@ const BoardEditor = () => {
     });
   };
 
+  const handleRandomize = () => {
+    const randomBoard = GenerateRandomBoardConfig.execute(
+      editingConfig.tiles, 
+      TILE_TYPES, 
+      TILE_ACTIONS, 
+      COLORS
+    );
+    
+    setEditingConfig({
+      ...editingConfig,
+      name: randomBoard.name,
+      mechanics: randomBoard.mechanics,
+      tiles: randomBoard.tiles
+    });
+    setConfigName(randomBoard.name);
+
+    showSystemPopup({
+      title: 'Aleatorizado!',
+      message: 'Novo tabuleiro gerado com sucesso.',
+      type: 'success'
+    });
+  };
+
   const startNewBoard = () => {
-    const defaultConfig = availableBoardConfigs.find(c => c.id === 'default');
+    const defaultConfig = availableBoardConfigs.find(c => c.id === 'default') || BoardConfigRepository.getDefaultConfig();
     const newConfig = JSON.parse(JSON.stringify(defaultConfig));
     newConfig.id = 'temp-' + Date.now();
     newConfig.name = 'Novo Tabuleiro';
     setEditingConfig(newConfig);
     setConfigName('Novo Tabuleiro');
+    setSelectedTileIndex(null);
+
+    showSystemPopup({
+      title: 'Novo Tabuleiro',
+      message: 'Um novo rascunho de tabuleiro foi criado.',
+      type: 'success'
+    });
   };
 
   const handleExport = (config) => {
@@ -201,6 +238,14 @@ const BoardEditor = () => {
                 <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>IMPORTAR</span>
                 <input type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
               </label>
+              <button 
+                className="btn-add-set" 
+                onClick={handleRandomize} 
+                style={{ width: '100%', marginTop: '1rem', padding: '0.75rem', borderRadius: '10px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+              >
+                <Sparkles size={16} />
+                <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>GERAR ALEATÓRIO</span>
+              </button>
             </div>
             
             <div className="config-list">
@@ -212,6 +257,7 @@ const BoardEditor = () => {
                     setEditingConfig(JSON.parse(JSON.stringify(config)));
                     setConfigName(config.name);
                     setSelectedTileIndex(null);
+                    changeActiveBoardConfig(config.id);
                   }}
                 >
                   <div className="config-info">

@@ -499,9 +499,9 @@
 }
 
 .color-grid-quick {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 0.5rem;
 }
 
 .color-dot-quick {
@@ -658,5 +658,9 @@
 
   .action-grid-quick {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .color-grid-quick {
+    grid-template-columns: repeat(6, 1fr);
   }
 }

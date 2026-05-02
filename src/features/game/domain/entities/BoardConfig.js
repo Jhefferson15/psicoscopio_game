@@ -1,3 +1,5 @@
+import { Tile } from './Tile';
+
 export class BoardConfig {
   constructor(id, name, tiles, mechanics, createdAt = Date.now(), updatedAt = Date.now()) {
     this.id = id;
@@ -12,7 +14,7 @@ export class BoardConfig {
     return new BoardConfig(
       json.id,
       json.name,
-      json.tiles, // Tiles will be mapped to Tile objects in the repository or context if needed
+      (json.tiles || []).map(t => Tile.fromJSON(t)),
       json.mechanics,
       json.createdAt,
       json.updatedAt

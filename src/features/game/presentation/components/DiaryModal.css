@@ -14,9 +14,9 @@
 }
 
 .diary-modal-container {
-  width: 100%;
-  max-width: 800px;
-  max-height: 85vh;
+  width: 95%;
+  max-width: 1100px;
+  max-height: 90vh;
   background: rgba(255, 255, 255, 0.98);
   border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 32px;
@@ -390,6 +390,30 @@
   font-size: 15px;
   outline: none;
   margin-bottom: 12px;
+}
+
+.edit-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.mood-selector.mini, .type-selector.mini {
+  gap: 4px;
+}
+
+.mood-btn.mini {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.type-tag.mini {
+  padding: 4px 8px;
+  font-size: 10px;
+  border-radius: 6px;
 }
 
 .edit-actions {

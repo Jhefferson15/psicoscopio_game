@@ -5,50 +5,52 @@
   justify-content: center;
   position: relative;
   z-index: 50;
+  width: 100%;
 }
 
 .all-dice-wrapper {
   display: flex;
+  flex-wrap: wrap;
   gap: 15px;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 15px 20px;
-  border-radius: 20px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 10px 0;
+  justify-content: space-around;
+  align-items: flex-end;
+  width: 100%;
 }
 
 .player-dice-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   position: relative;
   transition: all 0.3s ease;
+  min-width: 80px;
 }
 
 .player-dice-wrapper.active-turn {
-  transform: translateY(-5px);
+  transform: translateY(-6px);
 }
 
 .player-dice-badge {
   position: absolute;
-  top: -5px;
-  right: -5px;
-  width: 20px;
-  height: 20px;
+  top: -8px;
+  right: -8px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
   border: 2px solid #ffffff;
 }
 
 .dice-button-multi {
-  width: 60px;
-  height: 60px;
-  border-radius: 15px;
+  width: 90px;
+  height: 90px;
+  border-radius: 22px;
   background: rgba(248, 250, 252, 0.9);
   border: 2px solid rgba(0, 0, 0, 0.05);
   display: flex;
@@ -58,16 +60,16 @@
   position: relative;
   overflow: hidden;
   transition: all 0.3s ease;
-  box-shadow: inset 0 2px 10px rgba(255, 255, 255, 1), 0 4px 10px rgba(0, 0, 0, 0.05);
+  box-shadow: inset 0 2px 10px rgba(255, 255, 255, 1), 0 6px 15px rgba(0, 0, 0, 0.07);
 }
 
 .dice-button-multi.not-allowed {
   cursor: not-allowed;
-  pointer-events: none; /* Garante zero interação do mouse sobre o elemento interno */
+  pointer-events: none;
 }
 
 .dice-button-multi:not(.not-allowed):hover {
-  box-shadow: inset 0 2px 15px rgba(255, 255, 255, 1), 0 6px 15px rgba(0, 0, 0, 0.12);
+  box-shadow: inset 0 2px 15px rgba(255, 255, 255, 1), 0 8px 20px rgba(0, 0, 0, 0.14);
 }
 
 .dice-icon-wrapper {
@@ -79,19 +81,19 @@
 }
 
 .dice-number-large {
-  font-size: 28px;
+  font-size: 42px;
   font-weight: 800;
   font-family: 'Outfit', sans-serif;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  text-shadow: 0 2px 6px rgba(0,0,0,0.12);
 }
 
 .dice-player-name {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   white-space: nowrap;
-  max-width: 60px;
+  max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: center;
@@ -101,9 +103,9 @@
   position: fixed;
   background: rgba(255, 255, 255, 0.95);
   color: #1e293b;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 13px;
   font-weight: 700;
   pointer-events: none;
   z-index: 9999;
@@ -111,4 +113,3 @@
   box-shadow: 0 4px 15px rgba(0,0,0,0.15);
   white-space: nowrap;
 }
-

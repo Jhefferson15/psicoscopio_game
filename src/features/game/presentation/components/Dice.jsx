@@ -42,7 +42,7 @@ const Dice = () => {
               onMouseLeave={() => setShowTooltip(false)}
             >
               <div className="player-dice-badge" style={{ backgroundColor: player.color }}>
-                 <User size={12} color="white" />
+                <User size={16} color="white" />
               </div>
 
               <motion.button
@@ -73,7 +73,7 @@ const Dice = () => {
                       transition={{ repeat: Infinity, duration: 0.5, ease: "linear" }}
                       style={{ display: 'flex', alignItems: 'center', justifyItems: 'center' }}
                     >
-                      <Dices size={isThisPlayerTurn ? 32 : 24} color={player.color} />
+                      <Dices size={isThisPlayerTurn ? 48 : 36} color={player.color} />
                     </motion.div>
                   ) : player.lastRoll ? (
                     <motion.span 
@@ -86,7 +86,7 @@ const Dice = () => {
                       {player.lastRoll}
                     </motion.span>
                   ) : (
-                    <Dices size={isThisPlayerTurn ? 32 : 24} color={player.color} />
+                    <Dices size={isThisPlayerTurn ? 48 : 36} color={player.color} />
                   )}
                 </div>
               </motion.button>

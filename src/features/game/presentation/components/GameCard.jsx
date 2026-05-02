@@ -81,14 +81,9 @@ const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = 
   const handleClick = () => {
     if (isFocused) {
       closeFocusedCard();
-    } else {
-      const typeMap = { 'reflexao': 3, 'desafio': 2, 'memoria': 0, 'experiencia': 1 };
-      setFocusedCard({ 
-        type: type, 
-        index: typeMap[type] !== undefined ? typeMap[type] : index, 
-        id: layoutId 
-      });
     }
+    // O foco manual (abertura de carta via clique) foi desabilitado 
+    // pois as cartas são disparadas automaticamente pela lógica do jogo.
   };
 
   return (
@@ -99,6 +94,7 @@ const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = 
         '--card-color': config.color,
         '--card-gradient': config.gradient,
         zIndex: isFocused ? 2000 : (isStacked ? 10 - index : 1),
+        cursor: isFocused ? 'pointer' : 'default'
       }}
       animate={{ 
         y: isFocused ? 0 : (isStacked ? index * -4 : 0),
@@ -109,8 +105,8 @@ const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = 
         scale: { duration: 0.5 },
         layout: { duration: 0.6, type: 'spring' }
       }}
-      whileHover={isFocused ? {} : { scale: 1.05, zIndex: 100 }}
-      whileTap={isFocused ? {} : { scale: 0.95 }}
+      whileHover={isFocused ? { scale: 1.05 } : {}}
+      whileTap={isFocused ? { scale: 0.95 } : {}}
       onClick={handleClick}
     >
       <div className="card-perspective-wrapper">

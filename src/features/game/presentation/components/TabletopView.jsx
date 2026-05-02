@@ -3,6 +3,7 @@ import './TabletopView.css';
 import './GameFeatures.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../state/useGame';
+import { useUser } from '../../../user/presentation/state/useUser';
 import BoardView from './BoardView';
 import GameCard from './GameCard';
 import PlayerCard from './PlayerCard';
@@ -12,19 +13,17 @@ import {
   Maximize2, 
   BookOpen, 
   Layers, 
-  PlayCircle,
   ArrowRight,
   ArrowLeft,
   Shuffle,
   Users,
   RotateCw,
-  TrendingUp,
   MessageSquare,
   Clock,
   History,
 } from 'lucide-react';
 import Hourglass from './Hourglass';
-import { GAME_RULES, GAME_CARDS } from '../../domain/gameConstants';
+import { GAME_CARDS } from '../../domain/gameConstants';
 import { CustomCardsModal } from './MenuModals';
 import DiaryModal from './DiaryModal';
 
@@ -32,7 +31,6 @@ const TabletopView = () => {
   const { 
     boardRotation,
     rotateBoard,
-    playerAttributes,
     diaryEntries,
     activeCardSet,
     players,
@@ -51,12 +49,20 @@ const TabletopView = () => {
   const [showHourglassDetails, setShowHourglassDetails] = React.useState(false);
   const [showCollection, setShowCollection] = React.useState(false);
   const [showProfileGallery, setShowProfileGallery] = React.useState(false);
+  const [quickDiaryText, setQuickDiaryText] = React.useState('');
+  
+  const { addDiaryEntry } = useUser();
+
+  const handleQuickDiarySubmit = (e) => {
+    if (e.key === 'Enter' && quickDiaryText.trim()) {
+      addDiaryEntry(quickDiaryText, 'nota-rapida', 'neutral');
+      setQuickDiaryText('');
+    }
+  };
 
 
   const currentPlayer = players[currentPlayerIndex];
   const gameTime = currentPlayer.timeLeft;
-
-  const activePlayerAttr = playerAttributes[players[currentPlayerIndex].id] || { memory: 0, reflection: 0, challenge: 0 };
 
   return (
     <motion.div 
@@ -94,16 +100,62 @@ const TabletopView = () => {
 
       <main className="tabletop-dashboard-grid">
         {/* Left Side Panels */}
+        {/* Left Side Panels: Independent Components */}
         <aside className="dashboard-sidebar left">
+          <div className="sidebar-section-title">
+            <Users size={16} className="text-purple" />
+            <span>Jogadores em Campo</span>
+          </div>
+
           <div className="info-panel-modern glass-light players-panel">
-            <div className="panel-header">
-              <Users size={18} className="text-purple" />
-              <h3>JOGADORES EM CAMPO</h3>
-            </div>
             <div className="players-scroll-area">
               {players.map((p, i) => (
                 <PlayerCard key={p.id} player={p} isActive={i === currentPlayerIndex} onClick={() => setShowProfileGallery(true)} />
               ))}
+            </div>
+          </div>
+
+          <div className="sidebar-section-title" style={{ marginTop: '5px' }}>
+            <MessageSquare size={16} className="text-purple" />
+            <span>Diário de Bordo</span>
+          </div>
+
+          <div className="narrative-journal glass-light sidebar-journal">
+            <div className="panel-header">
+              <div className="header-with-action">
+                <span className="journal-subtitle">Registros da Jornada</span>
+              </div>
+              <button className="btn-expand-journal" onClick={() => setShowDiary(true)} title="Expandir Diário">
+                <Maximize2 size={14} />
+              </button>
+            </div>
+
+            <div className="journal-content-scroll">
+               {diaryEntries.map(entry => (
+                 <motion.div 
+                   key={entry.id} 
+                   initial={{ x: -20, opacity: 0 }}
+                   animate={{ x: 0, opacity: 1 }}
+                   className={`journal-entry-card ${entry.type}`}
+                 >
+                   <span className="entry-time">{entry.timestamp || new Date(entry.id).toLocaleTimeString()}</span>
+                   <p>{entry.text}</p>
+                 </motion.div>
+               ))}
+               {diaryEntries.length === 0 && (
+                 <div className="empty-journal-msg">Nenhum registro ainda...</div>
+               )}
+            </div>
+            
+            <div className="quick-diary-input-area">
+              <input 
+                type="text" 
+                placeholder="Nota rápida (Enter para salvar)..." 
+                value={quickDiaryText}
+                onChange={(e) => setQuickDiaryText(e.target.value)}
+                onKeyDown={handleQuickDiarySubmit}
+                className="journal-quick-input"
+              />
             </div>
           </div>
         </aside>
@@ -118,78 +170,12 @@ const TabletopView = () => {
           </motion.div>
 
           <div className="bottom-dashboard-row-large">
-              <div className="narrative-journal glass-light">
-                <div className="panel-header">
-                  <div className="header-with-action">
-                    <MessageSquare size={18} className="text-purple" />
-                    <h3>DIÁRIO DE BORDO</h3>
-                  </div>
-                  <button className="btn-expand-journal" onClick={() => setShowDiary(true)} title="Expandir Diário">
-                    <Maximize2 size={14} />
-                  </button>
-                </div>
-
-                <div className="journal-content-scroll">
-                   {diaryEntries.map(entry => (
-                     <motion.div 
-                       key={entry.id} 
-                       initial={{ x: -20, opacity: 0 }}
-                       animate={{ x: 0, opacity: 1 }}
-                       className={`journal-entry-card ${entry.type}`}
-                     >
-                       <span className="entry-time">{entry.timestamp}</span>
-                       <p>{entry.text}</p>
-                     </motion.div>
-                   ))}
-                </div>
-              </div>
-
-              <div className="evolution-sheet glass-light">
-                <div className="panel-header">
-                  <TrendingUp size={18} className="text-gold" />
-                  <h3>FICHA DE EVOLUÇÃO</h3>
-                </div>
-                <div className="attributes-grid-visual">
-                   <div className="attr-visual-item">
-                      <div className="attr-label-row">
-                        <span>MEMÓRIA</span>
-                        <span>{activePlayerAttr.memory}%</span>
-                      </div>
-                      <div className="attr-bar-bg"><motion.div className="attr-bar-fill memory" initial={{ width: 0 }} animate={{ width: `${activePlayerAttr.memory}%` }} /></div>
-                   </div>
-                   <div className="attr-visual-item">
-                      <div className="attr-label-row">
-                        <span>REFLEXÃO</span>
-                        <span>{activePlayerAttr.reflection}%</span>
-                      </div>
-                      <div className="attr-bar-bg"><motion.div className="attr-bar-fill reflection" initial={{ width: 0 }} animate={{ width: `${activePlayerAttr.reflection}%` }} /></div>
-                   </div>
-                   <div className="attr-visual-item">
-                      <div className="attr-label-row">
-                        <span>DESAFIO</span>
-                        <span>{activePlayerAttr.challenge}%</span>
-                      </div>
-                      <div className="attr-bar-bg"><motion.div className="attr-bar-fill challenge" initial={{ width: 0 }} animate={{ width: `${activePlayerAttr.challenge}%` }} /></div>
-                   </div>
-                </div>
-              </div>
+              {/* Espaço central inferior agora limpo conforme solicitado */}
           </div>
         </section>
 
         {/* Right Side Panels */}
         <aside className="dashboard-sidebar right">
-          <div className="info-panel-modern glass-light">
-            <div className="panel-header">
-              <PlayCircle size={18} className="text-green" />
-              <h3>COMO JOGAR</h3>
-            </div>
-            <ul className="steps-list-modern">
-              {GAME_RULES.steps.slice(0, 4).map((s, i) => (
-                <li key={i}>{s}</li>
-              ))}
-            </ul>
-          </div>
-
           <div className="info-panel-modern glass-light">
             <div className="panel-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -211,21 +197,21 @@ const TabletopView = () => {
             </div>
 
             <div className="card-history-preview" style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '1px' }}>ÚLTIMA CARTA ABERTA</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '1px' }}>ÚLTIMA CARTA ABERTA</span>
               </div>
               
               {cardHistory && cardHistory.length > 0 ? (
-                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', marginBottom: '10px', borderLeft: '3px solid var(--primary)' }}>
-                  <p style={{ margin: '0 0 5px 0', fontSize: '12px', lineHeight: '1.4', fontStyle: 'italic', color: 'var(--text)' }}>
+                <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '14px', marginBottom: '12px', borderLeft: '4px solid var(--primary)' }}>
+                  <p style={{ margin: '0 0 8px 0', fontSize: '14px', lineHeight: '1.5', fontStyle: 'italic', color: 'var(--text)' }}>
                     "{cardHistory[0].cardText}"
                   </p>
-                  <span style={{ fontSize: '10px', fontWeight: '600', color: 'var(--text-muted)' }}>
+                  <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-muted)' }}>
                     por {cardHistory[0].playerName}
                   </span>
                 </div>
               ) : (
-                <div style={{ padding: '10px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                <div style={{ padding: '15px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px' }}>
                   Nenhuma carta foi sorteada.
                 </div>
               )}
@@ -233,15 +219,15 @@ const TabletopView = () => {
               <button 
                 className="btn-primary" 
                 onClick={() => setShowCardHistory(true)} 
-                style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '8px', padding: '10px', fontSize: '12px', background: 'white', color: 'var(--text)', border: '1px solid rgba(0,0,0,0.1)' }}
+                style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '10px', padding: '13px', fontSize: '14px', background: 'white', color: 'var(--text)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '12px' }}
               >
-                <History size={14} />
+                <History size={16} />
                 <span>Ver Histórico Completo</span>
               </button>
             </div>
           </div>
 
-          <div className="action-area-modern glass-light">
+          <div className="info-panel-modern glass-light action-area-modern">
             <Dice />
           </div>
 
