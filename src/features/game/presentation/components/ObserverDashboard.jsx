@@ -360,7 +360,9 @@ const RoomCard = ({ room, onClick }) => {
           <RefreshCw size={12} style={{ marginLeft: '5px', opacity: 0.5 }} />
         </div>
         <div className={`status-badge ${status}`}>
-          {status === 'playing' ? 'Em Jogo' : status === 'waiting' ? 'Aguardando' : 'Setup'}
+          {status === 'playing' ? 'Em Jogo' : 
+           status === 'finished' ? 'Finalizado' : 
+           status === 'waiting' ? 'Aguardando' : 'Setup'}
         </div>
       </div>
       
@@ -401,7 +403,7 @@ const RoomCard = ({ room, onClick }) => {
         <Eye size={18} />
       </div>
 
-      <style jsx>{`
+      <style>{`
         .room-card {
           background: white;
           border: 1px solid rgba(0, 0, 0, 0.05);
@@ -459,6 +461,7 @@ const RoomCard = ({ room, onClick }) => {
         }
         .status-badge.playing { background: #dcfce7; color: #166534; }
         .status-badge.waiting { background: #fef3c7; color: #92400e; }
+        .status-badge.finished { background: #fee2e2; color: #991b1b; border: 1px solid rgba(153, 27, 27, 0.1); }
         .status-badge.setup { background: #f1f5f9; color: #475569; }
         
         .batch-name {

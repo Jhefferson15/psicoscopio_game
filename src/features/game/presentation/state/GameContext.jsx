@@ -501,6 +501,18 @@ export const GameProvider = ({ children }) => {
     }
   }, [isOnline, user, players, myPlayerIndex]);
 
+  // Monitoramento de partida encerrada
+  useEffect(() => {
+    if (isOnline && roomStatus === 'finished' && currentScreen !== 'menu') {
+      showSystemPopup({
+        title: 'Partida Encerrada',
+        message: 'A partida foi finalizada pois todos os jogadores saíram ou o tempo expirou.',
+        buttonText: 'Voltar ao Menu',
+        onConfirm: goToMenu
+      });
+    }
+  }, [roomStatus, isOnline, currentScreen, showSystemPopup, goToMenu]);
+
   // Início Automático em Salas de Observador (quando todos estão prontos)
   useEffect(() => {
     if (!isOnline || !roomId || roomStatus !== 'setup_cards' || hostRole !== 'observer') return;
@@ -688,17 +700,27 @@ export const GameProvider = ({ children }) => {
     const turnTime = activeBoardConfig.mechanics?.turnTime || 120;
     const basePlayers = overrides.players || players;
     let nextIndex = (currentPlayerIndex + 1) % basePlayers.length;
-    
-    // Verifica se o proximo jogador deve pular a vez
-    const nextPlayer = basePlayers[nextIndex];
+    // Verifica se o proximo jogador deve pular a vez (seja por carta ou por estar offline)
+    let nextPlayer = basePlayers[nextIndex];
     let updatedPlayers = [...basePlayers];
+    
+    // Loop para encontrar o próximo disponível (máximo players.length tentativas)
+    for (let i = 0; i < basePlayers.length; i++) {
+      const nextParticipant = roomParticipants[nextPlayer.id];
+      const isNextOnline = nextParticipant ? nextParticipant.isOnline : true;
 
-    if (nextPlayer.skipNextTurn) {
-      console.log(`PULANDO VEZ DE: ${nextPlayer.name}`);
-      updatedPlayers = updatedPlayers.map((p, i) => 
-        i === nextIndex ? { ...p, skipNextTurn: false } : p
-      );
-      nextIndex = (nextIndex + 1) % updatedPlayers.length;
+      if (nextPlayer.skipNextTurn || !isNextOnline) {
+        console.log(`PULANDO VEZ DE: ${nextPlayer.name} (${nextPlayer.skipNextTurn ? 'Carta' : 'Offline'})`);
+        if (nextPlayer.skipNextTurn) {
+          updatedPlayers = updatedPlayers.map((p, j) => 
+            j === nextIndex ? { ...p, skipNextTurn: false } : p
+          );
+        }
+        nextIndex = (nextIndex + 1) % updatedPlayers.length;
+        nextPlayer = updatedPlayers[nextIndex];
+      } else {
+        break;
+      }
     }
 
     // Aplica o reset de tempo e limpa o ultimo dado ao jogador que esta assumindo o turno
@@ -770,13 +792,16 @@ export const GameProvider = ({ children }) => {
             clearInterval(interval);
             // Autoridade para passar o turno por tempo:
             // 1. O próprio jogador da vez (se estiver online)
-            // 2. O Anfitrião (Host) como backup (caso o jogador da vez caia ou demore)
-            // 3. Modo offline (sempre passa)
+            // 2. O Anfitrião (Host) como backup
+            // 3. Qualquer jogador online se o jogador da vez estiver offline (desconectado)
+            // 4. Modo offline (sempre passa)
             const isMyTurn = currentPlayerIndex === myPlayerIndexRef.current;
             const isHost = user?.id === ownerId;
+            const currentParticipant = roomParticipants[currentPlayer.id];
+            const isCurrentPlayerOnline = currentParticipant ? currentParticipant.isOnline : true;
             
-            if (!isOnline || isMyTurn || isHost) {
-              console.log("[Timer] Tempo esgotado! Tentando passar turno...");
+            if (!isOnline || isMyTurn || isHost || !isCurrentPlayerOnline) {
+              console.log("[Timer] Tempo esgotado! Tentando passar turno...", { isMyTurn, isHost, isCurrentPlayerOnline });
               passTurnRef.current();
             }
           }

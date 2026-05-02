@@ -9,7 +9,7 @@ const PlayerCard = ({ player, isActive, onClick }) => {
 
   return (
     <motion.div 
-      className={`player-card ${isActive ? 'active' : ''}`}
+      className={`player-card ${isActive ? 'active' : ''} ${!isPlayerOnline && isGameOnline ? 'is-offline-card' : ''}`}
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       whileHover={{ scale: 1.05 }}

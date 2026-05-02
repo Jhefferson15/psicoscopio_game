@@ -1,4 +1,5 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onValueUpdated } = require("firebase-functions/v2/database");
 const admin = require("firebase-admin");
 
 admin.initializeApp();
@@ -7,12 +8,89 @@ const db = admin.database();
 const fs = admin.firestore();
 
 /**
+ * Função interna para passar o turno, agora pula jogadores offline
+ */
+async function internalPassTurn(roomId, room, reason = null) {
+  const gameState = room.gameState || {};
+  const players = gameState.players || [];
+  if (players.length === 0) return;
+
+  const currentIndex = gameState.currentPlayerIndex;
+  const currentPlayer = players[currentIndex];
+  const participants = room.participants || {};
+  
+  // Registro de métricas de tempo
+  const turnStartTime = gameState.turnStartTime || 0;
+  const now = Date.now();
+  const durationSeconds = turnStartTime > 0 ? Math.floor((now - turnStartTime) / 1000) : 0;
+  
+  const turnMetric = {
+    playerId: currentPlayer.id,
+    playerName: currentPlayer.name,
+    durationSeconds,
+    timestamp: admin.database.ServerValue.TIMESTAMP,
+    turnIndex: gameState.totalTurns || 0,
+    reason: reason || "Normal"
+  };
+
+  const turnDuration = gameState.turnDuration || 120;
+  let nextIndex = (currentIndex + 1) % players.length;
+  
+  let updatedPlayers = [...players];
+  
+  // Loop para encontrar o próximo jogador disponível (online e sem skip)
+  // Evita loop infinito se ninguém estiver online (máximo players.length tentativas)
+  for (let i = 0; i < players.length; i++) {
+    const candidate = updatedPlayers[nextIndex];
+    const p = participants[candidate.id];
+    const isCandidateOnline = p && p.isOnline === true;
+
+    if (candidate.skipNextTurn || !isCandidateOnline) {
+      if (candidate.skipNextTurn) {
+        updatedPlayers[nextIndex] = { ...candidate, skipNextTurn: false };
+      }
+      nextIndex = (nextIndex + 1) % updatedPlayers.length;
+      
+      if (nextIndex === currentIndex && !isCandidateOnline) break;
+    } else {
+      break;
+    }
+  }
+
+  updatedPlayers[nextIndex] = { 
+    ...updatedPlayers[nextIndex], 
+    timeLeft: turnDuration, 
+    lastRoll: null 
+  };
+
+  const updates = {
+    "gameState/players": updatedPlayers,
+    "gameState/currentPlayerIndex": nextIndex,
+    "gameState/turnStartTime": admin.database.ServerValue.TIMESTAMP,
+    "gameState/turnDuration": turnDuration,
+    "gameState/totalTurns": (gameState.totalTurns || 0) + 1
+  };
+
+  const roomRef = db.ref(`rooms/${roomId}`);
+  await roomRef.update(updates);
+  
+  await fs.collection("rooms").doc(roomId).update({
+    "gameState.totalTurns": (gameState.totalTurns || 0) + 1,
+    status: room.status || "playing"
+  });
+
+  await fs.collection("roomHistory").doc(roomId).collection("turns").add({
+    ...turnMetric,
+    timestamp: admin.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+/**
  * Ação centralizada para mecânicas de jogo
- * Minimiza o tempo de CPU mantendo a lógica direta e sem bibliotecas pesadas.
  */
 exports.gameAction = onCall({ 
   region: "us-central1",
-  cors: true // Permite chamadas de diferentes origens (importante para localhost)
+  cors: true 
 }, async (request) => {
   const { roomId, action, data } = request.data;
   const uid = request.auth?.uid;
@@ -72,60 +150,16 @@ exports.gameAction = onCall({
         const currentPlayer = players[currentIndex];
         const isCurrentPlayer = currentPlayer && currentPlayer.id === uid;
         
-        if (!isCurrentPlayer && !isOwner) {
-          throw new HttpsError("permission-denied", "Não é o seu turno.");
+        const participants = room.participants || {};
+        const isCurrentPlayerOnline = participants[currentPlayer?.id]?.isOnline !== false;
+
+        // Permite passar o turno se for o próprio jogador, o dono da sala,
+        // ou se o jogador atual estiver offline (qualquer um pode destravar).
+        if (!isCurrentPlayer && !isOwner && isCurrentPlayerOnline) {
+          throw new HttpsError("permission-denied", "Não é o seu turno e o jogador atual está online.");
         }
 
-        // Registro de métricas de tempo
-        const turnStartTime = gameState.turnStartTime || 0;
-        const now = Date.now();
-        const durationSeconds = turnStartTime > 0 ? Math.floor((now - turnStartTime) / 1000) : 0;
-        
-        const turnMetric = {
-          playerId: currentPlayer.id,
-          playerName: currentPlayer.name,
-          durationSeconds,
-          timestamp: admin.database.ServerValue.TIMESTAMP,
-          turnIndex: gameState.totalTurns || 0
-        };
-
-        const turnDuration = data.turnDuration || gameState.turnDuration || 120;
-        let nextIndex = (currentIndex + 1) % players.length;
-        
-        let updatedPlayers = [...players];
-        const nextPlayer = updatedPlayers[nextIndex];
-
-        if (nextPlayer && nextPlayer.skipNextTurn) {
-          updatedPlayers[nextIndex] = { ...nextPlayer, skipNextTurn: false };
-          nextIndex = (nextIndex + 1) % updatedPlayers.length;
-        }
-
-        updatedPlayers[nextIndex] = { 
-          ...updatedPlayers[nextIndex], 
-          timeLeft: turnDuration, 
-          lastRoll: null 
-        };
-
-        const updates = {
-          "gameState/players": updatedPlayers,
-          "gameState/currentPlayerIndex": nextIndex,
-          "gameState/turnStartTime": admin.database.ServerValue.TIMESTAMP,
-          "gameState/turnDuration": turnDuration,
-          "gameState/totalTurns": (gameState.totalTurns || 0) + 1
-        };
-
-        await roomRef.update(updates);
-        // Atualiza estatísticas no Firestore para o Dashboard
-        await fs.collection("rooms").doc(roomId).update({
-          "gameState.totalTurns": (gameState.totalTurns || 0) + 1,
-          status: room.status || "playing"
-        });
-        // Grava no histórico no Firestore (mais barato que RTDB para dados volumosos)
-        await fs.collection("roomHistory").doc(roomId).collection("turns").add({
-          ...turnMetric,
-          timestamp: admin.firestore.FieldValue.serverTimestamp()
-        });
-        
+        await internalPassTurn(roomId, room, data.reason);
         return { success: true };
       }
 
@@ -160,7 +194,6 @@ exports.gameAction = onCall({
         }
         
         const statusUpdates = { status: data.status };
-        // Se estiver iniciando o jogo propriamente dito, reseta o timer
         if (data.status === "playing") {
           statusUpdates["gameState/turnStartTime"] = admin.database.ServerValue.TIMESTAMP;
         }
@@ -173,7 +206,19 @@ exports.gameAction = onCall({
         const participants = room.participants || {};
         const participantIds = Object.keys(participants);
         
+        // 1. Bloqueio: Não permite entrar se a partida foi finalizada
+        if (room.status === "finished") {
+          throw new HttpsError("failed-precondition", "Esta partida já foi encerrada e não permite novos acessos.");
+        }
+
+        // 2. Se já é participante e a partida está em andamento, permite reconectar
         if (participants[uid]) return { status: "already_in" };
+        
+        // 3. Bloqueio: Não permite novos jogadores se a partida já começou
+        if (room.status !== "waiting") {
+          throw new HttpsError("failed-precondition", "A partida já começou e você não faz parte dela.");
+        }
+
         if (participantIds.length >= 4) throw new HttpsError("resource-exhausted", "Sala cheia.");
 
         const userData = {
@@ -186,7 +231,6 @@ exports.gameAction = onCall({
 
         await roomRef.child("participants").child(uid).set(userData);
         
-        // Atualiza contagem e resumo de participantes no Firestore
         await fs.collection("rooms").doc(roomId).update({
           participantCount: participantIds.length + 1,
           participantsSummary: admin.firestore.FieldValue.arrayUnion({
@@ -208,6 +252,55 @@ exports.gameAction = onCall({
     throw new HttpsError("internal", error.message);
   }
 });
+
+/**
+ * Trigger para monitorar saída de jogadores
+ */
+exports.onPlayerPresenceChange = onValueUpdated("/rooms/{roomId}/participants/{userId}/isOnline", async (event) => {
+  const { roomId, userId } = event.params;
+  const isOnline = event.data.after.val();
+  const wasOnline = event.data.before.val();
+
+  // Só nos interessa quando o jogador sai (online: true -> false)
+  if (isOnline !== false || wasOnline !== true) return null;
+
+  console.log(`[PresenceChange] Jogador ${userId} saiu da sala ${roomId}`);
+
+  const roomRef = db.ref(`rooms/${roomId}`);
+  const snapshot = await roomRef.once("value");
+  if (!snapshot.exists()) return null;
+
+  const room = snapshot.val();
+  if (room.status !== "playing") return null;
+
+  const participants = room.participants || {};
+  const player = participants[userId];
+  const playerName = player ? player.name : "Desconhecido";
+
+  // 1. Se foi saída manual (hasLeft: true), pula o turno imediatamente se for a vez dele
+  if (player && player.hasLeft === true) {
+    const gameState = room.gameState || {};
+    const players = gameState.players || [];
+    const currentIndex = gameState.currentPlayerIndex;
+    const currentPlayer = players[currentIndex];
+
+    if (currentPlayer && currentPlayer.id === userId) {
+      console.log(`[PresenceChange] Pulo imediato: ${playerName} saiu manualmente.`);
+      await internalPassTurn(roomId, room, "Saída Manual");
+    }
+  }
+
+  // 2. Verifica se todos saíram
+  const anyOnline = Object.values(participants).some(p => p.id !== userId && p.isOnline === true);
+  if (!anyOnline) {
+    console.log(`[PresenceChange] Todos saíram. Finalizando sala ${roomId}`);
+    await roomRef.update({ status: "finished" });
+    await fs.collection("rooms").doc(roomId).update({ status: "finished" });
+  }
+
+  return null;
+});
+
 
 /**
  * Criação de múltiplas salas para observadores (ex: professores)

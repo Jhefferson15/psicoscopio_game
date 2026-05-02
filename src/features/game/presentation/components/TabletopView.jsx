@@ -43,7 +43,9 @@ const TabletopView = () => {
     setShowDiary,
     setShowCardHistory,
     cardHistory,
-    activeBoardConfig
+    activeBoardConfig,
+    isOnline,
+    roomId
   } = useGame();
 
   const [showHourglassDetails, setShowHourglassDetails] = React.useState(false);
@@ -263,16 +265,26 @@ const TabletopView = () => {
           <span className="status-dot green"></span>
           <span className="status-text">O aprendizado é um ciclo, não uma linha de chegada.</span>
         </div>
-        <div className={`timer-atmosphere ${gameTime < 20 ? 'critical' : ''}`}>
-          <Hourglass 
-            progress={gameTime / (activeBoardConfig.mechanics?.turnTime || 120)} 
-            isCritical={gameTime < 20}
-            onClick={() => setShowHourglassDetails(true)} 
-            activePlayerIndex={currentPlayerIndex}
-          />
-          <div className="time-remaining">
-            <Clock size={14} />
-            <span>{Math.floor(gameTime / 60)}:{(gameTime % 60).toString().padStart(2, '0')}</span>
+        
+        <div className="footer-right-area">
+          {isOnline && roomId && (
+            <div className="room-info-display">
+               <span className="room-label">SALA:</span>
+               <span className="room-id">{roomId.substring(0, 8)}</span>
+            </div>
+          )}
+          
+          <div className={`timer-atmosphere ${gameTime < 20 ? 'critical' : ''}`}>
+            <Hourglass 
+              progress={gameTime / (activeBoardConfig.mechanics?.turnTime || 120)} 
+              isCritical={gameTime < 20}
+              onClick={() => setShowHourglassDetails(true)} 
+              activePlayerIndex={currentPlayerIndex}
+            />
+            <div className="time-remaining">
+              <Clock size={14} />
+              <span>{Math.floor(gameTime / 60)}:{(gameTime % 60).toString().padStart(2, '0')}</span>
+            </div>
           </div>
         </div>
       </footer>

@@ -66,8 +66,9 @@ const RoomMonitor = ({ roomId, onBack }) => {
             <Eye size={18} />
             <span>Ver Deck de Cartas</span>
           </button>
-          <div className={`room-status-badge ${roomData.gameState?.status || 'waiting'}`}>
-            {roomData.gameState?.status === 'playing' ? 'Em Partida' : 'Lobby'}
+          <div className={`room-status-badge ${roomData.status || 'waiting'}`}>
+            {roomData.status === 'playing' ? 'Em Partida' : 
+             roomData.status === 'finished' ? 'Finalizado' : 'Lobby'}
           </div>
         </div>
       </header>
@@ -349,6 +350,7 @@ const RoomMonitor = ({ roomId, onBack }) => {
         }
         .room-status-badge.playing { background: #dcfce7; color: #166534; }
         .room-status-badge.waiting { background: #fef3c7; color: #92400e; }
+        .room-status-badge.finished { background: #fee2e2; color: #991b1b; border: 1px solid rgba(153, 27, 27, 0.1); }
 
         /* QUICK STATS ROW */
         .quick-stats-row {

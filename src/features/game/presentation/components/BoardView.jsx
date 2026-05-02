@@ -31,10 +31,10 @@ const BoardView = ({ boardRotation = 0 }) => {
   useEffect(() => {
     const cx = 400, cy = 400;
     const cards = [
-      { ref: cardTopRef,    rx: 0,    ry: -325 },
-      { ref: cardRightRef,  rx: 330,  ry: 0    },
-      { ref: cardBottomRef, rx: 0,    ry: 340  },
-      { ref: cardLeftRef,   rx: -330, ry: 50   },
+      { ref: cardTopRef,    rx: 0,    ry: -305 },
+      { ref: cardRightRef,  rx: 310,  ry: 0    },
+      { ref: cardBottomRef, rx: 0,    ry: 320  },
+      { ref: cardLeftRef,   rx: -310, ry: 50   },
     ];
     const update = (r) => {
       const rad = r * Math.PI / 180;
@@ -116,8 +116,8 @@ const BoardView = ({ boardRotation = 0 }) => {
       onPointerUp={onPointerUp}
       onPointerLeave={onPointerUp}
     >
-      <svg viewBox="0 0 800 800" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"
-        style={{ backgroundColor: '#f4f7f8', fontFamily: "'Segoe UI', Roboto, sans-serif", display: 'block' }}>
+      <svg viewBox="30 30 740 740" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"
+        style={{ backgroundColor: 'transparent', fontFamily: "'Segoe UI', Roboto, sans-serif", display: 'block', overflow: 'visible' }}>
         <defs>
           <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
             <feDropShadow dx="2" dy="4" stdDeviation="4" floodColor="#000" floodOpacity="0.15" />
@@ -175,14 +175,6 @@ const BoardView = ({ boardRotation = 0 }) => {
         </defs>
 
         <g ref={rotGRef}>
-          {/* Fundo decorativo */}
-          <g stroke="#cfdadd" strokeWidth="2.5" fill="none" opacity="0.8">
-            <path d="M -50 400 Q 150 200 400 -50" />
-            <path d="M 200 -50 C 350 250, 600 150, 850 300" />
-            <path d="M -50 600 C 200 750, 300 500, 500 850" />
-            <path d="M 850 500 Q 650 700 400 850" />
-          </g>
-
           <circle cx="400" cy="400" r="195" fill="none" stroke="#aab5b9" strokeWidth="1.5" strokeDasharray="4,6" />
           <circle cx="400" cy="400" r="270" fill="none" stroke="#aab5b9" strokeWidth="1.5" strokeDasharray="4,6" />
 

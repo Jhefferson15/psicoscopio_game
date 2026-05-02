@@ -130,7 +130,7 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
     if (!functions || !roomId) return;
     // O startTurn agora é mapeado para PASS_TURN no servidor,
     // que lida com a lógica de próximo jogador e timestamps.
-    await this._callGameAction(roomId, "PASS_TURN", { 
+    return await this._callGameAction(roomId, "PASS_TURN", { 
       playerIndex, 
       turnDuration: duration 
     });
@@ -197,15 +197,21 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
       const participants = room.participants || {};
       const remainingAfterLeave = Object.keys(participants).filter(id => id !== userId);
 
-      if (remainingAfterLeave.length === 0) {
-        // Era o ultimo jogador: apaga toda a sala para nao gerar dados orfaos
-        console.log(`Sala ${roomId} apagada: ultimo jogador saiu.`);
+      if (remainingAfterLeave.length === 0 && room.status === 'waiting') {
+        // Se for o último e a partida NUNCA começou, apaga a sala
+        console.log(`Sala ${roomId} apagada: último jogador saiu do lobby.`);
         await this.deleteRoom(roomId);
       } else {
-        // Apenas remove o participante e seu estado de pronto
+        // Apenas marca como offline e que saiu manualmente
         const participantRef = ref(database, `rooms/${roomId}/participants/${userId}`);
         const readyRef = ref(database, `rooms/${roomId}/readyPlayers/${userId}`);
-        await set(participantRef, null);
+        
+        await set(participantRef, {
+          ...participants[userId],
+          isOnline: false,
+          hasLeft: true,
+          lastSeen: serverTimestamp()
+        });
         await set(readyRef, null);
       }
     }
