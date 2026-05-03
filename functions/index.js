@@ -72,17 +72,18 @@ async function internalPassTurn(roomId, room, reason = null) {
   };
 
   const roomRef = db.ref(`rooms/${roomId}`);
-  await roomRef.update(updates);
-  
-  await fs.collection("rooms").doc(roomId).update({
-    "gameState.totalTurns": (gameState.totalTurns || 0) + 1,
-    status: room.status || "playing"
-  });
 
-  await fs.collection("roomHistory").doc(roomId).collection("turns").add({
-    ...turnMetric,
-    timestamp: admin.firestore.FieldValue.serverTimestamp()
-  });
+  // Correção 2 + 5: Paraleliza as escritas no RTDB e no histórico do Firestore.
+  // Removida a escrita redundante em fs.rooms que regravava status e totalTurns
+  // a cada turno — totalTurns pode ser contado via roomHistory/turns,
+  // e status só muda no START_GAME e ao finalizar a partida.
+  await Promise.all([
+    roomRef.update(updates),
+    fs.collection("roomHistory").doc(roomId).collection("turns").add({
+      ...turnMetric,
+      timestamp: admin.firestore.FieldValue.serverTimestamp()
+    })
+  ]);
 }
 
 /**
@@ -105,6 +106,23 @@ exports.gameAction = onCall({
     throw new HttpsError("invalid-argument", "ID da sala é obrigatório.");
   }
 
+  // Correção 1: Fast-path para SYNC_STATE — a ação mais frequente do jogo.
+  // Não precisa ler a sala inteira: apenas verifica participação e escreve.
+  if (action === "SYNC_STATE") {
+    const participantSnap = await db.ref(`rooms/${roomId}/participants/${uid}`).once("value");
+    if (!participantSnap.exists()) {
+      throw new HttpsError("permission-denied", "Você não é um participante desta sala.");
+    }
+    const { boardConfig, cardSet, ...dynamicData } = data;
+    await db.ref(`rooms/${roomId}/gameState`).update({
+      ...dynamicData,
+      lastActionBy: uid,
+      serverTimestamp: admin.database.ServerValue.TIMESTAMP
+    });
+    return { success: true };
+  }
+
+  // Para todas as outras ações, lê a sala completa uma única vez.
   const roomRef = db.ref(`rooms/${roomId}`);
   const snapshot = await roomRef.once("value");
 
@@ -185,13 +203,9 @@ exports.gameAction = onCall({
         return { success: true };
       }
 
+      // SYNC_STATE é tratado antes do switch (fast-path, sem leitura da sala).
+      // Este case nunca é alcançado, mas mantido para clareza.
       case "SYNC_STATE": {
-        const { boardConfig, cardSet, ...dynamicData } = data;
-        await roomRef.child("gameState").update({
-          ...dynamicData,
-          lastActionBy: uid,
-          serverTimestamp: admin.database.ServerValue.TIMESTAMP
-        });
         return { success: true };
       }
 
@@ -274,36 +288,46 @@ exports.onPlayerPresenceChange = onValueUpdated("/rooms/{roomId}/participants/{u
 
   console.log(`[PresenceChange] Jogador ${userId} saiu da sala ${roomId}`);
 
-  const roomRef = db.ref(`rooms/${roomId}`);
-  const snapshot = await roomRef.once("value");
-  if (!snapshot.exists()) return null;
+  // Correção 3: Leituras granulares e paralelas — evita baixar gameState completo
+  // apenas para verificar status e participantes.
+  const [statusSnap, participantsSnap, gameStateSnap, playerSnap] = await Promise.all([
+    db.ref(`rooms/${roomId}/status`).once("value"),
+    db.ref(`rooms/${roomId}/participants`).once("value"),
+    db.ref(`rooms/${roomId}/gameState`).once("value"),
+    db.ref(`rooms/${roomId}/participants/${userId}`).once("value")
+  ]);
 
-  const room = snapshot.val();
-  if (room.status !== "playing") return null;
+  const status = statusSnap.val();
+  if (status !== "playing") return null;
 
-  const participants = room.participants || {};
-  const player = participants[userId];
+  const participants = participantsSnap.val() || {};
+  const player = playerSnap.val();
   const playerName = player ? player.name : "Desconhecido";
+
+  // Monta o objeto room mínimo para internalPassTurn
+  const gameState = gameStateSnap.val() || {};
+  const minimalRoom = { status, participants, gameState };
 
   // 1. Se foi saída manual (hasLeft: true), pula o turno imediatamente se for a vez dele
   if (player && player.hasLeft === true) {
-    const gameState = room.gameState || {};
     const players = gameState.players || [];
     const currentIndex = gameState.currentPlayerIndex;
     const currentPlayer = players[currentIndex];
 
     if (currentPlayer && currentPlayer.id === userId) {
       console.log(`[PresenceChange] Pulo imediato: ${playerName} saiu manualmente.`);
-      await internalPassTurn(roomId, room, "Saída Manual");
+      await internalPassTurn(roomId, minimalRoom, "Saída Manual");
     }
   }
 
-  // 2. Verifica se todos saíram
+  // 2. Verifica se todos saíram — paraleliza escritas finais
   const anyOnline = Object.values(participants).some(p => p.id !== userId && p.isOnline === true);
   if (!anyOnline) {
     console.log(`[PresenceChange] Todos saíram. Finalizando sala ${roomId}`);
-    await roomRef.update({ status: "finished" });
-    await fs.collection("rooms").doc(roomId).update({ status: "finished" });
+    await Promise.all([
+      db.ref(`rooms/${roomId}/status`).set("finished"),
+      fs.collection("rooms").doc(roomId).update({ status: "finished" })
+    ]);
   }
 
   return null;
@@ -323,10 +347,14 @@ exports.createRoomBatch = onCall({ region: "us-central1", cors: true }, async (r
   const batchId = `batch-${Date.now()}`;
   const roomIds = [];
 
+  // Correção 4: Paraleliza todas as escritas usando Promise.all para RTDB
+  // e WriteBatch do Firestore para agrupar as 2 escritas Firestore por sala
+  // em uma única operação atômica — reduz de 3 roundtrips sequenciais para 2 paralelos.
+  const roomPromises = [];
+
   for (let i = 0; i < numRooms; i++) {
     const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
-    
-    // Separa dados pesados
+
     const roomMetadata = {
       hostRole: "observer",
       batchId: batchId,
@@ -345,28 +373,35 @@ exports.createRoomBatch = onCall({ region: "us-central1", cors: true }, async (r
         isRolling: false
       }
     };
-    
-    // RTDB - Apenas estado dinâmico
-    await db.ref(`rooms/${roomId}`).set(roomData);
-    
-    // Firestore - Metadados para Dashboard
-    await fs.collection("rooms").doc(roomId).set({
+
+    // Agrupa as 2 escritas Firestore em um WriteBatch (1 roundtrip em vez de 2)
+    const fsBatch = fs.batch();
+    fsBatch.set(fs.collection("rooms").doc(roomId), {
       id: roomId,
       ownerId: uid,
       status: "waiting",
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       metadata: roomMetadata
     });
-
-    // Firestore - Configuração pesada (Leitura única por sessão)
-    await fs.collection("roomConfigs").doc(roomId).set({
+    fsBatch.set(fs.collection("roomConfigs").doc(roomId), {
       boardConfig: boardConfig || null,
       cardSet: cardSet || null,
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
+    // Paraleliza RTDB + Firestore batch
+    roomPromises.push(
+      Promise.all([
+        db.ref(`rooms/${roomId}`).set(roomData),
+        fsBatch.commit()
+      ])
+    );
+
     roomIds.push(roomId);
   }
+
+  // Aguarda todas as criações em paralelo
+  await Promise.all(roomPromises);
 
   return { batchId, roomIds };
 });
