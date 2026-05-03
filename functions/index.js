@@ -185,13 +185,15 @@ exports.gameAction = onCall({
         return { success: true };
       }
 
-      case "SYNC_STATE":
+      case "SYNC_STATE": {
+        const { boardConfig, cardSet, ...dynamicData } = data;
         await roomRef.child("gameState").update({
-          ...data,
+          ...dynamicData,
           lastActionBy: uid,
           serverTimestamp: admin.database.ServerValue.TIMESTAMP
         });
         return { success: true };
+      }
 
       case "UPDATE_STATUS": {
         const isObsRoom = room.metadata?.hostRole === "observer";
@@ -323,33 +325,44 @@ exports.createRoomBatch = onCall({ region: "us-central1", cors: true }, async (r
 
   for (let i = 0; i < numRooms; i++) {
     const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    
+    // Separa dados pesados
+    const roomMetadata = {
+      hostRole: "observer",
+      batchId: batchId,
+      batchName: batchName || "Turma Principal"
+    };
+
     const roomData = {
       id: roomId,
       ownerId: uid,
       status: "waiting",
       createdAt: admin.database.ServerValue.TIMESTAMP,
-      metadata: {
-        hostRole: "observer",
-        batchId: batchId,
-        batchName: batchName || "Turma Principal"
-      },
+      metadata: roomMetadata,
       gameState: {
-        boardConfig: boardConfig,
-        cardSet: cardSet,
         players: [],
         currentPlayerIndex: 0,
         isRolling: false
       }
     };
+    
+    // RTDB - Apenas estado dinâmico
     await db.ref(`rooms/${roomId}`).set(roomData);
     
-    // Espelha metadados essenciais no Firestore para listagem eficiente no Dashboard
+    // Firestore - Metadados para Dashboard
     await fs.collection("rooms").doc(roomId).set({
       id: roomId,
       ownerId: uid,
       status: "waiting",
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      metadata: roomData.metadata
+      metadata: roomMetadata
+    });
+
+    // Firestore - Configuração pesada (Leitura única por sessão)
+    await fs.collection("roomConfigs").doc(roomId).set({
+      boardConfig: boardConfig || null,
+      cardSet: cardSet || null,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
     roomIds.push(roomId);

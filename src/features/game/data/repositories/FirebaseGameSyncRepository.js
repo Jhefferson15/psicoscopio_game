@@ -21,6 +21,9 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
     }
     const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
 
+    // Separa dados pesados (configuração) do estado dinâmico
+    const { boardConfig, cardSet, ...dynamicState } = gameData;
+
     const roomRef = ref(database, `rooms/${roomId}`);
     
     const initialData = {
@@ -31,26 +34,33 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
       participants: (ownerId && gameData.metadata?.hostRole !== 'observer') 
         ? { [ownerId]: { id: ownerId, name: 'Anfitrião', isOnline: true } } 
         : {}, 
-      gameState: JSON.parse(JSON.stringify(gameData))
+      gameState: dynamicState // Apenas estado dinâmico no RTDB
     };
 
     await set(roomRef, initialData);
 
-    // Espelha metadados essenciais no Firestore para listagem eficiente no Dashboard
+    // Salva configuração pesada no Firestore (escrita única, leitura cacheada)
     if (firestore) {
       try {
+        // 1. Metadados para o Dashboard
         const fsRoomRef = doc(firestore, "rooms", roomId);
         await setDoc(fsRoomRef, {
           id: roomId,
           ownerId: ownerId || null,
           status: 'waiting',
           createdAt: firestoreTimestamp(),
-          metadata: initialData.gameState.metadata || {}
+          metadata: gameData.metadata || {}
+        });
+
+        // 2. Configuração completa da sala (Tabuleiro e Cartas)
+        const fsConfigRef = doc(firestore, "roomConfigs", roomId);
+        await setDoc(fsConfigRef, {
+          boardConfig: boardConfig || null,
+          cardSet: cardSet || null,
+          createdAt: firestoreTimestamp()
         });
       } catch (fsError) {
-        console.error("Erro ao registrar sala no Firestore (Metadados):", fsError);
-        // Não lançamos o erro aqui para não impedir o jogo de começar se o RTDB funcionou,
-        // mas o Dashboard do Observador não verá esta sala.
+        console.error("Erro ao registrar configuração no Firestore:", fsError);
       }
     }
 
@@ -109,14 +119,38 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
       photoURL: user.photoURL 
     });
 
-    // Após entrar, lê os dados da sala via RTDB (mais eficiente para leitura)
+    // Após entrar, lê os dados da sala via RTDB (mais eficiente para leitura do estado dinâmico)
     const roomRef = ref(database, `rooms/${roomId}`);
     const snapshot = await new Promise((resolve, reject) => {
       onValue(roomRef, (s) => resolve(s), (error) => reject(error), { onlyOnce: true });
     });
 
     if (!snapshot.exists()) throw new Error('Sala não encontrada');
-    return snapshot.val();
+    const roomData = snapshot.val();
+
+    // Busca configuração pesada do Firestore
+    try {
+      const config = await this.getRoomConfig(roomId);
+      if (config) {
+        roomData.gameState = {
+          ...roomData.gameState,
+          boardConfig: config.boardConfig,
+          cardSet: config.cardSet
+        };
+      }
+    } catch (configError) {
+      console.warn("Aviso: Não foi possível carregar configuração do Firestore, usando fallback do RTDB se disponível.", configError);
+    }
+
+    return roomData;
+  }
+
+  async getRoomConfig(roomId) {
+    if (!firestore) return null;
+    const { getDoc } = await import("firebase/firestore");
+    const docRef = doc(firestore, "roomConfigs", roomId);
+    const snap = await getDoc(docRef);
+    return snap.exists() ? snap.data() : null;
   }
 
   async startGame(roomId, initialData = {}) {
@@ -302,6 +336,23 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
       unsubTurns();
       unsubCards();
     };
+  }
+
+  async saveEvaluation(evaluationData) {
+    if (!firestore) throw new Error("Firestore não configurado");
+    
+    // Using addDoc to auto-generate an ID
+    const { addDoc, collection } = await import("firebase/firestore");
+    const evaluationsRef = collection(firestore, "evaluations");
+    
+    // Add server timestamp just to be safe
+    const { serverTimestamp } = await import("firebase/firestore");
+    const docData = {
+      ...evaluationData,
+      createdAt: serverTimestamp()
+    };
+    
+    await addDoc(evaluationsRef, docData);
   }
 }
 

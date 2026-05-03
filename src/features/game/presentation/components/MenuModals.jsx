@@ -1,4 +1,4 @@
-import { Globe, ShieldCheck, Copy, X, Users, ChevronRight, User, Volume2, VolumeX, RotateCcw, Image as ImageIcon, Layout, Brush } from 'lucide-react';
+import { Globe, ShieldCheck, Copy, X, Users, ChevronRight, User, Volume2, VolumeX, RotateCcw, Image as ImageIcon, Layout, Brush, ClipboardList } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import CustomCardsGallery from './CustomCardsGallery';
@@ -281,6 +281,17 @@ export const SettingsModal = ({ onClose }) => {
             <div className="setting-text">
               <h3>Editor de Tabuleiro</h3>
               <p>Customizar casas e mecânicas</p>
+            </div>
+          </div>
+          <ChevronRight size={20} className="text-muted" />
+        </div>
+
+        <div className="setting-item" onClick={() => { setCurrentScreen('evaluation'); onClose(); }}>
+          <div className="setting-info">
+            <div className="setting-icon"><ClipboardList size={20} /></div>
+            <div className="setting-text">
+              <h3>Avaliar o Jogo</h3>
+              <p>Responder ao questionário MEEGA+</p>
             </div>
           </div>
           <ChevronRight size={20} className="text-muted" />

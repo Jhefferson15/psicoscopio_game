@@ -339,14 +339,14 @@ const BoardEditor = () => {
                           type="number" 
                           value={editingConfig.mechanics.diceMin} 
                           onChange={(e) => handleMechanicChange('diceMin', e.target.value)}
-                          style={{ width: '50px' }}
+                          style={{ width: '80px' }}
                         />
                         <span>-</span>
                         <input 
                           type="number" 
                           value={editingConfig.mechanics.diceMax} 
                           onChange={(e) => handleMechanicChange('diceMax', e.target.value)}
-                          style={{ width: '50px' }}
+                          style={{ width: '80px' }}
                         />
                       </div>
                     </div>
@@ -372,6 +372,56 @@ const BoardEditor = () => {
                       </div>
                       <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>
                         Se habilitado, os jogadores passarão pelo ateliê de criação antes da partida.
+                      </p>
+                    </div>
+
+                    <div className="mechanic-card">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <BookOpen size={16} color="#7B4BB1" />
+                          <h4 style={{ margin: 0 }}>Informações no Tabuleiro</h4>
+                        </div>
+                        <label className="switch-premium">
+                          <input 
+                            type="checkbox" 
+                            checked={!!editingConfig.mechanics.showBoardLabels} 
+                            onChange={(e) => {
+                              setEditingConfig({
+                                ...editingConfig,
+                                mechanics: { ...editingConfig.mechanics, showBoardLabels: e.target.checked }
+                              });
+                            }}
+                          />
+                          <span className="slider-premium round"></span>
+                        </label>
+                      </div>
+                      <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>
+                        Mostra ou oculta os nomes das casas no tabuleiro.
+                      </p>
+                    </div>
+
+                    <div className="mechanic-card">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <Sparkles size={16} color="#6FB05E" />
+                          <h4 style={{ margin: 0 }}>Informações nas Cartas</h4>
+                        </div>
+                        <label className="switch-premium">
+                          <input 
+                            type="checkbox" 
+                            checked={!!editingConfig.mechanics.showCardLabels} 
+                            onChange={(e) => {
+                              setEditingConfig({
+                                ...editingConfig,
+                                mechanics: { ...editingConfig.mechanics, showCardLabels: e.target.checked }
+                              });
+                            }}
+                          />
+                          <span className="slider-premium round"></span>
+                        </label>
+                      </div>
+                      <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>
+                        Mostra ou oculta o tipo e o número da carta.
                       </p>
                     </div>
                   </div>

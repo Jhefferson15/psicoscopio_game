@@ -45,7 +45,7 @@ const cardTypes = {
 };
 
 const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = false }) => {
-  const { closeFocusedCard, activeCardSet, recordCardDraw, showDetailPopup } = useGame();
+  const { closeFocusedCard, activeCardSet, recordCardDraw, showDetailPopup, activeBoardConfig } = useGame();
   const config = cardTypes[type] || cardTypes.default;
   const Icon = config.icon;
   const layoutId = `card-${type}-${index}`;
@@ -123,19 +123,23 @@ const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = 
             {showFront ? (
               /* FRENTE - Conteudo rico em texto */
               <div className="card-content-wrapper">
-                <div className="card-header-bar" style={{ borderBottomColor: config.color }}>
-                  <Icon size={isFocused ? 28 : 16} color={config.color} />
-                  <span style={{ color: config.color }}>
-                    {config.label.toUpperCase()}
-                  </span>
-                </div>
+                {activeBoardConfig.mechanics?.showCardLabels !== false && (
+                  <div className="card-header-bar" style={{ borderBottomColor: config.color }}>
+                    <Icon size={isFocused ? 28 : 16} color={config.color} />
+                    <span style={{ color: config.color }}>
+                      {config.label.toUpperCase()}
+                    </span>
+                  </div>
+                )}
                 <div className="card-body-text">
                   <p>{cardText}</p>
                 </div>
-                <div className="card-footer-bar">
-                  <span>PSICOSCOPIO</span>
-                  <span>#{String(index + 1).padStart(3, '0')}</span>
-                </div>
+                {activeBoardConfig.mechanics?.showCardLabels !== false && (
+                  <div className="card-footer-bar">
+                    <span>PSICOSCOPIO</span>
+                    <span>#{String(index + 1).padStart(3, '0')}</span>
+                  </div>
+                )}
               </div>
             ) : (
               /* VERSO - Capa decorativa */

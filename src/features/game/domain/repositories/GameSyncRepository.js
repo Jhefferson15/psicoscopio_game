@@ -30,4 +30,8 @@ export class GameSyncRepository {
   async deleteRoom(_roomId) { // eslint-disable-line no-unused-vars
     throw new Error('Method not implemented');
   }
+
+  async saveEvaluation(_evaluationData) { // eslint-disable-line no-unused-vars
+    throw new Error('Method not implemented');
+  }
 }

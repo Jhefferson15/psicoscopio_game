@@ -282,7 +282,9 @@ const BoardView = ({ boardRotation = 0 }) => {
                  });
                };
 
-               if (tile.label && tile.label.trim().length > 0) {
+               const showLabels = activeBoardConfig.mechanics?.showBoardLabels !== false;
+
+               if (showLabels && tile.label && tile.label.trim().length > 0) {
                  const yOff = tile.ring === 'inner' ? -145 : (tile.ring === 'middle' ? -220 : -295);
                  const fSize = tile.ring === 'inner' ? 12 : 14;
                  return <g key={tile.id || idx}>{arcText(tile.color, tile.label, tile.angle, tile.ring, yOff, fSize, handleTileClick)}</g>;

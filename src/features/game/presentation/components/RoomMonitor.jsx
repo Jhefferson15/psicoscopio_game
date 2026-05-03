@@ -7,12 +7,18 @@ const syncRepository = new FirebaseGameSyncRepository();
 
 const RoomMonitor = ({ roomId, onBack }) => {
   const [roomData, setRoomData] = useState(null);
+  const [roomConfig, setRoomConfig] = useState(null);
   const [history, setHistory] = useState({ turns: {}, cards: {} });
   const [showDeck, setShowDeck] = useState(false);
 
   useEffect(() => {
     const unsubRoom = syncRepository.listenToRoomData(roomId, (data) => setRoomData(data));
     const unsubHistory = syncRepository.listenToRoomHistory(roomId, (hist) => setHistory(hist));
+
+    // Busca configuração pesada uma única vez
+    syncRepository.getRoomConfig(roomId).then(config => {
+      if (config) setRoomConfig(config);
+    });
 
     return () => {
       unsubRoom();
@@ -27,8 +33,8 @@ const RoomMonitor = ({ roomId, onBack }) => {
   const participants = Object.values(roomData.participants || {});
   const currentPlayer = participants.find((_, i) => i === roomData.gameState?.currentPlayerIndex);
 
-  // Deck de Cartas Ativo
-  const activeDeck = roomData.metadata?.cardSet?.content || {};
+  // Deck de Cartas Ativo (Busca no Firestore, fallback RTDB para salas antigas)
+  const activeDeck = roomConfig?.cardSet?.content || roomData.gameState?.cardSet?.content || {};
 
   // Estatísticas calculadas
   const totalTurns = turnsArray.length;
@@ -234,7 +240,7 @@ const RoomMonitor = ({ roomId, onBack }) => {
               exit={{ scale: 0.9, y: 50 }}
             >
               <div className="deck-modal-header">
-                <h2>Deck Ativo: {roomData.metadata?.cardSet?.name || 'Conjunto de Cartas'}</h2>
+                <h2>Deck Ativo: {roomConfig?.cardSet?.name || roomData.gameState?.cardSet?.name || 'Conjunto de Cartas'}</h2>
                 <button className="btn-close-deck" onClick={() => setShowDeck(false)}>
                   <X size={24} />
                 </button>

@@ -405,8 +405,7 @@ export const GameProvider = ({ children }) => {
           acc[p.id] = { memory: 20, reflection: 20, challenge: 20 };
           return acc;
         }, {}),
-        boardConfig: activeBoardConfig.toJSON(),
-        status: 'setup_cards' // Status que a function deve definir
+        status: 'setup_cards' 
       };
 
       // Chamada única e atômica via Cloud Functions
@@ -563,18 +562,18 @@ export const GameProvider = ({ children }) => {
 
   // Monitoramento de partida encerrada
   useEffect(() => {
-    if (isOnline && roomStatus === 'finished' && currentScreen !== 'menu') {
+    if (isOnline && roomStatus === 'finished' && currentScreen !== 'menu' && currentScreen !== 'evaluation') {
       const timer = setTimeout(() => {
         showSystemPopup({
           title: 'Partida Encerrada',
-          message: 'A partida foi finalizada pois todos os jogadores saíram ou o tempo expirou.',
-          buttonText: 'Voltar ao Menu',
-          onConfirm: goToMenu
+          message: 'A partida foi finalizada. Gostaríamos de ouvir sua opinião sobre a experiência.',
+          buttonText: 'Avaliar Partida',
+          onConfirm: () => setCurrentScreen('evaluation')
         });
       }, 0);
       return () => clearTimeout(timer);
     }
-  }, [roomStatus, isOnline, currentScreen, showSystemPopup, goToMenu]);
+  }, [roomStatus, isOnline, currentScreen, showSystemPopup]);
 
   // Início Automático em Salas de Observador (quando todos estão prontos)
   useEffect(() => {
@@ -946,21 +945,13 @@ export const GameProvider = ({ children }) => {
       return;
     }
 
-    // Movimento passo a passo para animacao global
+    // Movimento passo a passo para animação LOCAL
     for (let i = 0; i < steps; i++) {
       relativePos = (relativePos + 1) % ringIndices.length;
       player.position = ringIndices[relativePos];
       
       newPlayers[currentPlayerIndex] = { ...player };
       setPlayers([...newPlayers]);
-      
-      // Sincroniza posicao atual para outros clientes verem a animacao
-      if (isOnline && roomId) {
-        syncRepository.updateGameState(roomId, {
-          players: newPlayers,
-          lastActionBy: user?.id || null
-        }).catch(e => console.error("Erro sync passo", e));
-      }
       
       await new Promise(r => setTimeout(r, 400));
     }

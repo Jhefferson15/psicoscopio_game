@@ -193,7 +193,6 @@
 }
 
 .mechanic-input-group input {
-  flex: 1;
   height: 40px;
   border-radius: 10px;
   border: 1px solid #e2e8f0;

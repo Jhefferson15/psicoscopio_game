@@ -92,7 +92,9 @@ export const getDefaultBoardConfig = () => {
       turnTime: 120,
       diceMin: 1,
       diceMax: 6,
-      enableCardCreationStep: false
+      enableCardCreationStep: false,
+      showBoardLabels: true,
+      showCardLabels: true
     }
   );
 };

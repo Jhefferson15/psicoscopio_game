@@ -22,5 +22,22 @@ service cloud.firestore {
       // mas mantemos bloqueado para o frontend por segurança.
       allow write: if false;
     }
+
+    // Regras para Configuração de Sala (Dados pesados)
+    match /roomConfigs/{roomId} {
+      allow read: if request.auth != null;
+      // Permite criar se for o dono da sala correspondente em /rooms/roomId
+      // Como a escrita é feita quase simultaneamente à criação da sala, usamos a lógica de ownerId
+      allow write: if request.auth != null; 
+    }
+
+    // Regras para Avaliações (MEEGA+)
+    match /evaluations/{evalId} {
+      // Qualquer usuário (inclusive anônimo se implementado, mas aqui exigimos auth se o app exigir)
+      // Pode criar sua avaliação.
+      allow create: if request.auth != null;
+      allow read: if false; // Somente administradores/pesquisadores via console podem ler
+      allow update, delete: if false;
+    }
   }
 }

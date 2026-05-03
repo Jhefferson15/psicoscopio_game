@@ -21,6 +21,7 @@ import { UserProvider } from './features/user/presentation/state/UserProvider.js
 import ObserverDashboard from './features/game/presentation/components/ObserverDashboard';
 import CardHistoryModal from './features/game/presentation/components/CardHistoryModal';
 import ConfirmLeaveModal from './features/game/presentation/components/ConfirmLeaveModal';
+import { EvaluationForm } from './features/game/presentation/components/EvaluationForm';
 
 
 const GameContent = () => {
@@ -121,6 +122,16 @@ const GameContent = () => {
             exit={{ opacity: 0 }}
           >
             <ObserverDashboard />
+          </motion.div>
+        ) : currentScreen === 'evaluation' ? (
+          <motion.div
+            key="evaluation"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.05 }}
+            transition={{ duration: 0.3 }}
+          >
+            <EvaluationForm onComplete={confirmGoToMenu} />
           </motion.div>
         ) : !isBoardFullScreen ? (
           <motion.div
