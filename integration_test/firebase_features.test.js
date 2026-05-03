@@ -68,6 +68,21 @@ vi.mock('firebase/functions', () => ({
   httpsCallable: vi.fn(() => vi.fn(() => Promise.resolve({ data: { success: true } })))
 }));
 
+vi.mock('firebase/firestore', () => ({
+  getFirestore: vi.fn(),
+  doc: vi.fn((fs, coll, id) => ({ path: `${coll}/${id}` })),
+  collection: vi.fn((fs, coll) => ({ path: coll })),
+  setDoc: vi.fn(() => Promise.resolve()),
+  getDoc: vi.fn(() => Promise.resolve({ exists: () => false, data: () => ({}) })),
+  addDoc: vi.fn(() => Promise.resolve({ id: 'new-id' })),
+  onSnapshot: vi.fn(() => () => {}),
+  query: vi.fn(),
+  where: vi.fn(),
+  orderBy: vi.fn(),
+  limit: vi.fn(),
+  serverTimestamp: vi.fn(() => Date.now())
+}));
+
 vi.mock('../src/config/firebase.js', () => ({
   auth: {},
   database: {},

@@ -3,6 +3,8 @@ import {
   collection, 
   doc, 
   setDoc, 
+  getDoc,
+  addDoc,
   onSnapshot, 
   query, 
   where, 
@@ -147,7 +149,6 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
 
   async getRoomConfig(roomId) {
     if (!firestore) return null;
-    const { getDoc } = await import("firebase/firestore");
     const docRef = doc(firestore, "roomConfigs", roomId);
     const snap = await getDoc(docRef);
     return snap.exists() ? snap.data() : null;
@@ -387,15 +388,11 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
   async saveEvaluation(evaluationData) {
     if (!firestore) throw new Error("Firestore não configurado");
     
-    // Using addDoc to auto-generate an ID
-    const { addDoc, collection } = await import("firebase/firestore");
     const evaluationsRef = collection(firestore, "evaluations");
     
-    // Add server timestamp just to be safe
-    const { serverTimestamp } = await import("firebase/firestore");
     const docData = {
       ...evaluationData,
-      createdAt: serverTimestamp()
+      createdAt: firestoreTimestamp()
     };
     
     await addDoc(evaluationsRef, docData);
