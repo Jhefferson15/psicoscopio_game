@@ -82,7 +82,6 @@ export const GameProvider = ({ children }) => {
   // Estado Online
   const [roomId, setRoomId] = useState(null);
   const [isOnline, setIsOnline] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [roomStatus, setRoomStatus] = useState('waiting'); // 'waiting' | 'playing'
   const [myPlayerIndex, setMyPlayerIndex] = useState(-1);
   const [roomParticipants, setRoomParticipants] = useState([]);
@@ -97,6 +96,8 @@ export const GameProvider = ({ children }) => {
     2: { memory: 30, reflection: 15, challenge: 50 }
   });
 
+  // serverTimeOffset como ref para nao causar re-render do GameProvider a cada atualizacao de rede
+  const serverTimeOffsetRef = useRef(0);
   const [serverTimeOffset, setServerTimeOffset] = useState(0);
   const [turnStartTime, setTurnStartTime] = useState(null);
   const [turnDuration, setTurnDuration] = useState(120);
@@ -144,9 +145,14 @@ export const GameProvider = ({ children }) => {
     }
   }, [user, cloudBoardConfigs]);
 
-  // Sincroniza offset de tempo com o servidor
+  // Sincroniza offset de tempo com o servidor — grava no ref para nao causar re-render em cascata
   useEffect(() => {
-    return syncRepository.getServerTimeOffset(setServerTimeOffset);
+    return syncRepository.getServerTimeOffset((offset) => {
+      serverTimeOffsetRef.current = offset;
+      // Atualiza estado apenas quando a diferenca for significativa (> 500ms)
+      // para que o timer no UI continue preciso sem re-renders constantes
+      setServerTimeOffset(prev => Math.abs(prev - offset) > 500 ? offset : prev);
+    });
   }, []);
 
 
@@ -425,128 +431,106 @@ export const GameProvider = ({ children }) => {
     }
   }, [hostRole, ownerId, user?.id, roomId]);
 
-  const syncStateToFirebase = useCallback(async (overrides = {}) => {
-    if (!isOnline || !roomId || isSyncing || players.length === 0) return;
-    
-    // isMoving e isRolling sao estados VISUAIS locais. Nao devem ser sincronizados.
-    // turnStartTime e turnDuration sao gerenciados EXCLUSIVAMENTE por startTurn via
-    // serverTimestamp(). Incluir aqui causaria loop: valor stale e reenviado e volta
-    // via listener, resetando o guard e causando o timer disparar em loop.
-    const gameState = {
-      players: overrides.players || players,
-      currentPlayerIndex: overrides.currentPlayerIndex !== undefined ? overrides.currentPlayerIndex : currentPlayerIndex,
-      lastDiceRoll: overrides.lastDiceRoll !== undefined ? overrides.lastDiceRoll : lastDiceRoll,
-      isRolling: overrides.isRolling !== undefined ? overrides.isRolling : isRolling,
-      playerAttributes: playerAttributes,
-      lastActionBy: user?.id || null
-      // NUNCA incluir ownerId aqui para não sobrescrever o RTDB
-    };
 
-    try {
-      await syncRepository.updateGameState(roomId, gameState);
-    } catch (error) {
-      console.error("Erro ao sincronizar:", error);
-    }
-  }, [isOnline, roomId, players, currentPlayerIndex, lastDiceRoll, playerAttributes, isSyncing, user, isRolling]);
-
-
+  // EFEITO 1: Listener de gameState (estado dinamico do jogo)
   useEffect(() => {
-    if (isOnline && roomId) {
-      const unsubscribe = syncRepository.listenToGameState(roomId, (newState) => {
-        setIsSyncing(true);
-        if (newState.players) {
-          // ANTI-ROLLBACK: Se o CLIENTE LOCAL esta em movimento, nao sobrescreve
-          // as posicoes — o Firebase ainda pode ter um estado anterior ao movimento
-          // em andamento. O estado final sera sincronizado ao terminar movePlayer.
-          if (!isMovingRef.current) {
-            setPlayers(newState.players.map(p => new Player(p.id, p.name, p.color, p.position, p.timeLeft, p.lastRoll)));
-          }
-        }
-        if (newState.currentPlayerIndex !== undefined) setCurrentPlayerIndex(newState.currentPlayerIndex);
-        if (newState.lastDiceRoll !== undefined) setLastDiceRoll(newState.lastDiceRoll);
-        if (newState.isRolling !== undefined) setIsRolling(newState.isRolling);
-        // isMoving NAO e sincronizado. Cada cliente gerencia sua propria animacao de movimento baseada nos players.
-        if (newState.playerAttributes) setPlayerAttributes(newState.playerAttributes);
-        if (newState.turnStartTime !== undefined && newState.turnStartTime !== null) {
-          const maxAgeMs = ((newState.turnDuration || turnDuration || 120) + 30) * 1000;
-          const isStale = newState.turnStartTime > 0 && (Date.now() - newState.turnStartTime) > maxAgeMs;
-          
-          if (!isStale) {
-            setTurnStartTime(newState.turnStartTime);
-          } else {
-            console.warn("[Timer] turnStartTime recebido esta desatualizado (sessao antiga). Ignorando para evitar timer zerado.");
-            setTurnStartTime(null);
-          }
-          // Sempre reseta o guard ao receber um update de turno do servidor
-          isTurnBeingPassedRef.current = false;
-        }
-        if (newState.turnDuration !== undefined) setTurnDuration(newState.turnDuration);
-        if (newState.boardConfig) {
-          setActiveBoardConfig(BoardConfig.fromJSON(newState.boardConfig));
-        }
+    if (!isOnline || !roomId) return;
 
-        
-        setTimeout(() => setIsSyncing(false), 500);
+    const unsubscribe = syncRepository.listenToGameState(roomId, (newState) => {
+      if (newState.players) {
+        // ANTI-ROLLBACK: Se o CLIENTE LOCAL esta em movimento, nao sobrescreve
+        // as posicoes — o Firebase ainda pode ter um estado anterior ao movimento
+        // em andamento. O estado final sera sincronizado ao terminar movePlayer.
+        if (!isMovingRef.current) {
+          setPlayers(newState.players.map(p => new Player(p.id, p.name, p.color, p.position, p.timeLeft, p.lastRoll)));
+        }
+      }
+      if (newState.currentPlayerIndex !== undefined) setCurrentPlayerIndex(newState.currentPlayerIndex);
+      if (newState.lastDiceRoll !== undefined) setLastDiceRoll(newState.lastDiceRoll);
+      if (newState.isRolling !== undefined) setIsRolling(newState.isRolling);
+      if (newState.playerAttributes) setPlayerAttributes(newState.playerAttributes);
+      if (newState.turnStartTime !== undefined && newState.turnStartTime !== null) {
+        const maxAgeMs = ((newState.turnDuration || turnDuration || 120) + 30) * 1000;
+        const isStale = newState.turnStartTime > 0 && (Date.now() - newState.turnStartTime) > maxAgeMs;
+        if (!isStale) {
+          setTurnStartTime(newState.turnStartTime);
+        } else {
+          console.warn("[Timer] turnStartTime recebido esta desatualizado. Ignorando.");
+          setTurnStartTime(null);
+        }
+        isTurnBeingPassedRef.current = false;
+      }
+      if (newState.turnDuration !== undefined) setTurnDuration(newState.turnDuration);
+      if (newState.boardConfig) {
+        setActiveBoardConfig(BoardConfig.fromJSON(newState.boardConfig));
+      }
+    });
+
+    return () => unsubscribe();
+  }, [isOnline, roomId, turnDuration]);
+
+  // EFEITO 2: Listener granular de metadados da sala (status, participants, readyPlayers, ownerId)
+  // Usa listenToRoomMeta que observa subnos leves — nao baixa gameState completo.
+  useEffect(() => {
+    if (!isOnline || !roomId) return;
+
+    const unsubscribeRoomMeta = syncRepository.listenToRoomMeta(roomId, (room) => {
+      if (!room) return;
+
+      setRoomStatus(room.status || 'waiting');
+
+      const rawParticipants = room.participants || {};
+      const normalizedParticipants = {};
+      Object.values(rawParticipants).forEach(val => {
+        if (typeof val === 'string') {
+          normalizedParticipants[val] = { id: val, name: 'Convidado', photoURL: null };
+        } else if (val && typeof val === 'object' && val.id) {
+          normalizedParticipants[val.id] = val;
+        }
       });
 
-      // Listener para o status e participantes da sala
-      const unsubscribeRoom = syncRepository.listenToRoomData(roomId, (room) => {
-        if (!room) return;
-        
-        setRoomStatus(room.status || 'waiting');
-        
-        // Normalização para suportar salas antigas (arrays misturados com objetos)
-        const rawParticipants = room.participants || {};
-        const normalizedParticipants = {};
-        Object.values(rawParticipants).forEach(val => {
-          if (typeof val === 'string') {
-            // Formato antigo (apenas o ID do usuário como string)
-            normalizedParticipants[val] = { id: val, name: 'Convidado', photoURL: null };
-          } else if (val && typeof val === 'object' && val.id) {
-            // Formato novo (objeto com id, name, photoURL)
-            normalizedParticipants[val.id] = val;
-          }
-        });
-        
-        setRoomParticipants(normalizedParticipants);
-        setReadyPlayers(room.readyPlayers || {});
-        setOwnerId(room.ownerId || null);
-        
-        if (room.status === 'playing' && (currentScreen === 'lobby' || currentScreen === 'card_creation' || currentScreen === 'waiting_players')) {
+      setRoomParticipants(normalizedParticipants);
+      setReadyPlayers(room.readyPlayers || {});
+      setOwnerId(room.ownerId || null);
+
+      if (room.status === 'playing' && (currentScreen === 'lobby' || currentScreen === 'card_creation' || currentScreen === 'waiting_players')) {
+        setCurrentScreen('game');
+      }
+
+      if (room.status === 'setup_cards' && currentScreen === 'lobby') {
+        const mechanics = room.metadata?.mechanics || activeBoardConfig?.mechanics || {};
+        if (mechanics.enableCardCreationStep === true) {
+          setAtelierContext('game_start');
+          setCurrentScreen('card_creation');
+        } else {
           setCurrentScreen('game');
         }
-        
-        if (room.status === 'setup_cards' && currentScreen === 'lobby') {
-          const board = room.gameState?.boardConfig || activeBoardConfig;
-          const mechanics = board.mechanics || {};
-          if (mechanics.enableCardCreationStep === true) {
-             setAtelierContext('game_start');
-             setCurrentScreen('card_creation');
-          } else {
-             setCurrentScreen('game');
-          }
-        }
-      });
+      }
+    });
 
-      // Monitoramento de Presença
-      const unsubscribePresence = syncRepository.updatePlayerPresence(roomId, user?.id);
+    return () => unsubscribeRoomMeta();
+  }, [isOnline, roomId, currentScreen, activeBoardConfig]);
 
-      // Listener para o histórico da sala (cartas sorteada)
-      const unsubscribeHistory = syncRepository.listenToRoomHistory(roomId, (history) => {
-        if (history && history.cards) {
-          const sortedCards = Object.values(history.cards).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-          setCardHistory(sortedCards);
-        }
-      });
+  // EFEITO 3: Presenca — deps minimas para evitar re-registro a cada mudanca de tela
+  useEffect(() => {
+    if (!isOnline || !roomId || !user?.id) return;
+    const unsubscribePresence = syncRepository.updatePlayerPresence(roomId, user.id);
+    return () => {
+      if (typeof unsubscribePresence === 'function') unsubscribePresence();
+    };
+  }, [isOnline, roomId, user?.id]);
 
-      return () => {
-        unsubscribe();
-        unsubscribeRoom();
-        unsubscribeHistory();
-        if (typeof unsubscribePresence === 'function') unsubscribePresence();
-      };
-    }
-  }, [isOnline, roomId, user, currentScreen, turnDuration, activeBoardConfig]);
+  // EFEITO 4: Historico de cartas — deps minimas para evitar reconnects constantes
+  useEffect(() => {
+    if (!isOnline || !roomId) return;
+    const unsubscribeHistory = syncRepository.listenToRoomHistory(roomId, (history) => {
+      if (history && history.cards) {
+        const sortedCards = Object.values(history.cards).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        setCardHistory(sortedCards);
+      }
+    });
+    return () => unsubscribeHistory();
+  }, [isOnline, roomId]);
 
   // Sincroniza meu índice de jogador com base no ID do usuário logado
   useEffect(() => {
@@ -795,16 +779,11 @@ export const GameProvider = ({ children }) => {
     setCurrentPlayerIndex(nextIndex);
     
     if (isOnline && roomId) {
-      // startTurn grava turnStartTime com serverTimestamp().
-      // O listener onValue recebe o novo turnStartTime e reseta isTurnBeingPassedRef.
+      // PASS_TURN via Cloud Function ja e autoritativo: grava players, currentPlayerIndex
+      // e turnStartTime com serverTimestamp(). Nao precisa de SYNC_STATE adicional.
       syncRepository.startTurn(roomId, nextIndex, turnTime).catch(e => {
-        console.warn("[PASS_TURN] Falha silenciosa (provavelmente já processado):", e.message);
+        console.warn("[PASS_TURN] Falha silenciosa (provavelmente ja processado):", e.message);
         isTurnBeingPassedRef.current = false;
-      });
-      syncStateToFirebase({ 
-        ...overrides,
-        players: updatedPlayers, 
-        currentPlayerIndex: nextIndex
       });
     } else {
       setTurnStartTime(Date.now());
@@ -812,7 +791,7 @@ export const GameProvider = ({ children }) => {
       // Modo offline: reseta o flag apos um tick para permitir que o estado se atualize
       queueMicrotask(() => { isTurnBeingPassedRef.current = false; });
     }
-  }, [currentPlayerIndex, players, isOnline, roomId, syncStateToFirebase, activeBoardConfig, roomParticipants]);
+  }, [currentPlayerIndex, players, isOnline, roomId, activeBoardConfig, roomParticipants]);
 
   // Refs de passagem: as declaracoes foram movidas para antes de passTurn
   // isMovingRef: permite o listener ignorar atualizacoes de players durante animacao local
@@ -884,44 +863,35 @@ export const GameProvider = ({ children }) => {
   const rollDice = async () => {
     if (isMoving || isRolling) return;
     if (isOnline && currentPlayerIndex !== myPlayerIndex) return; // Trava de seguranca backend
-    
+
     setIsRolling(true);
     setIsMoving(true);
     setLastDiceRoll(0);
-    
-    // Sincroniza o inicio da rolagem para todos verem a animacao
-    if (isOnline) {
-      syncRepository.updateGameState(roomId, { isRolling: true, lastActionBy: user?.id || null }).catch(
-        e => console.error("Erro sync inicio rolagem", e)
-      );
-    }
-    
-    // Simula tempo de "rolagem" do dado (animacao do botao/shaker)
+
+    // Animacao de rolagem local (1.5s) — nao sincroniza estado intermediario para economizar requisicoes
     await new Promise(r => setTimeout(r, 1500));
-    
+
     const { diceMin = 1, diceMax = 6 } = activeBoardConfig.mechanics || {};
     const roll = generateDiceRoll(diceMin, diceMax);
     setLastDiceRoll(roll);
     setIsRolling(false);
-    
+
     // Atualiza apenas o lastRoll do jogador (nao a posicao)
     const updatedPlayers = players.map((p, i) => i === currentPlayerIndex ? { ...p, lastRoll: roll } : p);
     setPlayers(updatedPlayers);
-    
-    // Sincroniza o resultado e para a animacao para todos
+
+    // Sincroniza apenas o resultado final do dado (uma unica chamada)
     if (isOnline) {
-      syncRepository.updateGameState(roomId, { 
-        isRolling: false, 
-        lastDiceRoll: roll, 
-        lastActionBy: user?.id || null 
-      }).catch(
-        e => console.error("Erro sync dado", e)
-      );
+      syncRepository.updateGameState(roomId, {
+        isRolling: false,
+        lastDiceRoll: roll,
+        lastActionBy: user?.id || null
+      }).catch(e => console.error("Erro sync dado", e));
     }
 
     // O numero esta na tela. Aguarda antes de mover
     await new Promise(r => setTimeout(r, 1200));
-    
+
     // Inicia o movimento com o array atualizado para evitar stale closure
     await movePlayer(roll, updatedPlayers);
   };

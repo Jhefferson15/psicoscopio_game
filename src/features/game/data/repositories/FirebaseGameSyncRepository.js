@@ -195,6 +195,52 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
     });
   }
 
+  /**
+   * Listener granular: observa APENAS metadados leves da sala.
+   * Evita baixar gameState inteiro a cada mudança de presença ou status.
+   * Chama callback com objeto { status, participants, readyPlayers, ownerId, metadata }.
+   */
+  listenToRoomMeta(roomId, callback) {
+    if (!database) return () => {};
+
+    const unsubs = [];
+    const meta = { status: null, participants: {}, readyPlayers: {}, ownerId: null, metadata: {} };
+
+    const emit = () => callback({ ...meta });
+
+    const statusRef = ref(database, `rooms/${roomId}/status`);
+    unsubs.push(onValue(statusRef, (snap) => {
+      meta.status = snap.val();
+      emit();
+    }));
+
+    const ownerRef = ref(database, `rooms/${roomId}/ownerId`);
+    unsubs.push(onValue(ownerRef, (snap) => {
+      meta.ownerId = snap.val();
+      emit();
+    }));
+
+    const participantsRef = ref(database, `rooms/${roomId}/participants`);
+    unsubs.push(onValue(participantsRef, (snap) => {
+      meta.participants = snap.val() || {};
+      emit();
+    }));
+
+    const readyRef = ref(database, `rooms/${roomId}/readyPlayers`);
+    unsubs.push(onValue(readyRef, (snap) => {
+      meta.readyPlayers = snap.val() || {};
+      emit();
+    }));
+
+    const metaRef = ref(database, `rooms/${roomId}/metadata`);
+    unsubs.push(onValue(metaRef, (snap) => {
+      meta.metadata = snap.val() || {};
+      emit();
+    }));
+
+    return () => unsubs.forEach(unsub => unsub());
+  }
+
   updatePlayerPresence(roomId, userId) {
     if (!database || !roomId || !userId) return () => {};
 
