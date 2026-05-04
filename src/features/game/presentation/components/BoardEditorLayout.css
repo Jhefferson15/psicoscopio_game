@@ -1,0 +1,84 @@
+/* BoardEditorLayout.css */
+.board-editor-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  background: radial-gradient(circle at top right, var(--accent-light), transparent),
+              radial-gradient(circle at bottom left, var(--secondary-light), transparent),
+              var(--bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  overflow: hidden;
+  will-change: transform;
+}
+
+.board-editor-layout {
+  width: 100%;
+  max-width: 1400px;
+  height: 95vh;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-float);
+  position: relative;
+  z-index: var(--z-elevated);
+  overflow: hidden;
+}
+
+.board-editor-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.header-title h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0;
+}
+
+.header-title p {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-back-editor {
+  background: var(--white);
+  border: 1px solid var(--border-light);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+}
+
+.btn-back-editor:hover {
+  background: var(--bg-darker);
+  transform: scale(1.1);
+}
+
+.board-editor-main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+  overflow: hidden;
+}

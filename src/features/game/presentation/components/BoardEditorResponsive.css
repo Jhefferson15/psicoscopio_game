@@ -1,0 +1,38 @@
+/* BoardEditorResponsive.css */
+@media (max-width: 1200px) {
+  .editor-top-grid { grid-template-columns: 1fr; }
+  .board-preview-container { position: static; max-height: none; width: 100%; order: -1; }
+  .preview-svg-wrapper { max-width: 500px; }
+}
+
+@media (max-width: 1024px) {
+  .board-editor-main { grid-template-columns: 1fr; display: flex; flex-direction: column; overflow-y: auto; }
+  .editor-sidebar { border-right: none; border-bottom: 1px solid rgba(0, 0, 0, 0.05); flex-shrink: 0; transition: all 0.3s ease; max-height: 80px; }
+  .editor-sidebar.mobile-open { max-height: 500px; }
+  .sidebar-header-mobile { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; cursor: pointer; }
+  .sidebar-actions, .config-list-container, .sidebar-footer { display: none; }
+  .editor-sidebar.mobile-open .sidebar-actions, 
+  .editor-sidebar.mobile-open .config-list-container, 
+  .editor-sidebar.mobile-open .sidebar-footer { display: flex; }
+}
+
+@media (max-width: 768px) {
+  .board-editor-wrapper { padding: 0.5rem; }
+  .board-editor-layout { height: 100dvh; border-radius: 1rem; }
+  .board-editor-header { padding: 1rem; }
+  .header-title h1 { font-size: 1.1rem; }
+  .editor-content { padding: 1rem; gap: 1.5rem; }
+  .tile-edit-row { grid-template-columns: 40px 1fr 40px; gap: 0.5rem; padding: 0.75rem; }
+  .tile-type-select, .tile-label-input, .tile-color-picker { display: none; }
+  .tile-edit-row.selected-row .tile-type-select, 
+  .tile-edit-row.selected-row .tile-label-input, 
+  .tile-edit-row.selected-row .tile-color-picker { display: flex; }
+  .tile-popup-content { padding: 1.5rem; border-radius: 1.5rem; }
+  .color-grid-quick { grid-template-columns: repeat(5, 1fr); }
+}
+
+.btn-toggle-preview-mobile { display: none; }
+@media (max-width: 1024px) { .btn-toggle-preview-mobile { display: block; } }
+
+.board-preview-container.collapsed .preview-svg-wrapper { max-height: 100px; overflow: hidden; opacity: 0.5; filter: blur(2px); pointer-events: none; }
+.board-preview-container.expanded .preview-svg-wrapper { max-height: 500px; opacity: 1; filter: none; }

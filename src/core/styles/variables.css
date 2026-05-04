@@ -1,0 +1,67 @@
+:root {
+  /* Cores de Marca */
+  --primary: #D84B42;
+  --primary-light: rgba(216, 75, 66, 0.1);
+  --secondary: #4885CE;
+  --secondary-light: rgba(72, 133, 206, 0.1);
+  --accent: #7B4BB1;
+  --accent-light: rgba(123, 75, 177, 0.1);
+  
+  /* Cores de Estado */
+  --success: #6FB05E;
+  --success-light: rgba(111, 176, 94, 0.1);
+  --warning: #F4C746;
+  --warning-light: rgba(244, 199, 70, 0.1);
+  --danger: #ef4444;
+  --danger-light: rgba(239, 68, 68, 0.1);
+
+  /* Neutros e Fundo */
+  --bg: #f8fafc;
+  --bg-darker: #f1f5f9;
+  --white: #ffffff;
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+  --text-light: #475569;
+  
+  /* Bordas e Divisores */
+  --border-light: rgba(0, 0, 0, 0.05);
+  --border-glass: rgba(255, 255, 255, 0.4);
+  --border-soft: rgba(0, 0, 0, 0.02);
+
+  /* Design System Tokens */
+  --radius-full: 9999px;
+  --radius-xl: 40px;
+  --radius-lg: 30px;
+  --radius-md: 20px;
+  --radius-sm: 12px;
+  
+  --shadow-premium: 0 20px 50px rgba(0, 0, 0, 0.05);
+  --shadow-float: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.02);
+  
+  --glass-bg: rgba(255, 255, 255, 0.98);
+  
+  /* Tipografia */
+  --font-main: 'Outfit', sans-serif;
+  --tracking-tighter: -0.05em;
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
+  --tracking-widest: 0.1em;
+  --tracking-ultra: 2px;
+  --tracking-mega: 4px;
+
+  /* Transições */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Z-index layers */
+  --z-base: 1;
+  --z-elevated: 10;
+  --z-overlay: 1000;
+  --z-modal: 2000;
+  --z-popup: 3000;
+}

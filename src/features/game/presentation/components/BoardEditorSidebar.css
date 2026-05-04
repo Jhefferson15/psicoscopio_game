@@ -1,0 +1,91 @@
+/* BoardEditorSidebar.css */
+.editor-sidebar {
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-section {
+  padding: 1.5rem;
+}
+
+.sidebar-section h3 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+}
+
+.config-list-container {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.config-list {
+  padding: 0 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.config-item {
+  padding: 1rem;
+  border-radius: 1rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.config-item:hover { background: rgba(255, 255, 255, 0.5); }
+.config-item.active {
+  background: white;
+  border-color: rgba(99, 102, 241, 0.2);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.config-info { display: flex; flex-direction: column; }
+.config-name { font-weight: 600; color: #1e293b; font-size: 0.9rem; }
+.config-meta { font-size: 0.75rem; color: #64748b; }
+
+.sidebar-actions { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; }
+
+.btn-add-set, .btn-randomize-premium, .btn-delete-board-styled {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-add-set { background: #f1f5f9; border: 1px solid #cbd5e1; color: #1e293b; }
+.btn-add-set:hover { background: #e2e8f0; }
+.btn-add-set.import-btn { background: transparent; border-style: dashed; }
+
+.btn-randomize-premium {
+  margin-top: 1rem;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border: none;
+  color: #fff;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+.btn-randomize-premium:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2); }
+
+.sidebar-footer { padding: 1.5rem; border-top: 1px solid rgba(0,0,0,0.05); }
+
+.btn-delete-board-styled { color: #ef4444; background: transparent; border: 1px solid #fee2e2; }
+.btn-delete-board-styled:hover:not(:disabled) { background: #fef2f2; border-color: #fecaca; }
+.btn-delete-board-styled:disabled { opacity: 0.5; cursor: not-allowed; }

@@ -1,0 +1,125 @@
+/* TabletopHeader.css */
+.tabletop-header, .tabletop-header-modern {
+  height: 75px;
+  background: rgba(255, 255, 255, 0.98);
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 40px;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+}
+
+.tabletop-header-modern {
+  background: var(--white);
+}
+
+.game-logo h1, .game-logo-modern h1 {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: 4px;
+  color: var(--text);
+}
+
+.game-logo h1 {
+  background: linear-gradient(to right, var(--text), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.game-version, .slogan-minimal {
+  font-size: 10px;
+  opacity: 0.5;
+  letter-spacing: 1px;
+}
+
+.slogan-minimal {
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.fs-toggle, .btn-rotate-modern, .btn-fullscreen-modern {
+  background: white;
+  border: 1px solid rgba(0,0,0,0.1);
+  color: var(--text);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  transition: all 0.2s;
+}
+
+.header-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.fs-toggle, .btn-fullscreen-modern {
+  padding: 10px 20px;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.btn-rotate-modern {
+  width: 42px;
+  height: 42px;
+}
+
+.fs-toggle:hover, .btn-rotate-modern:hover {
+  background: var(--text);
+  color: white;
+}
+
+.btn-rotate-modern:hover {
+  transform: rotate(90deg);
+}
+
+.btn-fullscreen-modern:hover {
+  background: #f1f5f9;
+  border-color: var(--secondary);
+  color: var(--secondary);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(72, 133, 206, 0.15);
+}
+
+.btn-fullscreen-modern i, .btn-fullscreen-modern svg {
+  color: var(--secondary);
+}
+
+.room-info-display {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  padding-right: 20px;
+  border-right: 1px solid rgba(0,0,0,0.05);
+}
+
+.room-label {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+.room-id {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--secondary);
+}
+
+.timer-minimal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  color: var(--primary);
+}

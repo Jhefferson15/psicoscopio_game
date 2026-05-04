@@ -1,11 +1,9 @@
+@import './core/styles/variables.css';
+@import './core/styles/shared.css';
+@import './core/styles/components/buttons.css';
+
 :root {
-  --primary: #D84B42;
-  --secondary: #4885CE;
-  --accent: #7B4BB1;
-  --bg: #f8fafc;
-  --white: #ffffff;
-  --text: #1e293b;
-  --text-muted: #64748b;
+  --side-padding: 20px;
   --card-bg: rgba(255, 255, 255, 0.7);
 }
 
@@ -27,10 +25,6 @@ body {
 /* ========================================== */
 
 @media (max-width: 768px) {
-  :root {
-    --side-padding: 20px;
-  }
-
   body {
     overflow-y: auto;
   }
@@ -213,26 +207,6 @@ body {
   .controls-overlay {
     bottom: 20px !important;
     right: 20px !important;
-  }
-
-  /* Modal Menu Mobile Fix */
-  .menu-modal-overlay {
-    align-items: flex-end !important;
-    padding: 0 !important;
-  }
-
-  .menu-modal-content {
-    max-width: 100% !important;
-    max-height: 95vh !important;
-    border-radius: 30px 30px 0 0 !important;
-    margin: 0 !important;
-  }
-
-  .modal-body {
-    padding: 20px 20px 40px 20px !important;
-    max-height: 75vh !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
   }
 
   .player-config-item {

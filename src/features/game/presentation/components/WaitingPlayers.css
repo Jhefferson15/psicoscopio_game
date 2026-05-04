@@ -4,10 +4,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   padding: 20px;
-  background: white; /* Identidade: Base branca pura */
-  font-family: 'Outfit', sans-serif;
+  background: var(--white);
+  font-family: var(--font-main);
 }
 
 .waiting-background {
@@ -31,21 +31,19 @@
   transform: translate(-50%, -50%);
   width: 900px;
   height: 900px;
-  background: radial-gradient(circle, rgba(123, 75, 177, 0.08) 0%, transparent 70%); /* Identidade: Glow Roxo sutil */
+  background: radial-gradient(circle, var(--accent-light) 0%, transparent 70%);
 }
 
 .waiting-card {
   position: relative;
-  z-index: 10;
-  background: rgba(255, 255, 255, 0.95); /* Identidade: Base clara */
+  z-index: var(--z-elevated);
+  background: rgba(255, 255, 255, 0.95);
   width: 100%;
   max-width: 600px;
-  border-radius: 40px; /* Identidade: Raio de 40px */
+  border-radius: var(--radius-xl);
   overflow: hidden;
-  box-shadow: 
-    0 20px 50px rgba(0, 0, 0, 0.05),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.5); /* Identidade: Reflexo interno */
-  border: 1px solid rgba(0,0,0,0.03);
+  box-shadow: var(--shadow-premium), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--border-soft);
 }
 
 .waiting-header {
@@ -53,8 +51,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(0,0,0,0.02);
-  background: white;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--white);
 }
 
 .timer-section {
@@ -66,39 +64,39 @@
 .timer-ring {
   width: 60px;
   height: 60px;
-  background: #f1f5f9;
-  border-radius: 20px; /* Squircle moderno */
+  background: var(--bg-darker);
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--secondary);
-  box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+  box-shadow: var(--shadow-soft);
 }
 
 .timer-label {
   font-size: 10px;
   font-weight: 800;
-  color: #94a3b8;
-  letter-spacing: 2px;
+  color: var(--text-dim);
+  letter-spacing: var(--tracking-ultra);
   text-transform: uppercase;
 }
 
 .countdown-modern {
   font-size: 32px;
   font-weight: 900;
-  color: #1e293b;
+  color: var(--text);
   font-family: 'JetBrains Mono', monospace;
 }
 
 .header-status-badge {
-  background: var(--accent); /* Identidade: Uso do Roxo para o Ateliê */
-  color: white;
+  background: var(--accent);
+  color: var(--white);
   padding: 8px 18px;
-  border-radius: 50px;
+  border-radius: var(--radius-full);
   font-size: 10px;
   font-weight: 900;
-  letter-spacing: 2px;
-  box-shadow: 0 5px 15px rgba(123, 75, 177, 0.2);
+  letter-spacing: var(--tracking-ultra);
+  box-shadow: 0 5px 15px var(--accent-light);
 }
 
 .waiting-body {
@@ -109,11 +107,11 @@
   display: flex;
   align-items: center;
   gap: 20px;
-  background: #f8fafc;
+  background: var(--bg);
   padding: 24px;
-  border-radius: 24px;
+  border-radius: var(--radius-lg);
   margin-bottom: 30px;
-  border: 1px solid rgba(0,0,0,0.02);
+  border: 1px solid var(--border-soft);
 }
 
 .context-icon {
@@ -125,13 +123,13 @@
   margin: 0 0 5px 0;
   font-size: 16px;
   font-weight: 800;
-  color: #1e293b;
+  color: var(--text);
 }
 
 .context-text p {
   margin: 0;
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-muted);
   line-height: 1.5;
 }
 
@@ -144,23 +142,23 @@
   justify-content: space-between;
   font-size: 10px;
   font-weight: 900;
-  color: #94a3b8;
+  color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: var(--tracking-ultra);
   margin-bottom: 12px;
 }
 
 .progress-bar-track {
   height: 8px;
-  background: #f1f5f9;
-  border-radius: 50px;
+  background: var(--bg-darker);
+  border-radius: var(--radius-full);
   overflow: hidden;
 }
 
 .progress-bar-fill {
   height: 100%;
   background: linear-gradient(to right, var(--secondary), var(--accent));
-  border-radius: 50px;
+  border-radius: var(--radius-full);
 }
 
 .ready-grid-premium {
@@ -174,66 +172,66 @@
   align-items: center;
   gap: 15px;
   padding: 15px;
-  background: white;
-  border-radius: 24px;
-  border: 1px solid rgba(0,0,0,0.02);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.02);
-  transition: all 0.3s;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-soft);
+  transition: all var(--transition-normal);
 }
 
 .ready-item-premium.is-ready {
-  border-color: #10b981;
-  background: #f0fdf4;
+  border-color: var(--success);
+  background: var(--success-light);
 }
 
 .avatar-placeholder-premium {
   width: 48px;
   height: 48px;
-  border-radius: 14px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--white);
   font-weight: 900;
   box-shadow: 0 5px 10px rgba(0,0,0,0.1);
-  border: 2px solid white;
+  border: 2px solid var(--white);
 }
 
 .player-name-text {
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text);
   font-size: 14px;
 }
 
 .player-status-tag {
   font-size: 9px;
   font-weight: 800;
-  color: #94a3b8;
-  letter-spacing: 1px;
+  color: var(--text-dim);
+  letter-spacing: var(--tracking-wide);
 }
 
 .waiting-footer-premium {
   padding: 30px 40px;
-  background: #f8fafc;
+  background: var(--bg);
   text-align: center;
 }
 
 .btn-premium-action {
   width: 100%;
-  background: #1e293b; /* Identidade: Botão do menu */
-  color: white;
+  background: var(--text);
+  color: var(--white);
   border: none;
   padding: 18px;
-  border-radius: 50px;
+  border-radius: var(--radius-full);
   font-weight: 900;
   font-size: 12px;
-  letter-spacing: 2px;
+  letter-spacing: var(--tracking-ultra);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all var(--transition-normal);
   box-shadow: 0 10px 25px rgba(0,0,0,0.15);
 }
 
@@ -245,7 +243,7 @@
 
 .footer-hint {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--text-dim);
   margin-top: 15px;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -261,8 +259,8 @@
   position: relative;
   width: 52px;
   height: 52px;
-  border-radius: 16px;
-  border: 2px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--bg-darker);
   padding: 2px;
   display: flex;
   align-items: center;
@@ -273,7 +271,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
 }
 
 .presence-indicator-modern {
@@ -283,18 +281,18 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  border: 2px solid white;
+  border: 2px solid var(--white);
   z-index: 5;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-normal);
 }
 
 .presence-indicator-modern.is-online {
-  background: #10b981;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+  background: var(--success);
+  box-shadow: 0 0 10px var(--success-light);
 }
 
 .presence-indicator-modern.is-offline {
-  background: #94a3b8;
+  background: var(--text-dim);
   filter: grayscale(1);
 }
 
@@ -302,15 +300,15 @@
   position: absolute;
   top: -6px;
   right: -6px;
-  background: #10b981;
-  color: white;
+  background: var(--success);
+  color: var(--white);
   width: 18px;
   height: 18px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid white;
+  border: 2px solid var(--white);
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  z-index: 10;
+  z-index: var(--z-elevated);
 }

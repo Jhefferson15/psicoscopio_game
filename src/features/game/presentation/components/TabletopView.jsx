@@ -1,5 +1,9 @@
 import React from 'react';
-import './TabletopView.css';
+import './TabletopLayout.css';
+import './TabletopHeader.css';
+import './TabletopSidebar.css';
+import './TabletopBoard.css';
+import './TabletopResponsive.css';
 import './GameFeatures.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../state/useGame';

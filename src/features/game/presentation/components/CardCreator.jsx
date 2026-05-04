@@ -6,7 +6,10 @@ import { GAME_CARDS } from '../../domain/gameConstants';
 import { CustomCard } from '../../domain/entities/CustomCard';
 import { customCardRepository } from '../../data/repositories/LocalStorageCardRepository';
 import { CustomCardsModal } from './MenuModals';
-import './CardCreator.css';
+import './CardCreatorLayout.css';
+import './CardCreatorMockup.css';
+import './CardCreatorToolbox.css';
+import './CardCreatorResponsive.css';
 
 const CardCreator = () => {
   const { finishCardCreation, players } = useGame();

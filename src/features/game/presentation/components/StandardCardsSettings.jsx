@@ -17,7 +17,10 @@ import {
   Upload,
   Info
 } from 'lucide-react';
-import './StandardCardsSettings.css';
+import './StandardCardsLayout.css';
+import './StandardCardsSidebar.css';
+import './StandardCardsEditor.css';
+import './StandardCardsResponsive.css';
 
 const categoryIcons = {
   memoria: Brain,

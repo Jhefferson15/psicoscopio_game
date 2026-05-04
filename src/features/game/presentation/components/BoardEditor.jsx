@@ -24,7 +24,11 @@ import {
   History
 } from 'lucide-react';
 import { useGame } from '../state/useGame';
-import './BoardEditor.css';
+import './BoardEditorLayout.css';
+import './BoardEditorSidebar.css';
+import './BoardEditorContent.css';
+import './BoardEditorPreview.css';
+import './BoardEditorResponsive.css';
 
 const TILE_TYPES = [
   { id: 'brain', label: 'Cérebro', color: '#D84B42', icon: Zap },
