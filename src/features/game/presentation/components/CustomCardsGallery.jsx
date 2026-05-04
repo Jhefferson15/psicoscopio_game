@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../state/useGame';
 import { customCardRepository } from '../../data/repositories/LocalStorageCardRepository';
-import { Trash2, ChevronLeft, Brain, Sprout, Puzzle, RotateCcw, Image as ImageIcon } from 'lucide-react';
+import { Trash2, ChevronLeft, Brain, Sprout, Puzzle, RotateCcw, Image as ImageIcon, Send } from 'lucide-react';
+
 import './CustomCardsGallery.css';
 
 const CustomCardsGallery = ({ isModal = false, onClose }) => {
@@ -29,6 +30,14 @@ const CustomCardsGallery = ({ isModal = false, onClose }) => {
       setCards(cards.filter(c => c.id !== id));
     }
   };
+
+  const handleSend = (card) => {
+    const cardData = JSON.stringify(card);
+    navigator.clipboard.writeText(cardData).then(() => {
+      alert('Dados da carta copiados! Você pode enviar este código para outro jogador importar.');
+    });
+  };
+
 
   const getIcon = (type) => {
     switch (type.toLowerCase()) {
@@ -108,18 +117,31 @@ const CustomCardsGallery = ({ isModal = false, onClose }) => {
                       )}
                     </div>
 
-                    <button 
-                      className="btn-delete-card-floating" 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(card.id);
-                      }}
-                      title="Excluir carta"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="gallery-card-actions">
+                      <button 
+                        className="btn-card-action send" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSend(card);
+                        }}
+                        title="Enviar para alguém"
+                      >
+                        <Send size={14} />
+                      </button>
+                      <button 
+                        className="btn-card-action delete" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(card.id);
+                        }}
+                        title="Excluir carta"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
+
               ))}
             </AnimatePresence>
           </div>

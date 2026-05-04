@@ -1,84 +1,81 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, 
   Save, 
-  Trash2, 
+  Download, 
   Plus, 
+  Trash2, 
+  Edit3, 
   Check, 
+  X, 
+  Sparkles, 
+  Brain, 
+  Zap, 
+  MessageSquare, 
+  Users, 
   Clock, 
-  Edit3,
-  X,
-  Zap,
-  Sparkles,
-  Search,
-  MessageSquare,
-  Settings,
-  PlusCircle,
-  BookOpen,
-  Users,
-  Download,
-  Upload,
-  Image as ImageIcon,
+  History, 
   RotateCcw,
-  History
+  Upload,
+  Settings,
+  BookOpen,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useGame } from '../state/useGame';
+import { useBoardEditor } from '../hooks/useBoardEditor';
+import { STANDARD_TILE_CONFIG } from '../../domain/gameConstants';
 import './BoardEditorLayout.css';
 import './BoardEditorSidebar.css';
 import './BoardEditorContent.css';
 import './BoardEditorPreview.css';
 import './BoardEditorResponsive.css';
 
+
+const COLORS = [
+  '#4885CE', '#6FB05E', '#D84B42', '#7B4BB1', '#F4C746', 
+  '#1e293b', '#F43F5E', '#EC4899', '#D946EF', '#8B5CF6', 
+  '#6366F1', '#3B82F6', '#0EA5E9', '#06B6D4', '#14B8A6', 
+  '#84CC16', '#EAB308', '#F97316'
+];
+
 const TILE_TYPES = [
-  { id: 'brain', label: 'Cérebro', color: '#D84B42', icon: Zap },
-  { id: 'reflexao', label: 'Reflexão', color: '#7B4BB1', icon: Sparkles },
-  { id: 'desafio', label: 'Desafio', color: '#D84B42', icon: Zap },
-  { id: 'memoria', label: 'Memória', color: '#4885CE', icon: Search },
-  { id: 'especial', label: 'Especial', color: '#FFFFFF', icon: Sparkles },
-  { id: 'bulb', label: 'Lâmpada', color: '#F4C746', icon: Zap },
-  { id: 'eye', label: 'Olho', color: '#4885CE', icon: Search },
-  { id: 'cycle', label: 'Ciclo', color: '#6FB05E', icon: Settings },
-  { id: 'target', label: 'Alvo', color: '#D84B42', icon: Zap },
-  { id: 'puzzle', label: 'Puzzle', color: '#6FB05E', icon: Settings },
-  { id: 'chat', label: 'Chat', color: '#6FB05E', icon: MessageSquare },
-  { id: 'slider', label: 'Controle', color: '#F4C746', icon: Settings }
+  { id: 'memoria', label: 'Memória', color: STANDARD_TILE_CONFIG.memoria.color, icon: Brain },
+  { id: 'reflexao', label: 'Reflexão', color: STANDARD_TILE_CONFIG.reflexao.color, icon: Brain },
+  { id: 'desafio', label: 'Desafio', color: STANDARD_TILE_CONFIG.desafio.color, icon: Zap },
+  { id: 'experiencia', label: 'Experiência', color: STANDARD_TILE_CONFIG.experiencia.color, icon: Sparkles },
+  { id: 'sorte', label: 'Sorte', color: STANDARD_TILE_CONFIG.sorte.color, icon: Sparkles },
+  
+  { id: 'custom_memoria', label: 'Custom Mem', color: STANDARD_TILE_CONFIG.memoria.color, icon: Brain },
+  { id: 'custom_reflexao', label: 'Custom Refl', color: STANDARD_TILE_CONFIG.reflexao.color, icon: Brain },
+  { id: 'custom_desafio', label: 'Custom Des', color: STANDARD_TILE_CONFIG.desafio.color, icon: Zap },
+  { id: 'custom_experiencia', label: 'Custom Exp', color: STANDARD_TILE_CONFIG.experiencia.color, icon: Sparkles },
+  { id: 'custom_sorte', label: 'Custom Sorte', color: STANDARD_TILE_CONFIG.sorte.color, icon: Sparkles },
+
+  { id: 'custom_card', label: 'Custom Geral', color: '#F4C746', icon: Sparkles },
+  { id: 'especial', label: 'Especial', color: '#FFFFFF', icon: Settings }
 ];
 
 const TILE_ACTIONS = [
-  { id: null, label: 'Nenhuma', icon: X },
-  { id: 'MOVE_2', label: 'Avançar 2', icon: Zap },
-  { id: 'BACK_2', label: 'Voltar 2', icon: ChevronLeft },
-  { id: 'SWAP_PLACE', label: 'Trocar Lugar', icon: Settings },
-  { id: 'MOVE_INNER', label: 'Para Interno', icon: Sparkles },
-  { id: 'MOVE_OUTER', label: 'Para Externo', icon: Sparkles },
-  { id: 'SKIP_TURN', label: 'Pular Vez', icon: Clock },
-  { id: 'DRAW_2', label: 'Pegar 2 Cartas', icon: Plus },
-  { id: 'TEAM_CHALLENGE', label: 'Desafio Equipe', icon: Users },
-  { id: 'SHARE_CARD', label: 'Mostrar Carta', icon: MessageSquare },
-  { id: 'CREATE_CARD', label: 'Criar Carta', icon: PlusCircle },
-  { id: 'WRITE_DIARY', label: 'No Diário', icon: BookOpen }
+  { id: null, label: 'Nenhuma', icon: X, color: '#FFFFFF' },
+  { id: 'MOVE_2', label: 'Avançar 2', icon: Zap, color: '#10B981' },
+  { id: 'BACK_2', label: 'Voltar 2', icon: RotateCcw, color: '#EF4444' },
+  { id: 'MOVE_INNER', label: 'Ir p/ Centro', icon: ChevronLeft, color: '#6366F1' },
+  { id: 'MOVE_OUTER', label: 'Ir p/ Borda', icon: ChevronLeft, color: '#F59E0B' },
+  { id: 'DRAW_2', label: 'Comprar 2', icon: Plus, color: '#8B5CF6' }
 ];
-
-const COLORS = [
-  '#D84B42', '#4885CE', '#7B4BB1', '#F59E0B', '#10B981', '#6366F1', '#F4C746', '#6FB05E', '#FFFFFF',
-  '#EC4899', '#F97316', '#8B5CF6', '#06B6D4', '#84CC16', '#3B82F6', '#EF4444', '#14B8A6', '#FACC15',
-  '#A855F7', '#64748B', '#000000', '#FFD700', '#C0C0C0', '#CD7F32', '#FF69B4', '#40E0D0', '#9FE2BF'
-];
-
-import { useBoardEditor } from '../hooks/useBoardEditor';
 
 const BoardEditor = () => {
   const { 
     activeBoardConfig, 
     availableBoardConfigs, 
-    changeActiveBoardConfig, 
-    saveNewBoardConfig, 
-    updateBoardConfig, 
-    deleteBoardConfig,
-    importBoardConfig,
+    deleteBoardConfig, 
+    showSystemPopup, 
     handleGoToMenu,
-    showSystemPopup
+    changeActiveBoardConfig,
+    saveNewBoardConfig,
+    updateBoardConfig,
+    importBoardConfig
   } = useGame();
 
   const {
@@ -86,35 +83,38 @@ const BoardEditor = () => {
     setEditingConfig,
     configName,
     setConfigName,
-    selectedTileIndex,
-    setSelectedTileIndex,
-    selectedPlayerIdx,
-    setSelectedPlayerIdx,
     handleSave,
-    handleTileChange,
+    handleExport,
+    handleImport,
     handleMechanicChange,
     handleCenterTextChange,
     handleInitialPositionChange,
+    handleTileChange,
     handleRandomize,
     startNewBoard,
-    handleExport,
-    handleImport,
-    selectConfig
+    selectConfig,
+    selectedTileIndex,
+    setSelectedTileIndex,
+    selectedPlayerIdx,
+    setSelectedPlayerIdx
   } = useBoardEditor({
     activeBoardConfig,
     availableBoardConfigs,
+    showSystemPopup,
     changeActiveBoardConfig,
     saveNewBoardConfig,
     updateBoardConfig,
     importBoardConfig,
-    showSystemPopup,
     TILE_TYPES,
     TILE_ACTIONS,
     COLORS
   });
 
+
+
   const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
   const [showCollectionsMobile, setShowCollectionsMobile] = useState(false);
+
 
   if (!editingConfig) return null;
 
@@ -416,7 +416,6 @@ const BoardEditor = () => {
                 </div>
                 <div className="preview-svg-wrapper">
                   <svg viewBox="0 0 800 800" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                    {/* ... (SVG content stays the same) ... */}
                     <defs>
                       <filter id="shadow-preview" x="-10%" y="-10%" width="120%" height="120%">
                         <feDropShadow dx="1" dy="2" stdDeviation="2" floodOpacity="0.1" />
@@ -520,11 +519,6 @@ const BoardEditor = () => {
                     </g>
                   </svg>
                 </div>
-                {isPreviewExpanded && (
-                  <p className="preview-hint">
-                    Clique em uma casa para editar rapidamente
-                  </p>
-                )}
               </div>
             </div>
 
@@ -540,114 +534,125 @@ const BoardEditor = () => {
                     onClick={() => setSelectedTileIndex(idx)}
                   >
                     <span className="tile-id-badge">{tile.id}</span>
-                    <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{tile.type.toUpperCase()}</span>
+                    <span className="tile-type-badge" style={{ fontWeight: 600, fontSize: '0.85rem' }}>{tile.type.toUpperCase()}</span>
                     <span className="tile-label-text" style={{ color: tile.label ? '#1e293b' : '#94a3b8' }}>{tile.label || '(Sem rótulo)'}</span>
-                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: tile.color, border: '1px solid rgba(0,0,0,0.1)' }} />
-                    <Edit3 size={14} color="#64748b" />
+                    <div className="tile-color-dot" style={{ width: '20px', height: '20px', borderRadius: '50%', background: tile.color, border: '1px solid rgba(0,0,0,0.1)' }} />
+                    <Edit3 className="tile-edit-icon" size={14} color="#64748b" />
                   </div>
+
                 ))}
               </div>
             </div>
           </section>
         </main>
+      </motion.div>
 
-        <AnimatePresence>
-          {selectedTileIndex !== null && currentTile && (
+      <AnimatePresence>
+        {selectedTileIndex !== null && currentTile && (
+          <motion.div 
+            className="tile-popup-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedTileIndex(null)}
+          >
             <motion.div 
-              className="tile-popup-overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedTileIndex(null)}
+              className="tile-popup-content glass-light"
+              initial={{ scale: 0.9, y: 50, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 50, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <motion.div 
-                className="tile-popup-content"
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                onClick={e => e.stopPropagation()}
-              >
-                <div className="popup-header">
-                  <h3>Editar Casa {currentTile.id}</h3>
-                  <button className="btn-close-popup" onClick={() => setSelectedTileIndex(null)}>
-                    <X size={18} />
-                  </button>
+              <div className="popup-header">
+                <h3>Editar Casa #{selectedTileIndex + 1}</h3>
+                <button className="btn-close-popup" onClick={() => setSelectedTileIndex(null)}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="popup-body">
+                <div className="popup-field">
+                  <label>Rótulo da Casa</label>
+                  <textarea 
+                    value={currentTile.label || ''} 
+                    onChange={(e) => handleTileChange(selectedTileIndex, 'label', e.target.value)}
+                    className="tile-label-input"
+                    placeholder="Ex: Ponto de Partida"
+                    rows={2}
+                  />
                 </div>
 
-                <div className="popup-body">
-                  <div className="popup-field">
-                    <label>Rótulo da Casa (Use Enter para múltiplas linhas)</label>
-                    <textarea 
-                      value={currentTile.label} 
-                      onChange={(e) => handleTileChange(selectedTileIndex, 'label', e.target.value)}
-                      className="tile-label-input"
-                      placeholder="Ex: Pule 1 casa"
-                      rows={2}
-                      autoFocus
-                      style={{ 
-                        width: '100%', 
-                        padding: '12px', 
-                        borderRadius: '12px', 
-                        border: '1px solid #e2e8f0',
-                        fontSize: '0.9rem',
-                        fontFamily: 'inherit',
-                        resize: 'none'
-                      }}
-                    />
-                  </div>
+                <div className="popup-field">
+                  <label>Descrição da Casa</label>
+                  <textarea 
+                    value={currentTile.description || ''} 
+                    onChange={(e) => handleTileChange(selectedTileIndex, 'description', e.target.value)}
+                    className="tile-description-input"
+                    placeholder="Explique o que acontece nesta casa..."
+                    rows={3}
+                  />
+                </div>
 
-                  <div className="popup-field">
-                    <label>Descrição da Casa</label>
-                    <textarea 
-                      value={currentTile.description || ''} 
-                      onChange={(e) => handleTileChange(selectedTileIndex, 'description', e.target.value)}
-                      className="tile-description-input"
-                      placeholder="Explique o que acontece nesta casa..."
-                      rows={3}
-                      style={{ 
-                        width: '100%', 
-                        padding: '12px', 
-                        borderRadius: '12px', 
-                        border: '1px solid #e2e8f0',
-                        fontSize: '0.9rem',
-                        fontFamily: 'inherit',
-                        resize: 'vertical'
-                      }}
-                    />
+                <div className="popup-field">
+                  <label>Tipo de Casa</label>
+                  <div className="type-grid-quick">
+                    {TILE_TYPES.map(type => (
+                      <button 
+                        key={type.id}
+                        className={`type-btn-quick ${currentTile.type === type.id ? 'active' : ''}`}
+                        style={{ '--cat-color': type.color }}
+                        onClick={() => {
+                          const tileConfig = STANDARD_TILE_CONFIG[type.id];
+                          setEditingConfig(prev => {
+                            const newTiles = [...prev.tiles];
+                            newTiles[selectedTileIndex] = {
+                              ...newTiles[selectedTileIndex],
+                              type: type.id,
+                              ...(tileConfig ? {
+                                color: tileConfig.color,
+                                label: tileConfig.label
+                              } : {})
+                            };
+                            return { ...prev, tiles: newTiles };
+                          });
+                        }}
+                      >
+                        <type.icon size={16} />
+                        <span>{type.label}</span>
+                      </button>
+                    ))}
                   </div>
+                </div>
 
-                  <div className="popup-field">
-                    <label>Tipo de Casa</label>
-                    <div className="type-grid-quick">
-                      {TILE_TYPES.map(type => (
-                        <button 
-                          key={type.id}
-                          className={`type-btn-quick ${currentTile.type === type.id ? 'active' : ''}`}
-                          onClick={() => handleTileChange(selectedTileIndex, 'type', type.id)}
-                        >
-                          <type.icon size={16} />
-                          <span>{type.label}</span>
-                        </button>
-                      ))}
-                    </div>
+                <div className="popup-field">
+                  <label>Ação Especial</label>
+                  <div className="action-grid-quick">
+                    {TILE_ACTIONS.map(action => (
+                      <button 
+                        key={action.id || 'none'}
+                        className={`action-btn-quick ${currentTile.action === action.id ? 'active' : ''}`}
+                        onClick={() => {
+                          setEditingConfig(prev => {
+                            const newTiles = [...prev.tiles];
+                            const isStandard = !!STANDARD_TILE_CONFIG[newTiles[selectedTileIndex].type];
+                            newTiles[selectedTileIndex] = {
+                              ...newTiles[selectedTileIndex],
+                              action: action.id,
+                              ...(action.id && action.color && !isStandard ? { color: action.color } : {})
+                            };
+                            return { ...prev, tiles: newTiles };
+                          });
+                        }}
+                      >
+                        <action.icon size={14} />
+                        <span>{action.label}</span>
+                      </button>
+                    ))}
                   </div>
+                </div>
 
-                  <div className="popup-field">
-                    <label>Ação Especial</label>
-                    <div className="action-grid-quick">
-                      {TILE_ACTIONS.map(action => (
-                        <button 
-                          key={action.id || 'none'}
-                          className={`action-btn-quick ${currentTile.action === action.id ? 'active' : ''}`}
-                          onClick={() => handleTileChange(selectedTileIndex, 'action', action.id)}
-                        >
-                          <action.icon size={14} />
-                          <span>{action.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
 
+                {!STANDARD_TILE_CONFIG[currentTile.type] && (
                   <div className="popup-field">
                     <label>Cor da Casa</label>
                     <div className="color-grid-quick">
@@ -661,19 +666,19 @@ const BoardEditor = () => {
                       ))}
                     </div>
                   </div>
-                </div>
+                )}
+              </div>
 
-                <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
-                  <button className="btn-save-board" onClick={() => setSelectedTileIndex(null)}>
-                    <Check size={18} />
-                    <span>Concluir</span>
-                  </button>
-                </div>
-              </motion.div>
+              <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+                <button className="btn-save-board" onClick={() => setSelectedTileIndex(null)}>
+                  <Check size={18} />
+                  <span>Concluir</span>
+                </button>
+              </div>
             </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -199,32 +199,55 @@
   padding: 1.5rem;
 }
 
-.btn-delete-card-floating {
+.gallery-card-actions {
   position: absolute;
-  bottom: 12px;
+  top: 12px;
   right: 12px;
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity var(--transition-normal), transform var(--transition-normal);
+  transform: translateY(-5px);
+  z-index: var(--z-elevated);
+}
+
+.gallery-card-item:hover .gallery-card-actions {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.btn-card-action {
   width: 32px;
   height: 32px;
-  background: var(--glass-bg);
-  backdrop-filter: blur(5px);
-  border: 1px solid var(--border-soft);
-  color: var(--text-muted);
-  border-radius: var(--radius-sm);
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   transition: all var(--transition-fast);
-  z-index: var(--z-elevated);
-  box-shadow: var(--shadow-soft);
 }
 
-.btn-delete-card-floating:hover {
-  background: var(--primary);
-  color: var(--white);
-  border-color: var(--primary);
-  transform: scale(1.1);
+.btn-card-action.send {
+  background: white;
+  color: var(--primary);
 }
+
+.btn-card-action.delete {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+}
+
+.btn-card-action:hover {
+  transform: scale(1.15);
+}
+
+.btn-card-action:active {
+  transform: scale(0.9);
+}
+
 
 .collection-modal-overlay {
   position: fixed;

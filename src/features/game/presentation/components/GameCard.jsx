@@ -36,7 +36,14 @@ const cardTypes = {
     label: 'Experiência',
     gradient: 'linear-gradient(135deg, #6FB05E, #558a47)'
   },
+  custom_card: {
+    icon: Sparkles,
+    color: '#F4C746',
+    label: 'Customizada',
+    gradient: 'linear-gradient(135deg, #F4C746, #d4a726)'
+  },
   default: {
+
     icon: HelpCircle,
     color: '#94a3b8',
     label: 'Info',
@@ -44,13 +51,15 @@ const cardTypes = {
   }
 };
 
-const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = false }) => {
+const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = false, content = null, contentType = 'text' }) => {
+
   const { closeFocusedCard, activeCardSet, recordCardDraw, showDetailPopup, activeBoardConfig } = useGame();
   const config = cardTypes[type] || cardTypes.default;
   const Icon = config.icon;
   const layoutId = `card-${type}-${index}`;
 
-  const [cardText] = useState(() => getRandomCardContent(type, activeCardSet?.content));
+  const [cardText] = useState(() => content && contentType === 'text' ? content : getRandomCardContent(type, activeCardSet?.content));
+
 
   // Controla a rotacao CSS (com delay para permitir a CSS transition animar)
   const [shouldFlip, setShouldFlip] = useState(false);
@@ -132,8 +141,15 @@ const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = 
                   </div>
                 )}
                 <div className="card-body-text">
-                  <p>{cardText}</p>
+                  {contentType === 'drawing' || contentType === 'image' ? (
+                    <div className="custom-card-media">
+                      <img src={content} alt="Card content" style={{ maxWidth: '100%', borderRadius: '8px' }} />
+                    </div>
+                  ) : (
+                    <p>{cardText}</p>
+                  )}
                 </div>
+
                 {activeBoardConfig.mechanics?.showCardLabels !== false && (
                   <div className="card-footer-bar">
                     <span>PSICOSCOPIO</span>

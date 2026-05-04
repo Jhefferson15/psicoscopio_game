@@ -53,35 +53,13 @@ export const SPECIAL_TILES = [
 ];
 
 export const GAME_CARDS = [
-  {
-    type: 'MEMÓRIA',
-    color: '#4885CE',
-    icon: 'brain',
-    instruction: 'Observe atentamente por 15 segundos.',
-    action: 'Vire esta carta e escreva tudo o que conseguir lembrar.'
-  },
-  {
-    type: 'EXPERIÊNCIA',
-    color: '#6FB05E',
-    icon: 'plant',
-    instruction: 'Você recebeu R$ 100 para montar um projeto que ajude sua comunidade.',
-    action: 'O que você faria? Explique.'
-  },
-  {
-    type: 'DESAFIO',
-    color: '#D84B42',
-    icon: 'puzzle',
-    instruction: 'Explique com suas palavras o que é empatia.',
-    timer: '1 minuto'
-  },
-  {
-    type: 'REFLEXÃO',
-    color: '#7B4BB1',
-    icon: 'cycle',
-    instruction: 'O que você aprendeu nesta rodada?',
-    action: 'O que te ajudou mais: memória, experiência, intuição ou estratégia? Registre no seu diário.'
-  }
+  { id: 'memoria', type: 'MEMÓRIA', color: '#4885CE', icon: 'brain' },
+  { id: 'experiencia', type: 'EXPERIÊNCIA', color: '#6FB05E', icon: 'sparkles' },
+  { id: 'desafio', type: 'DESAFIO', color: '#D84B42', icon: 'zap' },
+  { id: 'reflexao', type: 'REFLEXÃO', color: '#7B4BB1', icon: 'brain' },
+  { id: 'sorte', type: 'SORTE', color: '#F4C746', icon: 'sparkles' }
 ];
+
 
 export const GAME_RULES = {
   about: "Psicoscópio é um jogo de tabuleiro que investiga os processos de aprendizagem por meio da memória, da experiência e da reflexão. A cada escolha, o jogador se torna protagonista do próprio caminho e descobre novas formas de aprender.",
@@ -104,3 +82,20 @@ export const GAME_RULES = {
     "Reflita, anote e continue o ciclo!"
   ]
 };
+
+export const STANDARD_TILE_CONFIG = {
+  memoria: { color: '#4885CE', label: 'MEMÓRIA' },
+  experiencia: { color: '#6FB05E', label: 'EXPERIÊNCIA' },
+  desafio: { color: '#D84B42', label: 'DESAFIO' },
+  reflexao: { color: '#7B4BB1', label: 'REFLEXÃO' },
+  sorte: { color: '#F4C746', label: 'SORTE' },
+  custom_memoria: { color: '#4885CE', label: 'CUSTOM\nMEM' },
+  custom_experiencia: { color: '#6FB05E', label: 'CUSTOM\nEXP' },
+  custom_desafio: { color: '#D84B42', label: 'CUSTOM\nDES' },
+  custom_reflexao: { color: '#7B4BB1', label: 'CUSTOM\nREFL' },
+  custom_sorte: { color: '#F4C746', label: 'CUSTOM\nSORTE' },
+  custom_card: { color: '#F4C746', label: 'CARTA\nCUSTOM' }
+};
+
+
+

@@ -23,13 +23,16 @@
   .header-title h1 { font-size: 1.1rem; }
   .editor-content { padding: 1rem; gap: 1.5rem; }
   .tile-edit-row { grid-template-columns: 40px 1fr 40px; gap: 0.5rem; padding: 0.75rem; }
-  .tile-type-select, .tile-label-input, .tile-color-picker { display: none; }
-  .tile-edit-row.selected-row .tile-type-select, 
-  .tile-edit-row.selected-row .tile-label-input, 
-  .tile-edit-row.selected-row .tile-color-picker { display: flex; }
-  .tile-popup-content { padding: 1.5rem; border-radius: 1.5rem; }
+  .tile-type-badge, .tile-color-dot { display: none; }
+  .tile-edit-row.selected-row .tile-type-badge, 
+  .tile-edit-row.selected-row .tile-color-dot { display: flex; }
+
+  .tile-popup-content { padding: 1.5rem; border-radius: 1.5rem; width: 95%; max-height: 90vh; overflow-y: auto; }
+  .type-grid-quick { grid-template-columns: repeat(2, 1fr) !important; }
+  .action-grid-quick { grid-template-columns: repeat(2, 1fr) !important; }
   .color-grid-quick { grid-template-columns: repeat(5, 1fr); }
 }
+
 
 .btn-toggle-preview-mobile { display: none; }
 @media (max-width: 1024px) { .btn-toggle-preview-mobile { display: block; } }

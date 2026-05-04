@@ -5,26 +5,30 @@
  * 2. Aleatoriza cada casa (tipo, cor, ação).
  * 3. Garante uma única ação por casa: se for tipo de carta, a ação especial deve ser nula.
  */
+import { STANDARD_TILE_CONFIG } from '../gameConstants';
+
 export class GenerateRandomBoardConfig {
   static execute(currentTiles, tileTypes, tileActions, colors) {
-    const cardTypes = ['brain', 'reflexao', 'desafio', 'memoria', 'chat', 'puzzle'];
+    const cardTypes = Object.keys(STANDARD_TILE_CONFIG);
     
     const newTiles = currentTiles.map(tile => {
       // Sorteia um tipo aleatório
       const randomType = tileTypes[Math.floor(Math.random() * tileTypes.length)];
-      // Sorteia uma cor aleatória
-      const randomColor = colors[Math.floor(Math.random() * colors.length)];
-      
-      let randomAction = null;
       const isCardType = cardTypes.includes(randomType.id);
       
-      // Regra: Uma e apenas uma ação por casa
-      if (!isCardType) {
-        // Se não for um tipo de carta, sorteamos uma ação especial
-        // Filtramos ações de movimento de anel para o sorteio inicial,
-        // pois elas serão garantidas manualmente depois para precisão.
+      let randomColor = colors[Math.floor(Math.random() * colors.length)];
+      let randomAction = null;
+      let label = randomType.label;
+
+      if (isCardType) {
+        randomColor = STANDARD_TILE_CONFIG[randomType.id].color;
+        label = STANDARD_TILE_CONFIG[randomType.id].label;
+      } else {
         const possibleActions = tileActions.filter(a => a.id !== null && a.id !== 'MOVE_INNER' && a.id !== 'MOVE_OUTER');
-        randomAction = possibleActions[Math.floor(Math.random() * possibleActions.length)].id;
+        const actionObj = possibleActions[Math.floor(Math.random() * possibleActions.length)];
+        randomAction = actionObj.id;
+        if (actionObj.color) randomColor = actionObj.color;
+        label = '';
       }
       
       return {
@@ -32,9 +36,10 @@ export class GenerateRandomBoardConfig {
         type: randomType.id,
         color: randomColor,
         action: randomAction,
-        label: randomAction ? '' : randomType.label
+        label: label
       };
     });
+
 
     // PÓS-PROCESSAMENTO: Garantir conectividade entre anéis
     const ensureAction = (ring, action, minCount = 1) => {

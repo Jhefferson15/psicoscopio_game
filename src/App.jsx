@@ -22,6 +22,10 @@ import ObserverDashboard from './features/game/presentation/components/ObserverD
 import CardHistoryModal from './features/game/presentation/components/CardHistoryModal';
 import ConfirmLeaveModal from './features/game/presentation/components/ConfirmLeaveModal';
 import { EvaluationForm } from './features/game/presentation/components/EvaluationForm';
+import { ActionVerificationForm } from './features/game/presentation/components/ActionVerificationForm';
+import PlayerSelectorModal from './features/game/presentation/components/PlayerSelectorModal';
+
+
 
 
 const GameContent = () => {
@@ -223,7 +227,10 @@ const GameContent = () => {
                 type={focusedCard.type} 
                 index={focusedCard.index} 
                 isFocused={true} 
+                content={focusedCard.content}
+                contentType={focusedCard.contentType}
               />
+
               <motion.button 
                 className="close-focused-card"
                 initial={{ opacity: 0, y: 20 }}
@@ -248,7 +255,11 @@ const GameContent = () => {
         onCancel={() => setShowLeaveConfirm(false)} 
       />
       <SystemPopup />
+      <PlayerSelectorModal />
+      <ActionVerificationForm />
     </div>
+
+
   );
 };
 

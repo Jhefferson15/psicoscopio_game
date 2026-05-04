@@ -43,7 +43,9 @@ async function internalPassTurn(roomId, room, reason = null) {
   for (let i = 0; i < players.length; i++) {
     const candidate = updatedPlayers[nextIndex];
     const p = participants[candidate.id];
-    const isCandidateOnline = p && p.isOnline === true;
+    
+    // Se p não existe ou isOnline não está definido, assume online para evitar pular jogadores em reconexão
+    const isCandidateOnline = p ? p.isOnline !== false : true;
 
     if (candidate.skipNextTurn || !isCandidateOnline) {
       if (candidate.skipNextTurn) {
@@ -51,7 +53,8 @@ async function internalPassTurn(roomId, room, reason = null) {
       }
       nextIndex = (nextIndex + 1) % updatedPlayers.length;
       
-      if (nextIndex === currentIndex && !isCandidateOnline) break;
+      // Se deu a volta completa e voltou ao atual, para
+      if (nextIndex === currentIndex) break;
     } else {
       break;
     }
@@ -169,6 +172,14 @@ exports.gameAction = onCall({
         const gameState = room.gameState || {};
         const players = gameState.players || [];
         if (players.length === 0) throw new HttpsError("failed-precondition", "Jogo não inicializado.");
+
+        // Validação de Idempotência: evita que múltiplos cliques ou múltiplos clientes
+        // (ex: Host e Jogador Atual) passem o mesmo turno, pulando o próximo jogador.
+        const currentServerTurn = gameState.totalTurns || 0;
+        if (data.currentTurn !== undefined && data.currentTurn !== currentServerTurn) {
+          console.log(`[PASS_TURN] Turno já avançado. Cliente: ${data.currentTurn}, Servidor: ${currentServerTurn}. Ignorando.`);
+          return { success: true, skipped: true };
+        }
 
         const currentIndex = gameState.currentPlayerIndex;
         const currentPlayer = players[currentIndex];

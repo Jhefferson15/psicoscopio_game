@@ -27,8 +27,11 @@ export const useGameRooms = ({
   readyPlayers, setReadyPlayers,
   ownerId, setOwnerId,
   hostRole, setHostRole,
-  showLeaveConfirm, setShowLeaveConfirm
+  showLeaveConfirm, setShowLeaveConfirm,
+  passTurn,
+  activeVerification
 }) => {
+
 
   const createOnlineGame = async (newPlayers) => {
     const turnTime = activeBoardConfig.mechanics?.turnTime || 120;
@@ -76,7 +79,8 @@ export const useGameRooms = ({
 
       if (room.gameState) {
         const playersArray = room.gameState.players || [];
-        setPlayers(playersArray.map(p => new Player(p.id, p.name, p.color, p.position, p.timeLeft, p.lastRoll)));
+        setPlayers(playersArray.map(p => new Player(p.id, p.name, p.color, p.position, p.timeLeft, p.lastRoll, p.skipNextTurn)));
+
         setCurrentPlayerIndex(room.gameState.currentPlayerIndex);
         setPlayerAttributes(room.gameState.playerAttributes);
 
@@ -89,16 +93,17 @@ export const useGameRooms = ({
 
       if (room.status === 'playing') {
         setCurrentScreen('game');
-      } else if (room.status === 'setup_cards') {
+      } else if (room.status === 'setup_cards' || room.status === 'card_creation') {
         const board = room.gameState?.boardConfig || activeBoardConfig;
         const mechanics = board.mechanics || {};
-        if (mechanics.enableCardCreationStep === true) {
-          setAtelierContext('game_start');
+        if (mechanics.enableCardCreationStep === true || room.status === 'card_creation') {
+          setAtelierContext(room.status === 'setup_cards' ? 'game_start' : 'missing_cards');
           setCurrentScreen('card_creation');
         } else {
           setCurrentScreen('game');
         }
       } else {
+
         setCurrentScreen('lobby');
       }
     } catch (error) {
@@ -152,7 +157,14 @@ export const useGameRooms = ({
         status: 'setup_cards' 
       };
 
+      // Sincroniza o tabuleiro atual com o Firestore antes de começar para todos
+      await syncRepository.updateRoomConfig(roomId, {
+        boardConfig: activeBoardConfig.toJSON(),
+        cardSet: activeCardSet.toJSON()
+      });
+
       await syncRepository.startGame(roomId, initialGameState);
+
     } catch (error) {
       console.error("Erro ao iniciar jogo:", error);
     }
@@ -274,7 +286,7 @@ export const useGameRooms = ({
   }, [roomStatus, isOnline, currentScreen, showSystemPopup, setCurrentScreen]);
 
   useEffect(() => {
-    if (!isOnline || !roomId || roomStatus !== 'setup_cards' || hostRole !== 'observer') return;
+    if (!isOnline || !roomId || (roomStatus !== 'setup_cards' && roomStatus !== 'card_creation') || hostRole !== 'observer') return;
     const participantsArray = Object.keys(roomParticipants);
     const readyIds = Object.keys(readyPlayers);
     const activeReadyCount = participantsArray.filter(id => readyIds.includes(id)).length;
@@ -285,6 +297,53 @@ export const useGameRooms = ({
       }
     }
   }, [isOnline, roomId, roomStatus, hostRole, roomParticipants, readyPlayers, user?.id, startPlayingGame]);
+  
+  // Monitoramento de conclusão da verificação social
+  useEffect(() => {
+    if (!isOnline || roomStatus !== 'verifying_action' || !activeVerification || !roomId) return;
+    
+    const responses = activeVerification.responses || {};
+    const participantsIds = Object.keys(roomParticipants);
+    const responsesIds = Object.keys(responses);
+    
+    // Todos responderam?
+    if (participantsIds.length > 0 && responsesIds.length >= participantsIds.length) {
+      // Somente o primeiro participante online finaliza
+      const sortedParticipants = participantsIds.sort();
+      if (user?.id === sortedParticipants[0]) {
+        const finalize = async () => {
+          try {
+             // 1. Salva no Firestore
+             await syncRepository.saveActionEvaluation({
+                roomId,
+                playerId: activeVerification.playerId,
+                cardType: activeVerification.cardType,
+                cardText: activeVerification.cardText,
+                responses: activeVerification.responses,
+                timestamp: Date.now()
+             });
+             
+             // 2. Limpa verificação e volta status para playing
+             await Promise.all([
+                syncRepository.updateRoomStatus(roomId, 'playing'),
+                syncRepository.updateGameState(roomId, { activeVerification: null })
+             ]);
+
+             
+             // 3. Passa o turno
+             passTurn();
+          } catch(e) { 
+            console.error("Erro ao finalizar verificação:", e); 
+          }
+        };
+        
+        const timer = setTimeout(finalize, 2500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isOnline, roomStatus, activeVerification, roomParticipants, roomId, user?.id, passTurn, syncRepository]);
+
+
 
   return {
     roomId, setRoomId,

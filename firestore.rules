@@ -33,11 +33,17 @@ service cloud.firestore {
 
     // Regras para Avaliações (MEEGA+)
     match /evaluations/{evalId} {
-      // Qualquer usuário (inclusive anônimo se implementado, mas aqui exigimos auth se o app exigir)
-      // Pode criar sua avaliação.
       allow create: if request.auth != null;
-      allow read: if false; // Somente administradores/pesquisadores via console podem ler
+      allow read: if false;
       allow update, delete: if false;
     }
+
+    // Regras para Verificação de Ações em Tempo Real (Histórico de Auditoria)
+    match /actionEvaluations/{evalId} {
+      allow create: if request.auth != null;
+      allow read: if false; 
+      allow update, delete: if false;
+    }
+
   }
 }

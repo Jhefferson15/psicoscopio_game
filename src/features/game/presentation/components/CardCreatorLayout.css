@@ -64,6 +64,20 @@
   -webkit-text-fill-color: transparent;
 }
 
+.missing-cards-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  color: #f43f5e;
+  padding: 8px 16px;
+  border-radius: 100px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.15);
+}
+
 .creator-header-actions {
   display: flex;
   align-items: center;

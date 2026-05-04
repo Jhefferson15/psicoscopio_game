@@ -4,7 +4,8 @@ import { BoardConfig } from '../../domain/entities/BoardConfig';
 import { CardSetRepository } from '../../data/repositories/CardSetRepository';
 import { BoardConfigRepository } from '../../data/repositories/BoardConfigRepository';
 
-export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudBoardConfigs, syncBoardConfigsToCloud, showSystemPopup }) => {
+export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudBoardConfigs, syncBoardConfigsToCloud, showSystemPopup, setDrawnCards }) => {
+
   // Estados para Conjuntos de Cartas
   const [availableCardSets, setAvailableCardSets] = useState(() => {
     const saved = CardSetRepository.getSavedSets();
@@ -38,40 +39,79 @@ export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudB
     if (user && cloudCardSets && cloudCardSets.length > 0) {
       const localSets = CardSetRepository.getSavedSets();
       const mergedMap = new Map();
+      
       localSets.forEach(s => mergedMap.set(s.id, s));
-      cloudCardSets.forEach(s => mergedMap.set(s.id, s));
+      
+      cloudCardSets.forEach(cloudSet => {
+        const local = mergedMap.get(cloudSet.id);
+        if (!local || (cloudSet.updatedAt > (local.updatedAt || 0))) {
+          mergedMap.set(cloudSet.id, cloudSet);
+        }
+      });
+      
       const mergedSets = Array.from(mergedMap.values());
       
       CardSetRepository.saveSets(mergedSets);
+      
       queueMicrotask(() => {
-        setAvailableCardSets([CardSetRepository.getDefaultSet(), ...mergedSets]);
+        const activeId = CardSetRepository.getActiveSetId();
+        const defaultSet = CardSetRepository.getDefaultSet();
+        const allSets = [defaultSet, ...mergedSets];
+        
+        setAvailableCardSets(allSets);
+        
+        const currentActive = allSets.find(s => s.id === activeId) || defaultSet;
+        setActiveCardSet(currentActive);
       });
     }
   }, [user, cloudCardSets]);
+
 
   // Sincroniza tabuleiros locais com os da nuvem ao logar
   useEffect(() => {
     if (user && cloudBoardConfigs && cloudBoardConfigs.length > 0) {
       const localConfigs = BoardConfigRepository.getSavedConfigs();
       const mergedMap = new Map();
+      
+      // Primeiro carrega locais
       localConfigs.forEach(c => mergedMap.set(c.id, c));
-      cloudBoardConfigs.forEach(c => mergedMap.set(c.id, c));
+      
+      // Depois mescla com os da nuvem usando updatedAt como critério de desempate
+      cloudBoardConfigs.forEach(cloudConfig => {
+        const local = mergedMap.get(cloudConfig.id);
+        if (!local || (cloudConfig.updatedAt > (local.updatedAt || 0))) {
+          mergedMap.set(cloudConfig.id, cloudConfig);
+        }
+      });
+      
       const mergedConfigs = Array.from(mergedMap.values());
       
       BoardConfigRepository.saveConfigs(mergedConfigs);
+      
       queueMicrotask(() => {
-        setAvailableBoardConfigs([BoardConfigRepository.getDefaultConfig(), ...mergedConfigs]);
+        const activeId = BoardConfigRepository.getActiveConfigId();
+        const defaultConfig = BoardConfigRepository.getDefaultConfig();
+        const allConfigs = [defaultConfig, ...mergedConfigs];
+        
+        setAvailableBoardConfigs(allConfigs);
+        
+        // Garante que o tabuleiro ativo reflita os dados mais recentes (ex: sincronizados)
+        const currentActive = allConfigs.find(c => c.id === activeId) || defaultConfig;
+        setActiveBoardConfig(currentActive);
       });
     }
   }, [user, cloudBoardConfigs]);
+
 
   const changeActiveCardSet = (id) => {
     const set = availableCardSets.find(s => s.id === id);
     if (set) {
       setActiveCardSet(set);
       CardSetRepository.setActiveSetId(id);
+      if (setDrawnCards) setDrawnCards({});
     }
   };
+
 
   const saveNewCardSet = (name, content) => {
     const newSet = new CardSet(Date.now().toString(), name, content);
@@ -160,8 +200,9 @@ export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudB
     setAvailableBoardConfigs([BoardConfigRepository.getDefaultConfig(), ...saved]);
     if (user) syncBoardConfigsToCloud(saved);
     if (activeBoardConfig.id === id) {
-      setActiveBoardConfig(BoardConfig.getDefaultConfig());
+      setActiveBoardConfig(BoardConfigRepository.getDefaultConfig());
     }
+
   };
 
   const importCardSet = (data) => {
@@ -199,7 +240,9 @@ export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudB
   return {
     availableCardSets,
     activeCardSet,
+    setActiveCardSet,
     availableBoardConfigs,
+
     activeBoardConfig,
     setActiveBoardConfig,
     changeActiveCardSet,

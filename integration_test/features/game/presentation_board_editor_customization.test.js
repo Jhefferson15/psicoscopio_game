@@ -70,4 +70,40 @@ describe('useBoardEditor Customization', () => {
 
     expect(result.current.editingConfig.tiles[0].label).toBe('Linha 1\nLinha 2');
   });
+
+  it('should atomically update type, color and label together', () => {
+    const { result } = renderHook(() => useBoardEditor(mockProps));
+    
+    act(() => {
+      result.current.setEditingConfig(prev => {
+        const newTiles = [...prev.tiles];
+        newTiles[0] = {
+          ...newTiles[0],
+          type: 'memoria',
+          color: '#4885CE',
+          label: 'Memória'
+        };
+        return { ...prev, tiles: newTiles };
+      });
+    });
+
+    expect(result.current.editingConfig.tiles[0].type).toBe('memoria');
+    expect(result.current.editingConfig.tiles[0].color).toBe('#4885CE');
+    expect(result.current.editingConfig.tiles[0].label).toBe('Memória');
+  });
+
+  it('should not lose previous tile changes when updating consecutively', () => {
+    const { result } = renderHook(() => useBoardEditor(mockProps));
+    
+    act(() => {
+      result.current.handleTileChange(0, 'label', 'Primeiro');
+    });
+    act(() => {
+      result.current.handleTileChange(0, 'color', '#FF0000');
+    });
+
+    expect(result.current.editingConfig.tiles[0].label).toBe('Primeiro');
+    expect(result.current.editingConfig.tiles[0].color).toBe('#FF0000');
+  });
 });
+

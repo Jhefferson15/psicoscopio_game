@@ -33,15 +33,16 @@ export class ProcessTileActionUseCase {
     let showDiary = false;
 
     // 1. Processamento de Modais de Carta
-    if (tile.type === 'reflexao' || tile.type === 'desafio' || tile.action === 'DRAW_2') {
-      const typeMap = { 'reflexao': 3, 'desafio': 2, 'memoria': 0, 'experiencia': 1 };
-      const cardType = tile.type === 'normal' ? 'desafio' : tile.type;
+    const standardCategories = ['reflexao', 'desafio', 'memoria', 'experiencia', 'sorte'];
+    const customCategories = ['custom_reflexao', 'custom_desafio', 'custom_memoria', 'custom_experiencia', 'custom_sorte', 'custom_card'];
+
+    if (standardCategories.includes(tile.type) || tile.action === 'DRAW_2') {
+      const cardType = tile.type === 'especial' || !standardCategories.includes(tile.type) ? 'desafio' : tile.type;
 
       uiActions.push({
         type: 'SET_FOCUSED_CARD',
         payload: { 
           type: cardType, 
-          index: typeMap[cardType] || 0, 
           id: `card-${cardType}-${deps.now()}`,
           fromTileAction: true,
           nextDraw: tile.action === 'DRAW_2'
@@ -49,7 +50,21 @@ export class ProcessTileActionUseCase {
       });
 
       modalOpened = true;
+    } else if (customCategories.includes(tile.type)) {
+      // Mapeia custom_memoria -> memoria para o filtro
+      const filterCategory = tile.type.startsWith('custom_') ? tile.type.replace('custom_', '') : null;
+      
+      uiActions.push({
+        type: 'PROCESS_CUSTOM_CARD',
+        payload: { 
+          fromTileAction: true,
+          category: filterCategory === 'card' ? null : filterCategory
+        }
+      });
+      modalOpened = true;
     }
+
+
 
     // 2. Processamento de Ações de Movimento ou Estado
     switch (tile.action) {

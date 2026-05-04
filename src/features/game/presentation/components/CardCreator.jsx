@@ -1,7 +1,8 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../state/useGame';
-import { Trash2, Brush, Plus, Brain, Sprout, Puzzle, Image as ImageIcon, Type, Upload, Layers, RotateCcw, CheckCircle, Undo2, Redo2, Eraser } from 'lucide-react';
+import { Trash2, Brush, Plus, Brain, Sparkles, Zap, Image as ImageIcon, Type, Upload, Layers, RotateCcw, CheckCircle, Undo2, Redo2, Eraser } from 'lucide-react';
+
 import { GAME_CARDS } from '../../domain/gameConstants';
 import { CustomCard } from '../../domain/entities/CustomCard';
 import { customCardRepository } from '../../data/repositories/LocalStorageCardRepository';
@@ -12,7 +13,7 @@ import './CardCreatorToolbox.css';
 import './CardCreatorResponsive.css';
 
 const CardCreator = () => {
-  const { finishCardCreation, players } = useGame();
+  const { finishCardCreation, players, atelierContext } = useGame();
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
   
@@ -197,11 +198,12 @@ const CardCreator = () => {
     if (!isCurrentCardValid()) return;
 
     const newCard = new CustomCard({
-      type: selectedType.type,
+      type: selectedType.id,
       content: content,
       contentType: creationMode,
       color: selectedType.color
     });
+
 
     await customCardRepository.saveCard(newCard);
   };
@@ -263,6 +265,20 @@ const CardCreator = () => {
             <h1>Ateliê de Cartas</h1>
           </div>
 
+          <AnimatePresence>
+            {atelierContext === 'missing_cards' && (
+              <motion.div 
+                className="missing-cards-alert"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+              >
+                <AlertCircle size={16} />
+                <span>O baralho está vazio! Crie novas cartas para continuar a partida.</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <div className="creator-header-actions">
             <button 
               className="btn-collection-minimal" 
@@ -292,11 +308,11 @@ const CardCreator = () => {
                   <div className="card-inner-frame">
                     <div className="card-header-badge" style={{ background: selectedType.color }}>
                        {selectedType.icon === 'brain' && <Brain size={14} />}
-                       {selectedType.icon === 'plant' && <Sprout size={14} />}
-                       {selectedType.icon === 'puzzle' && <Puzzle size={14} />}
-                       {selectedType.icon === 'cycle' && <RotateCcw size={14} />}
+                       {selectedType.icon === 'zap' && <Zap size={14} />}
+                       {selectedType.icon === 'sparkles' && <Sparkles size={14} />}
                        <span>{selectedType.type}</span>
                     </div>
+
                     
                     <div className="canvas-surface">
                       {creationMode === 'drawing' && (
@@ -356,17 +372,20 @@ const CardCreator = () => {
               <div className="type-chips">
                 {GAME_CARDS.map(type => (
                   <button 
-                    key={type.type}
-                    className={`type-chip ${selectedType.type === type.type ? 'active' : ''}`}
+                    key={type.id}
+                    className={`type-chip ${selectedType.id === type.id ? 'active' : ''}`}
                     style={{ '--chip-color': type.color }}
                     onClick={() => {
                         setSelectedType(type);
                         setIsEraser(false);
+                        // Se não estivermos no modo desenho, podemos querer mudar a cor do texto/fundo
+                        if (creationMode === 'drawing') setColor(type.color);
                     }}
                   >
                     {type.type}
                   </button>
                 ))}
+
               </div>
             </div>
 

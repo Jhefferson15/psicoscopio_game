@@ -50,6 +50,8 @@ export const GameProvider = ({ children }) => {
   const [showDiary, setShowDiary] = useState(false);
   const [cardHistory, setCardHistory] = useState([]);
   const [showCardHistory, setShowCardHistory] = useState(false);
+  const [drawnCards, setDrawnCards] = useState({}); // { category: [index1, index2, ...] }
+
   
   const [playerAttributes, setPlayerAttributes] = useState({
     1: { memory: 20, reflection: 40, challenge: 10 },
@@ -71,6 +73,10 @@ export const GameProvider = ({ children }) => {
   const [hostRole, setHostRole] = useState(null);
   const [serverTimeOffset, setServerTimeOffset] = useState(0);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [playerSelectionTask, setPlayerSelectionTask] = useState(null);
+  const [activeVerification, setActiveVerification] = useState(null);
+
+
 
   // 2. Hooks de Dados Base e Assets
   const { 
@@ -90,7 +96,9 @@ export const GameProvider = ({ children }) => {
     availableBoardConfigs,
     activeBoardConfig,
     setActiveBoardConfig,
+    setActiveCardSet,
     changeActiveCardSet,
+
     saveNewCardSet,
     updateCardSet,
     deleteCardSet,
@@ -107,8 +115,10 @@ export const GameProvider = ({ children }) => {
     syncCardSetsToCloud,
     cloudBoardConfigs,
     syncBoardConfigsToCloud,
-    showSystemPopup
+    showSystemPopup,
+    setDrawnCards
   });
+
 
   // 3. Funções Auxiliares (que dependem de assets)
   const getRingIndices = useCallback((ring) => {
@@ -132,7 +142,48 @@ export const GameProvider = ({ children }) => {
     setDetailPopup(null);
   }, []);
 
+  const drawCard = useCallback((type) => {
+    const cardList = activeCardSet?.content?.[type] || [];
+    if (cardList.length === 0) return { content: "Nenhuma carta disponível.", index: 0 };
+
+    const usedIndices = drawnCards[type] || [];
+    
+    // Filtra índices não usados
+    const availableIndices = cardList
+      .map((_, i) => i)
+      .filter(i => !usedIndices.includes(i));
+
+    let selectedIndex;
+    let newUsedIndices = [...usedIndices];
+
+    if (availableIndices.length === 0) {
+      // Reinicia a contagem (reshuffle)
+      selectedIndex = Math.floor(Math.random() * cardList.length);
+      newUsedIndices = [selectedIndex];
+    } else {
+      // Sorteia um dos disponíveis
+      selectedIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+      newUsedIndices.push(selectedIndex);
+    }
+
+    setDrawnCards(prev => ({ ...prev, [type]: newUsedIndices }));
+    return { content: cardList[selectedIndex], index: selectedIndex };
+  }, [activeCardSet, drawnCards]);
+
+
   // 4. Hooks de Lógica Complexa (Ordem de Dependência)
+  const isTurnBeingPassedRef = useRef(false);
+  const myPlayerIndexRef = useRef(myPlayerIndex);
+  useEffect(() => { myPlayerIndexRef.current = myPlayerIndex; }, [myPlayerIndex]);
+
+  // Ref compartilhada de isMoving: usada pelo useGameSync antes de useGameActions ser inicializado.
+  // useGameActions vai atualizar isMovingRef.current diretamente durante o movimento.
+  // NUNCA remova esta ref - useGameSync depende dela para nao sobrescrever posicoes durante animacao.
+  const isMovingRefForSync = useRef(false);
+
+  // Forward declaration of passTurn (will be defined below)
+  const passTurnRef = useRef();
+
   const {
     createOnlineGame,
     joinOnlineGame,
@@ -167,20 +218,32 @@ export const GameProvider = ({ children }) => {
     readyPlayers, setReadyPlayers,
     ownerId, setOwnerId,
     hostRole, setHostRole,
-    showLeaveConfirm, setShowLeaveConfirm
+    showLeaveConfirm, setShowLeaveConfirm,
+    passTurn: (overrides) => passTurnRef.current?.(overrides),
+    activeVerification
   });
 
-  const myPlayerIndexRef = useRef(myPlayerIndex);
-  useEffect(() => { myPlayerIndexRef.current = myPlayerIndex; }, [myPlayerIndex]);
-
-  // Forward declaration of passTurn (will be defined below)
-  const passTurnRef = useRef();
+  useGameSync({
+    isOnline, roomId, user, syncRepository, setPlayers,
+    setCurrentPlayerIndex, setLastDiceRoll, setIsRolling,
+    setPlayerAttributes, setTurnStartTime, setTurnDuration,
+    setActiveBoardConfig, setActiveCardSet, setRoomStatus, setRoomParticipants,
+    setReadyPlayers, setOwnerId, setCurrentScreen, currentScreen,
+    setCardHistory, activeBoardConfig, setAtelierContext,
+    setActiveVerification,
+    joinOnlineGame,
+    isMovingRef: isMovingRefForSync,
+    turnDuration, setCurrentTurn,
+    isTurnBeingPassedRef
+  });
 
   useGameTimer({
     isOnline, user, syncRepository, setPlayers,
     currentPlayerIndex, myPlayerIndex, ownerId,
-    roomParticipants, currentScreen, isMoving, showModal,
+    roomParticipants, currentScreen, isMoving, showModal, roomStatus,
+    currentTurn,
     passTurn: useCallback((overrides) => passTurnRef.current?.(overrides), []),
+
     serverTimeOffset, setServerTimeOffset,
     turnStartTime, setTurnStartTime,
     turnDuration, setTurnDuration
@@ -197,19 +260,16 @@ export const GameProvider = ({ children }) => {
     players, setPlayers, currentPlayerIndex, myPlayerIndex,
     isMoving, setIsMoving, isRolling, setIsRolling,
     setLastDiceRoll, setShowModal, setFocusedCard, showSystemPopup,
-    setCurrentScreen, setShowDiary, passTurn: (overrides) => passTurnRef.current?.(overrides), 
+    setCurrentScreen, currentScreen, setShowDiary, setAtelierContext, passTurn: (overrides) => passTurnRef.current?.(overrides), 
     getRingIndices,
-    generateDiceRoll, focusedCard
+    generateDiceRoll, 
+    focusedCard,
+    drawCard
   });
 
-  const { isTurnBeingPassedRef } = useGameSync({
-    isOnline, roomId, user, syncRepository, setPlayers,
-    setCurrentPlayerIndex, setLastDiceRoll, setIsRolling,
-    setPlayerAttributes, setTurnStartTime, setTurnDuration,
-    setActiveBoardConfig, setRoomStatus, setRoomParticipants,
-    setReadyPlayers, setOwnerId, setCurrentScreen, currentScreen,
-    setCardHistory, activeBoardConfig, setAtelierContext,
-    joinOnlineGame, isMovingRef, turnDuration, setCurrentTurn
+  // Mantém isMovingRefForSync sincronizada com isMovingRef real
+  useEffect(() => {
+    if (isMovingRef) isMovingRefForSync.current = isMovingRef.current;
   });
 
   const passTurn = useCallback((overrides = {}) => {
@@ -247,15 +307,17 @@ export const GameProvider = ({ children }) => {
     }
 
     if (isOnline && roomId) {
-      syncRepository.startTurn(roomId, nextIndex, turnTime, newTurn).catch(() => {
+      syncRepository.startTurn(roomId, nextIndex, turnTime, currentTurn).then(() => {
+        setTimeout(() => { isTurnBeingPassedRef.current = false; }, 1000);
+      }).catch(() => {
         isTurnBeingPassedRef.current = false;
       });
     } else {
       setTurnStartTime(Date.now());
       setTurnDuration(turnTime);
-      queueMicrotask(() => { isTurnBeingPassedRef.current = false; });
+      setTimeout(() => { isTurnBeingPassedRef.current = false; }, 500);
     }
-  }, [currentPlayerIndex, players, isOnline, roomId, activeBoardConfig, roomParticipants, isTurnBeingPassedRef, setTurnStartTime, setTurnDuration]);
+  }, [currentPlayerIndex, players, isOnline, roomId, activeBoardConfig, roomParticipants, currentTurn, setTurnStartTime, setTurnDuration, setCurrentTurn, setPlayers, setCurrentPlayerIndex, showSystemPopup, setCurrentScreen]);
 
   // Update ref for passTurn
   useEffect(() => { passTurnRef.current = passTurn; }, [passTurn]);
@@ -397,8 +459,10 @@ export const GameProvider = ({ children }) => {
       setShowCardHistory,
       cardHistory,
 
+      syncRepository,
       roomId,
       isOnline,
+
       roomStatus,
       roomParticipants,
       readyPlayers,
@@ -437,8 +501,14 @@ export const GameProvider = ({ children }) => {
       confirmGoToMenu,
       detailPopup,
       showDetailPopup,
-      closeDetailPopup
+      closeDetailPopup,
+      playerSelectionTask,
+      setPlayerSelectionTask,
+      activeVerification,
+      setActiveVerification
     }}>
+
+
 
       {children}
     </GameContext.Provider>

@@ -16,9 +16,12 @@ const mockTiles = [
 ];
 
 const mockTypes = [
-  { id: 'brain', label: 'Cérebro' },
+  { id: 'memoria', label: 'Memória' },
+  { id: 'reflexao', label: 'Reflexão' },
+  { id: 'desafio', label: 'Desafio' },
   { id: 'especial', label: 'Especial' }
 ];
+
 
 const mockActions = [
   { id: null, label: 'Nenhuma' },
@@ -58,8 +61,9 @@ test('Deve garantir conectividade entre todos os anéis', () => {
 
 test('Deve converter casas forçadas para tipo especial e cor branca', () => {
   // Usamos apenas tipos de carta para forçar a lógica de conectividade a converter casas
-  const typesOnlyCards = [{ id: 'brain', label: 'Cérebro' }];
+  const typesOnlyCards = [{ id: 'memoria', label: 'Memória' }];
   const result = GenerateRandomBoardConfig.execute(mockTiles, typesOnlyCards, mockActions, mockColors);
+
   
   const transitionTiles = result.tiles.filter(t => t.action === 'MOVE_INNER' || t.action === 'MOVE_OUTER');
   

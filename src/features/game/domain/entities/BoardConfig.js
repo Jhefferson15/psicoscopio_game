@@ -35,10 +35,11 @@ export class BoardConfig {
     return {
       id: this.id,
       name: this.name,
-      tiles: this.tiles,
+      tiles: this.tiles.map(t => (typeof t.toJSON === 'function' ? t.toJSON() : t)),
       mechanics: this.mechanics,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt
     };
   }
 }
+

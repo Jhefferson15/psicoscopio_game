@@ -1,4 +1,5 @@
-import { useMotionValue, useSpring } from 'framer-motion';
+import { motion, useMotionValue, useSpring } from 'framer-motion';
+
 import { useRef, useEffect, useState } from 'react';
 import { useGame } from '../state/useGame';
 import { 
@@ -18,21 +19,23 @@ import {
 import './BoardView.css';
 
 const TILE_ICONS = {
-  brain: Brain,
-  reflexao: Sparkles,
+  memoria: Brain,
+  reflexao: Brain,
   desafio: Zap,
-  memoria: Search,
+  experiencia: Sparkles,
+  sorte: Sparkles,
+  custom_memoria: Brain,
+  custom_reflexao: Brain,
+  custom_desafio: Zap,
+  custom_experiencia: Sparkles,
+  custom_sorte: Sparkles,
+  custom_card: Sparkles,
   especial: Zap,
-  bulb: Zap,
-  eye: Eye,
-  cycle: RotateCw,
-  target: Target,
-  puzzle: Puzzle,
-  chat: MessageSquare,
-  slider: Sliders,
-  star: Star,
   center: Info
+
 };
+
+
 
 const BoardView = ({ boardRotation = 0 }) => {
   const { setBoardRotation, players, activeBoardConfig, showDetailPopup } = useGame();
@@ -217,9 +220,32 @@ const BoardView = ({ boardRotation = 0 }) => {
             <path d="M-6 -8 C2 -12 10 -6 10 2 M10 2 L14 -2 M10 2 L6 -2" fill="none" stroke="#1f2937" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             <path d="M10 8 C2 12 -6 6 -6 -2 M-6 -2 L-10 2 M-6 -2 L-2 2" fill="none" stroke="#1f2937" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           </g>
+          <g id="icon-zap">
+            <path d="M5 -10 L-5 2 L2 2 L-2 10 L8 -2 L1 -2 Z" fill="none" stroke="#1f2937" strokeWidth="2.5" strokeLinejoin="round" />
+          </g>
+          <g id="icon-sparkles">
+            <path d="M0 -10 L2 -2 L10 0 L2 2 L0 10 L-2 2 L-10 0 L-2 -2 Z" fill="none" stroke="#1f2937" strokeWidth="2.5" strokeLinejoin="round" />
+          </g>
+          <g id="icon-memoria">
+             <use href="#icon-brain" />
+          </g>
+          <g id="icon-reflexao">
+             <use href="#icon-brain" />
+          </g>
+          <g id="icon-desafio">
+             <use href="#icon-zap" />
+          </g>
+          <g id="icon-experiencia">
+             <use href="#icon-sparkles" />
+          </g>
+          <g id="icon-custom_card">
+             <use href="#icon-sparkles" />
+          </g>
           <g id="icon-star">
             <path d="M0 -11 L3.2 -3.5 L11 -2.5 L5 3 L6.5 10.5 L0 6.5 L-6.5 10.5 L-5 3 L-11 -2.5 L-3.2 -3.5 Z" fill="#1f2937" />
           </g>
+
+
           <g id="icon-user">
             <path d="M-8 8 Q-8 1, 0 1 Q 8 1, 8 8" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
             <circle cx="0" cy="-5" r="5" fill="currentColor" />
@@ -260,19 +286,37 @@ const BoardView = ({ boardRotation = 0 }) => {
               }
               const angleOffset = samePosCount > 1 ? (samePosIdx - (samePosCount - 1) / 2) * (markerSize * 0.25) : 0;
 
+              const validAngle = (tile.angle || 0) + (angleOffset || 0);
+              const validR = typeof r === 'number' ? r : 0;
+              const safeBoardRotation = boardRotation || 0;
+
               return (
-                <g key={player.id} transform={`rotate(${tile.angle + angleOffset})`} 
-                   style={{ cursor: 'pointer', pointerEvents: 'auto' }}
+                <g 
+                   key={player.id} 
+                   transform={`rotate(${validAngle}) translate(0, ${-validR})`}
+                   style={{ cursor: 'pointer', pointerEvents: 'auto', transition: 'transform 0.3s ease-out' }}
                    onClick={(e) => {
                      e.stopPropagation();
                      setShowNameId(showNameId === player.id ? null : player.id);
                    }}>
-                  <circle cx="0" cy={-r} r={markerSize} fill={player.color} stroke="#FFF" strokeWidth="3" filter="url(#shadow)" />
-                  <g transform={`translate(0, ${-r}) scale(${markerSize / 15})`} style={{ pointerEvents: 'none', color: '#FFF' }}>
+                  <circle 
+                    cx="0" 
+                    cy="0" 
+                    r={markerSize || 20} 
+                    fill={player.color} 
+                    stroke="#FFF" 
+                    strokeWidth="3" 
+                    filter="url(#shadow)" 
+                  />
+                  <g 
+                    transform={`scale(${(markerSize || 25) / 15})`}
+                    style={{ pointerEvents: 'none', color: '#FFF' }}
+                  >
                     <use href="#icon-user" />
                   </g>
+
                   {showNameId === player.id && (
-                    <g transform={`translate(0, ${-r - markerSize - 15}) rotate(${- (tile.angle + angleOffset + boardRotation)})`}>
+                    <g transform={`translate(0, ${-(markerSize || 25) - 15}) rotate(${- (validAngle + safeBoardRotation)})`}>
                       <rect x="-50" y="-14" width="100" height="28" rx="14" fill="#FFF" filter="url(#shadow)" />
                       <text y="5" textAnchor="middle" fill="#333" fontSize="13" fontWeight="bold">{player.name}</text>
                       <path d="M -6 14 L 0 20 L 6 14 Z" fill="#FFF" />
@@ -280,6 +324,9 @@ const BoardView = ({ boardRotation = 0 }) => {
                   )}
                 </g>
               );
+
+
+
             })}
 
             {/* RENDERIZAÇÃO DINÂMICA DAS CASAS */}

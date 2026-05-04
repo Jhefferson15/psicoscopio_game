@@ -80,16 +80,61 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
     await this._callGameAction(roomId, "UPDATE_STATUS", { status });
   }
 
+  // ============================================================
+  // PROTECAO CRITICA CONTRA DOS E SOBRECARGA DO SERVIDOR FIREBASE
+  // ============================================================
+  // Este metodo e a unica porta de entrada para todas as Cloud Functions.
+  // NUNCA remova o limite de tentativas (MAX_RETRIES = 5).
+  // NUNCA remova o backoff exponencial (dobra a cada falha).
+  // NUNCA chame Cloud Functions diretamente sem passar por aqui.
+  // Cada chamada custa dinheiro (escrita no Firebase Firestore/RTDB).
+  // Um loop sem limite pode gerar centenas de chamadas por segundo,
+  // causar bloqueio de conta e custo financeiro imprevisivel.
+  // ============================================================
   async _callGameAction(roomId, action, data = {}) {
-    if (!functions) throw new Error("Firebase Functions não configurado");
+    if (!functions) throw new Error("Firebase Functions nao configurado");
+
+    // LIMITE ABSOLUTO: Maximo 5 tentativas por operacao. NAO ALTERE ESTE NUMERO.
+    const MAX_RETRIES = 5;
+    // Atraso base em ms. Progressao: 500ms, 1s, 2s, 4s, 8s. NAO REMOVA.
+    const BACKOFF_MS = 500;
+
     const gameAction = httpsCallable(functions, 'gameAction');
-    try {
-      const result = await gameAction({ roomId, action, data });
-      return result.data;
-    } catch (error) {
-      console.error(`Erro ao executar ação ${action}:`, error);
-      throw error;
+
+    let lastError;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const result = await gameAction({ roomId, action, data });
+        return result.data;
+      } catch (error) {
+        lastError = error;
+        // Erros de negocio nao sao recuperaveis: permissao negada, argumento invalido, nao encontrado
+        const isNotRetryable = [
+          'functions/permission-denied',
+          'functions/invalid-argument',
+          'functions/not-found',
+          'functions/already-exists',
+          'functions/unauthenticated'
+        ].includes(error.code);
+
+        if (isNotRetryable) {
+          console.error(`[GameAction] Erro definitivo em "${action}":`, error.message);
+          throw error;
+        }
+
+        if (attempt < MAX_RETRIES) {
+          // Backoff exponencial: recua progressivamente para proteger o servidor
+          const delay = BACKOFF_MS * Math.pow(2, attempt - 1);
+          console.warn(`[GameAction] Falha em "${action}" (tentativa ${attempt}/${MAX_RETRIES}). Aguardando ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          // LIMITE ATINGIDO: Para imediatamente. Nao tente novamente.
+          // Esta linha e a barreira final contra DOS. NAO REMOVA.
+          console.error(`[GameAction] LIMITE DE TENTATIVAS ATINGIDO para "${action}". Abortando para proteger o servidor.`);
+        }
+      }
     }
+    throw lastError;
   }
 
   getServerTimeOffset(callback) {
@@ -147,7 +192,21 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
     return roomData;
   }
 
+  async updateRoomConfig(roomId, config) {
+    if (!firestore || !roomId) return;
+    try {
+      const docRef = doc(firestore, "roomConfigs", roomId);
+      await setDoc(docRef, {
+        ...config,
+        updatedAt: firestoreTimestamp()
+      }, { merge: true });
+    } catch (error) {
+      console.error("Erro ao atualizar configuração da sala:", error);
+    }
+  }
+
   async getRoomConfig(roomId) {
+
     if (!firestore) return null;
     const docRef = doc(firestore, "roomConfigs", roomId);
     const snap = await getDoc(docRef);
@@ -202,46 +261,53 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
    * Evita baixar gameState inteiro a cada mudança de presença ou status.
    * Chama callback com objeto { status, participants, readyPlayers, ownerId, metadata }.
    */
+  listenToRoomConfig(roomId, callback) {
+    if (!firestore || !roomId) return () => {};
+    const docRef = doc(firestore, "roomConfigs", roomId);
+    return onSnapshot(docRef, (snap) => {
+      if (snap.exists()) {
+        callback(snap.data());
+      }
+    });
+  }
+
+  // ============================================================
+  // ATENCAO: Este listener usa debounce de 150ms para consolidar
+  // mudancas simultaneas em uma unica chamada. NAO remova o debounce.
+  // Antes havia 5 listeners separados que emitiam em cascata a cada
+  // mudanca de presenca, gerando rajadas de 5 eventos por atualizacao.
+  // ============================================================
   listenToRoomMeta(roomId, callback) {
     if (!database) return () => {};
 
-    const unsubs = [];
+    let debounceTimer = null;
     const meta = { status: null, participants: {}, readyPlayers: {}, ownerId: null, metadata: {} };
 
-    const emit = () => callback({ ...meta });
+    // Debounce: consolida multiplas mudancas em uma unica chamada ao callback.
+    // Isso reduz o numero de eventos de N mudancas simultaneas para 1.
+    const emit = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => callback({ ...meta }), 150);
+    };
 
-    const statusRef = ref(database, `rooms/${roomId}/status`);
-    unsubs.push(onValue(statusRef, (snap) => {
-      meta.status = snap.val();
+    const roomRef = ref(database, `rooms/${roomId}`);
+    const unsubscribe = onValue(roomRef, (snap) => {
+      if (!snap.exists()) return;
+      const data = snap.val();
+      meta.status = data.status || null;
+      meta.ownerId = data.ownerId || null;
+      meta.participants = data.participants || {};
+      meta.readyPlayers = data.readyPlayers || {};
+      meta.metadata = data.metadata || {};
       emit();
-    }));
+    });
 
-    const ownerRef = ref(database, `rooms/${roomId}/ownerId`);
-    unsubs.push(onValue(ownerRef, (snap) => {
-      meta.ownerId = snap.val();
-      emit();
-    }));
-
-    const participantsRef = ref(database, `rooms/${roomId}/participants`);
-    unsubs.push(onValue(participantsRef, (snap) => {
-      meta.participants = snap.val() || {};
-      emit();
-    }));
-
-    const readyRef = ref(database, `rooms/${roomId}/readyPlayers`);
-    unsubs.push(onValue(readyRef, (snap) => {
-      meta.readyPlayers = snap.val() || {};
-      emit();
-    }));
-
-    const metaRef = ref(database, `rooms/${roomId}/metadata`);
-    unsubs.push(onValue(metaRef, (snap) => {
-      meta.metadata = snap.val() || {};
-      emit();
-    }));
-
-    return () => unsubs.forEach(unsub => unsub());
+    return () => {
+      clearTimeout(debounceTimer);
+      unsubscribe();
+    };
   }
+
 
   updatePlayerPresence(roomId, userId) {
     if (!database || !roomId || !userId) return () => {};
@@ -398,5 +464,18 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
     
     await addDoc(evaluationsRef, docData);
   }
+  async saveActionEvaluation(data) {
+    if (!firestore) return;
+    try {
+      const evaluationsRef = collection(firestore, "actionEvaluations");
+      await addDoc(evaluationsRef, {
+        ...data,
+        createdAt: firestoreTimestamp()
+      });
+    } catch (error) {
+      console.error("Erro ao salvar avaliação de ação:", error);
+    }
+  }
 }
+
 

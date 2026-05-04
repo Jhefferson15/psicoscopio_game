@@ -44,34 +44,47 @@ export const useBoardEditor = ({
   };
 
   const handleTileChange = (index, field, value) => {
-    const newTiles = [...editingConfig.tiles];
-    newTiles[index] = { ...newTiles[index], [field]: value };
-    setEditingConfig({ ...editingConfig, tiles: newTiles });
+    setEditingConfig(prev => {
+      const newTiles = [...prev.tiles];
+      newTiles[index] = { ...newTiles[index], [field]: value };
+      return { ...prev, tiles: newTiles };
+    });
   };
 
   const handleMechanicChange = (field, value) => {
-    setEditingConfig({
-      ...editingConfig,
+    setEditingConfig(prev => ({
+      ...prev,
       mechanics: { 
-        ...editingConfig.mechanics, 
+        ...prev.mechanics, 
         [field]: (field === 'enableCardCreationStep' || field === 'showBoardLabels' || field === 'showCardLabels' || field === 'centerText' || field === 'initialPositions') 
           ? value 
           : (parseInt(value) || 0) 
       }
-    });
+    }));
   };
 
   const handleCenterTextChange = (index, value) => {
-    const newCenterText = [...(editingConfig.mechanics.centerText || [])];
-    newCenterText[index] = value;
-    handleMechanicChange('centerText', newCenterText);
+    setEditingConfig(prev => {
+      const newCenterText = [...(prev.mechanics.centerText || [])];
+      newCenterText[index] = value;
+      return {
+        ...prev,
+        mechanics: { ...prev.mechanics, centerText: newCenterText }
+      };
+    });
   };
 
   const handleInitialPositionChange = (playerIndex, tileIndex) => {
-    const newPositions = [...(editingConfig.mechanics.initialPositions || [0, 0, 0, 0])];
-    newPositions[playerIndex] = tileIndex;
-    handleMechanicChange('initialPositions', newPositions);
+    setEditingConfig(prev => {
+      const newPositions = [...(prev.mechanics.initialPositions || [0, 0, 0, 0])];
+      newPositions[playerIndex] = tileIndex;
+      return {
+        ...prev,
+        mechanics: { ...prev.mechanics, initialPositions: newPositions }
+      };
+    });
   };
+
 
   const handleRandomize = () => {
     const randomBoard = GenerateRandomBoardConfig.execute(
