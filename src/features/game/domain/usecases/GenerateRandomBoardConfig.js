@@ -21,8 +21,9 @@ export class GenerateRandomBoardConfig {
       // Regra: Uma e apenas uma ação por casa
       if (!isCardType) {
         // Se não for um tipo de carta, sorteamos uma ação especial
-        // Filtramos 'null' para garantir que casas especiais realmente tenham ações (opcional, mas melhora a variedade)
-        const possibleActions = tileActions.filter(a => a.id !== null);
+        // Filtramos ações de movimento de anel para o sorteio inicial,
+        // pois elas serão garantidas manualmente depois para precisão.
+        const possibleActions = tileActions.filter(a => a.id !== null && a.id !== 'MOVE_INNER' && a.id !== 'MOVE_OUTER');
         randomAction = possibleActions[Math.floor(Math.random() * possibleActions.length)].id;
       }
       
@@ -31,9 +32,62 @@ export class GenerateRandomBoardConfig {
         type: randomType.id,
         color: randomColor,
         action: randomAction,
-        label: randomAction ? '' : randomType.label // Se tiver ação, deixamos o rótulo vazio ou usamos a ação no futuro
+        label: randomAction ? '' : randomType.label
       };
     });
+
+    // PÓS-PROCESSAMENTO: Garantir conectividade entre anéis
+    const ensureAction = (ring, action, minCount = 1) => {
+      const ringTiles = newTiles.filter(t => t.ring === ring);
+      const currentCount = ringTiles.filter(t => t.action === action).length;
+      
+      const oppositeAction = action === 'MOVE_INNER' ? 'MOVE_OUTER' : 'MOVE_INNER';
+      
+      if (currentCount < minCount) {
+        for (let i = 0; i < (minCount - currentCount); i++) {
+          // Busca casas que não tenham ações de transição ainda
+          // E que não estejam "em cima" de uma casa com a ação oposta em outro anel
+          const available = ringTiles.filter(t => {
+            if (t.action === 'MOVE_INNER' || t.action === 'MOVE_OUTER') return false;
+            
+            // Verifica sobreposição angular (margem de 10 graus)
+            const hasOverlappingOpposite = newTiles.some(other => 
+              other.ring !== ring && 
+              other.action === oppositeAction && 
+              Math.abs(other.angle - t.angle) < 10
+            );
+            
+            return !hasOverlappingOpposite;
+          });
+
+          if (available.length > 0) {
+            const target = available[Math.floor(Math.random() * available.length)];
+            const index = newTiles.findIndex(t => t.id === target.id);
+            newTiles[index].action = action;
+            newTiles[index].label = action === 'MOVE_INNER' ? 'PARA DENTRO' : 'PARA FORA';
+            newTiles[index].type = 'especial';
+            newTiles[index].color = '#FFFFFF';
+          } else if (ringTiles.length > 0) {
+            // Se não houver casas ideais, pegamos qualquer uma que não seja a própria ação
+            const fallbackAvailable = ringTiles.filter(t => t.action !== action);
+            if (fallbackAvailable.length > 0) {
+               const target = fallbackAvailable[Math.floor(Math.random() * fallbackAvailable.length)];
+               const index = newTiles.findIndex(t => t.id === target.id);
+               newTiles[index].action = action;
+               newTiles[index].label = action === 'MOVE_INNER' ? 'PARA DENTRO' : 'PARA FORA';
+               newTiles[index].type = 'especial';
+               newTiles[index].color = '#FFFFFF';
+            }
+          }
+        }
+      }
+    };
+
+    ensureAction('outer', 'MOVE_INNER', 1);
+    ensureAction('middle', 'MOVE_INNER', 1);
+    ensureAction('middle', 'MOVE_OUTER', 1);
+    ensureAction('inner', 'MOVE_INNER', 1);
+    ensureAction('center', 'MOVE_OUTER', 1);
 
     return {
       name: `Tabuleiro Aleatório ${Math.floor(Math.random() * 1000)}`,

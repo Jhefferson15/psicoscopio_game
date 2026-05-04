@@ -164,13 +164,14 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
     await this._callGameAction(roomId, "SYNC_STATE", gameState);
   }
 
-  async startTurn(roomId, playerIndex, duration) {
+  async startTurn(roomId, playerIndex, duration, currentTurn) {
     if (!functions || !roomId) return;
     // O startTurn agora é mapeado para PASS_TURN no servidor,
     // que lida com a lógica de próximo jogador e timestamps.
     return await this._callGameAction(roomId, "PASS_TURN", { 
       playerIndex, 
-      turnDuration: duration 
+      turnDuration: duration,
+      currentTurn
     });
   }
 

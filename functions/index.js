@@ -113,7 +113,7 @@ exports.gameAction = onCall({
     if (!participantSnap.exists()) {
       throw new HttpsError("permission-denied", "Você não é um participante desta sala.");
     }
-    const { boardConfig, cardSet, ...dynamicData } = data;
+    const { ...dynamicData } = data;
     await db.ref(`rooms/${roomId}/gameState`).update({
       ...dynamicData,
       lastActionBy: uid,

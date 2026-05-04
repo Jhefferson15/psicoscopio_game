@@ -109,7 +109,7 @@
 .settings-main-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: 350px 1fr;
+  grid-template-columns: 350px minmax(0, 1fr);
   overflow: hidden;
 }
 
@@ -881,6 +881,13 @@
     padding: 20px;
   }
 
+  .settings-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 20px;
+  }
+
   .editor-top-bar {
     flex-direction: column;
     align-items: stretch;
@@ -888,11 +895,43 @@
   }
 
   .editor-top-actions {
-    justify-content: space-between;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .btn-save-edit {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .category-navigation {
+    flex-direction: column;
+    overflow-x: visible;
+    height: auto;
+    padding: 0;
+    gap: 8px;
+  }
+
+  .cat-nav-item {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .premium-content-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+
+  .premium-content-card .edit-actions {
+    justify-content: flex-end;
   }
 
   .add-content-row {
     flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
   }
 
   .btn-add-item-premium {

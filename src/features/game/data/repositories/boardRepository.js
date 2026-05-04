@@ -94,7 +94,10 @@ export const getDefaultBoardConfig = () => {
       diceMax: 6,
       enableCardCreationStep: false,
       showBoardLabels: true,
-      showCardLabels: true
+      showCardLabels: true,
+      maxTurns: 0,
+      centerText: ["A APRENDIZAGEM", "É UM CICLO,", "NÃO UMA LINHA", "DE CHEGADA."],
+      initialPositions: [0, 0, 0, 0]
     }
   );
 };

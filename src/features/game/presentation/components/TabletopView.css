@@ -124,7 +124,7 @@
 .tabletop-content, .tabletop-dashboard-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: 450px 1fr 450px;
+  grid-template-columns: minmax(320px, 450px) minmax(0, 1fr) minmax(320px, 450px);
   gap: 15px;
   padding: 15px 10px;
   z-index: 10;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, 
@@ -7,7 +7,6 @@ import {
   Plus, 
   Check, 
   Clock, 
-  Dice5, 
   Edit3,
   X,
   Zap,
@@ -20,11 +19,11 @@ import {
   Users,
   Download,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  RotateCcw,
+  History
 } from 'lucide-react';
 import { useGame } from '../state/useGame';
-import { GenerateRandomBoardConfig } from '../../domain/usecases/GenerateRandomBoardConfig';
-import { BoardConfigRepository } from '../../data/repositories/BoardConfigRepository';
 import './BoardEditor.css';
 
 const TILE_TYPES = [
@@ -63,6 +62,8 @@ const COLORS = [
   '#A855F7', '#64748B', '#000000', '#FFD700', '#C0C0C0', '#CD7F32', '#FF69B4', '#40E0D0', '#9FE2BF'
 ];
 
+import { useBoardEditor } from '../hooks/useBoardEditor';
+
 const BoardEditor = () => {
   const { 
     activeBoardConfig, 
@@ -76,125 +77,40 @@ const BoardEditor = () => {
     showSystemPopup
   } = useGame();
 
-  const [editingConfig, setEditingConfig] = useState(() => activeBoardConfig ? JSON.parse(JSON.stringify(activeBoardConfig)) : null);
-  const [configName, setConfigName] = useState(activeBoardConfig?.name || '');
-  const [selectedTileIndex, setSelectedTileIndex] = useState(null);
+  const {
+    editingConfig,
+    setEditingConfig,
+    configName,
+    setConfigName,
+    selectedTileIndex,
+    setSelectedTileIndex,
+    selectedPlayerIdx,
+    setSelectedPlayerIdx,
+    handleSave,
+    handleTileChange,
+    handleMechanicChange,
+    handleCenterTextChange,
+    handleInitialPositionChange,
+    handleRandomize,
+    startNewBoard,
+    handleExport,
+    handleImport,
+    selectConfig
+  } = useBoardEditor({
+    activeBoardConfig,
+    availableBoardConfigs,
+    changeActiveBoardConfig,
+    saveNewBoardConfig,
+    updateBoardConfig,
+    importBoardConfig,
+    showSystemPopup,
+    TILE_TYPES,
+    TILE_ACTIONS,
+    COLORS
+  });
 
-  const handleSave = () => {
-    const isNew = editingConfig.id === 'default' || editingConfig.id.startsWith('temp-');
-    
-    if (isNew) {
-      const nameToSave = editingConfig.id === 'default' ? `${configName} (Cópia)` : configName;
-      const newId = saveNewBoardConfig(nameToSave, editingConfig.tiles, editingConfig.mechanics);
-      
-      // Atualiza o estado local com o novo ID real
-      setEditingConfig(prev => ({ ...prev, id: newId, name: nameToSave }));
-      setConfigName(nameToSave);
-      changeActiveBoardConfig(newId);
-    } else {
-      updateBoardConfig(editingConfig.id, editingConfig.tiles, editingConfig.mechanics, configName);
-      changeActiveBoardConfig(editingConfig.id);
-    }
-
-    showSystemPopup({
-      title: 'Sucesso!',
-      message: 'Configuração de tabuleiro salva com sucesso.',
-      type: 'success'
-    });
-  };
-
-  const handleTileChange = (index, field, value) => {
-    const newTiles = [...editingConfig.tiles];
-    newTiles[index] = { ...newTiles[index], [field]: value };
-    setEditingConfig({ ...editingConfig, tiles: newTiles });
-  };
-
-  const handleMechanicChange = (field, value) => {
-    setEditingConfig({
-      ...editingConfig,
-      mechanics: { ...editingConfig.mechanics, [field]: parseInt(value) || 0 }
-    });
-  };
-
-  const handleRandomize = () => {
-    const randomBoard = GenerateRandomBoardConfig.execute(
-      editingConfig.tiles, 
-      TILE_TYPES, 
-      TILE_ACTIONS, 
-      COLORS
-    );
-    
-    setEditingConfig({
-      ...editingConfig,
-      name: randomBoard.name,
-      mechanics: randomBoard.mechanics,
-      tiles: randomBoard.tiles
-    });
-    setConfigName(randomBoard.name);
-
-    showSystemPopup({
-      title: 'Aleatorizado!',
-      message: 'Novo tabuleiro gerado com sucesso.',
-      type: 'success'
-    });
-  };
-
-  const startNewBoard = () => {
-    const defaultConfig = availableBoardConfigs.find(c => c.id === 'default') || BoardConfigRepository.getDefaultConfig();
-    const newConfig = JSON.parse(JSON.stringify(defaultConfig));
-    newConfig.id = 'temp-' + Date.now();
-    newConfig.name = 'Novo Tabuleiro';
-    setEditingConfig(newConfig);
-    setConfigName('Novo Tabuleiro');
-    setSelectedTileIndex(null);
-
-    showSystemPopup({
-      title: 'Novo Tabuleiro',
-      message: 'Um novo rascunho de tabuleiro foi criado.',
-      type: 'success'
-    });
-  };
-
-  const handleExport = (config) => {
-    const data = JSON.stringify(config, null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${config.name.toLowerCase().replace(/\s+/g, '_')}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleImport = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const json = JSON.parse(event.target.result);
-        const newId = importBoardConfig(json);
-        if (newId) {
-          showSystemPopup({
-            title: 'Importado!',
-            message: 'Configuração de tabuleiro importada com sucesso.',
-            type: 'success'
-          });
-        }
-      } catch {
-        showSystemPopup({
-          title: 'Erro',
-          message: 'Falha ao ler o arquivo JSON.',
-          type: 'error'
-        });
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  };
+  const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
+  const [showCollectionsMobile, setShowCollectionsMobile] = useState(false);
 
   if (!editingConfig) return null;
 
@@ -212,10 +128,10 @@ const BoardEditor = () => {
             <ChevronLeft size={24} />
           </button>
           <div className="header-title">
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e293b' }}>Editor de Tabuleiro</h1>
-            <p style={{ fontSize: '0.875rem', color: '#64748b' }}>Visualize e edite clicando no tabuleiro</p>
+            <h1>Editor de Tabuleiro</h1>
+            <p>Visualize e edite clicando no tabuleiro</p>
           </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem' }}>
+          <div className="header-actions">
               <button className="btn-export-board" onClick={() => handleExport(editingConfig)} title="Exportar JSON">
                 <Download size={18} />
               </button>
@@ -227,52 +143,61 @@ const BoardEditor = () => {
         </header>
 
         <main className="board-editor-main">
-          <aside className="editor-sidebar">
+          <aside className={`editor-sidebar ${showCollectionsMobile ? 'mobile-open' : ''}`}>
             <div className="sidebar-section">
-              <h3>COLEÇÕES</h3>
-              <button className="btn-add-set" onClick={startNewBoard} style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#1e293b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                <Plus size={16} />
-                <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>CRIAR NOVO</span>
-              </button>
-              <label className="btn-add-set" style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem', borderRadius: '10px', background: '#f1f5f9', border: '1px dashed #cbd5e1', color: '#1e293b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} title="Importar Tabuleiro">
-                <Upload size={16} />
-                <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>IMPORTAR</span>
-                <input type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
-              </label>
+              <div className="sidebar-header-mobile" onClick={() => setShowCollectionsMobile(!showCollectionsMobile)}>
+                <h3>COLEÇÕES</h3>
+                <div className="active-collection-badge">
+                  <span>{editingConfig.name}</span>
+                  <ChevronLeft size={16} style={{ transform: showCollectionsMobile ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                </div>
+              </div>
+
+              <div className="sidebar-actions">
+                <button className="btn-add-set" onClick={startNewBoard}>
+                  <Plus size={16} />
+                  <span>CRIAR NOVO</span>
+                </button>
+                <label className="btn-add-set import-btn">
+                  <Upload size={16} />
+                  <span>IMPORTAR</span>
+                  <input type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
+                </label>
+              </div>
+
               <button 
-                className="btn-add-set" 
+                className="btn-randomize-premium" 
                 onClick={handleRandomize} 
-                style={{ width: '100%', marginTop: '1rem', padding: '0.75rem', borderRadius: '10px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
               >
                 <Sparkles size={16} />
-                <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>GERAR ALEATÓRIO</span>
+                <span>GERAR ALEATÓRIO</span>
               </button>
             </div>
             
-            <div className="config-list">
-              {availableBoardConfigs.map(config => (
-                <div 
-                  key={config.id} 
-                  className={`config-item ${editingConfig.id === config.id ? 'active' : ''}`}
-                  onClick={() => {
-                    setEditingConfig(JSON.parse(JSON.stringify(config)));
-                    setConfigName(config.name);
-                    setSelectedTileIndex(null);
-                    changeActiveBoardConfig(config.id);
-                  }}
-                >
-                  <div className="config-info">
-                    <span className="config-name">{config.name}</span>
-                    <span className="config-meta">{config.tiles.length} casas</span>
+            <div className="config-list-container">
+              <div className="config-list">
+                {availableBoardConfigs.map(config => (
+                  <div 
+                    key={config.id} 
+                    className={`config-item ${editingConfig.id === config.id ? 'active' : ''}`}
+                    onClick={() => {
+                      selectConfig(config);
+                      setShowCollectionsMobile(false);
+                    }}
+                  >
+                    <div className="config-info">
+                      <span className="config-name">{config.name}</span>
+                      <span className="config-meta">{config.tiles.length} casas</span>
+                    </div>
+                    {config.id === activeBoardConfig.id && <Check size={16} color="#10B981" />}
                   </div>
-                  {config.id === activeBoardConfig.id && <Check size={16} color="#10B981" />}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
-            <div style={{ padding: '1.5rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+            <div className="sidebar-footer">
                <button 
-                className="btn-delete-set" 
+                className="btn-delete-board-styled" 
                 onClick={() => {
                   if (editingConfig.id !== 'default') {
                     showSystemPopup({
@@ -287,11 +212,9 @@ const BoardEditor = () => {
                   }
                 }}
                 disabled={editingConfig.id === 'default'}
-                className="btn-delete-board-styled"
-                style={{ width: '100%', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', borderRadius: '10px', background: 'transparent', border: '1px solid #fee2e2', cursor: editingConfig.id === 'default' ? 'not-allowed' : 'pointer' }}
                >
                  <Trash2 size={16} />
-                 <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>EXCLUIR TABULEIRO</span>
+                 <span>EXCLUIR TABULEIRO</span>
                </button>
             </div>
           </aside>
@@ -322,35 +245,87 @@ const BoardEditor = () => {
                   </div>
                   <div className="mechanics-grid">
                     <div className="mechanic-card">
-                      <h4><Clock size={16} /> Turno</h4>
+                      <h4><Clock size={16} /> Tempo de Turno</h4>
                       <div className="mechanic-input-group">
                         <input 
                           type="number" 
-                          value={editingConfig.mechanics.turnTime} 
+                          value={editingConfig.mechanics.turnTime || 120} 
                           onChange={(e) => handleMechanicChange('turnTime', e.target.value)}
                         />
-                        <span>s</span>
+                        <span style={{ fontSize: '0.7rem' }}>seg</span>
                       </div>
                     </div>
+
                     <div className="mechanic-card">
-                      <h4><Dice5 size={16} /> Dado</h4>
-                      <div className="mechanic-input-group">
+                      <h4><RotateCcw size={16} /> Intervalo Dado</h4>
+                      <div className="mechanic-input-group dice-range">
                         <input 
                           type="number" 
-                          value={editingConfig.mechanics.diceMin} 
+                          value={editingConfig.mechanics.diceMin || 1} 
                           onChange={(e) => handleMechanicChange('diceMin', e.target.value)}
-                          style={{ width: '80px' }}
+                          placeholder="Min"
                         />
                         <span>-</span>
                         <input 
                           type="number" 
-                          value={editingConfig.mechanics.diceMax} 
+                          value={editingConfig.mechanics.diceMax || 6} 
                           onChange={(e) => handleMechanicChange('diceMax', e.target.value)}
-                          style={{ width: '80px' }}
+                          placeholder="Max"
                         />
                       </div>
                     </div>
-                    <div className="mechanic-card" style={{ gridColumn: 'span 2' }}>
+
+                    <div className="mechanic-card">
+                      <h4><History size={16} /> Turnos Máx</h4>
+                      <div className="mechanic-input-group">
+                        <input 
+                          type="number" 
+                          value={editingConfig.mechanics.maxTurns || 0} 
+                          onChange={(e) => handleMechanicChange('maxTurns', e.target.value)}
+                        />
+                        <span style={{ fontSize: '0.7rem' }}>(0=inf)</span>
+                      </div>
+                    </div>
+
+                    <div className="mechanic-card span-2">
+                      <h4><MessageSquare size={16} /> Texto do Centro</h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                        {(editingConfig.mechanics.centerText || ["", "", "", ""]).map((line, i) => (
+                          <input 
+                            key={i}
+                            type="text"
+                            value={line}
+                            onChange={(e) => handleCenterTextChange(i, e.target.value)}
+                            placeholder={`Linha ${i + 1}`}
+                            style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mechanic-card span-2">
+                      <h4><Users size={16} /> Posições Iniciais</h4>
+                      <p className="mechanic-hint">
+                        Clique em um jogador abaixo e depois em uma casa no tabuleiro.
+                      </p>
+                      <div className="initial-positions-grid">
+                        {[0, 1, 2, 3].map((playerIdx) => (
+                          <button 
+                            key={playerIdx} 
+                            className={`pos-setup-btn ${selectedPlayerIdx === playerIdx ? 'active' : ''}`}
+                            onClick={() => setSelectedPlayerIdx(selectedPlayerIdx === playerIdx ? null : playerIdx)}
+                          >
+                            <div className="player-dot-icon" style={{ background: ['#D84B42', '#4885CE', '#7B4BB1', '#F59E0B'][playerIdx] }} />
+                            <div className="pos-btn-info">
+                              <span className="p-label">P{playerIdx + 1}</span>
+                              <span className="p-idx">idx: {editingConfig.mechanics.initialPositions?.[playerIdx] || 0}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mechanic-card span-2">
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <ImageIcon size={16} color="#6366f1" />
@@ -428,12 +403,16 @@ const BoardEditor = () => {
                 </div>
               </div>
 
-              <div className="board-preview-container">
-                <div className="section-header">
+              <div className={`board-preview-container ${isPreviewExpanded ? 'expanded' : 'collapsed'}`}>
+                <div className="section-header" onClick={() => setIsPreviewExpanded(!isPreviewExpanded)}>
                   <h2>Preview Interativo</h2>
+                  <button className="btn-toggle-preview-mobile">
+                    {isPreviewExpanded ? 'Recolher' : 'Ver Tabuleiro'}
+                  </button>
                 </div>
                 <div className="preview-svg-wrapper">
                   <svg viewBox="0 0 800 800" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                    {/* ... (SVG content stays the same) ... */}
                     <defs>
                       <filter id="shadow-preview" x="-10%" y="-10%" width="120%" height="120%">
                         <feDropShadow dx="1" dy="2" stdDeviation="2" floodOpacity="0.1" />
@@ -441,40 +420,72 @@ const BoardEditor = () => {
                       <path id="arc-inner-p" d="M -28 -133 L 28 -133 L 36 -167 L -36 -167 Z" />
                       <path id="arc-middle-p" d="M -34 -208 L 34 -208 L 40 -242 L -40 -242 Z" />
                       <path id="arc-outer-p" d="M -37 -283 L 37 -283 L 43 -317 L -43 -317 Z" />
+                      <rect id="arc-special-p" x="-50" y="-15" width="100" height="30" rx="4" />
+                      <g id="arrow-inner-p">
+                        <line x1="0" y1="-8" x2="0" y2="8" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round" />
+                        <path d="M -5 3 L 0 8 L 5 3" fill="none" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </g>
+                      <g id="arrow-outer-p">
+                        <line x1="0" y1="8" x2="0" y2="-8" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round" />
+                        <path d="M -5 -3 L 0 -8 L 5 -3" fill="none" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </g>
                     </defs>
                     <g transform="translate(400, 400)">
                       <circle r="115" fill="#f8fafc" stroke="#e2e8f0" strokeWidth="1" />
                       <text textAnchor="middle" y="5" fill="#94a3b8" fontSize="12" fontWeight="700">CENTRO</text>
-                      
-                      {editingConfig.tiles.filter(t => t.ring !== 'special' && t.ring !== 'center').map((tile) => {
+                      {editingConfig.tiles.filter(t => t.ring !== 'center').map((tile) => {
                         const actualIdx = editingConfig.tiles.findIndex(t => t.id === tile.id);
+                        const isSpecial = tile.ring === 'special';
+                        
+                        let transform = `rotate(${tile.angle})`;
+                        if (isSpecial) {
+                           let tx = 0, ty = 0;
+                           if (tile.id === 's4') ty = -305;
+                           if (tile.id === 's1') tx = 310;
+                           if (tile.id === 's2') ty = 320;
+                           if (tile.id === 's3') tx = -310;
+                           transform = `translate(${tx}, ${ty})`;
+                        }
+
                         return (
                           <g 
                             key={tile.id} 
-                            transform={`rotate(${tile.angle})`} 
-                            className={`preview-tile-group ${selectedTileIndex === actualIdx ? 'selected' : ''}`}
-                            onClick={() => setSelectedTileIndex(actualIdx)}
+                            transform={transform} 
+                            className={`preview-tile-group ${selectedTileIndex === actualIdx ? 'selected' : ''} ${isSpecial ? 'special-preview' : ''}`}
+                            onClick={() => {
+                              if (selectedPlayerIdx !== null) {
+                                handleInitialPositionChange(selectedPlayerIdx, actualIdx);
+                                setSelectedPlayerIdx(null);
+                              } else {
+                                setSelectedTileIndex(actualIdx);
+                              }
+                            }}
                           >
                             <use 
                               href={`#arc-${tile.ring}-p`} 
                               fill={tile.color} 
-                              stroke={tile.color} 
-                              strokeWidth="8" 
+                              stroke={selectedTileIndex === actualIdx ? '#6366f1' : tile.color} 
+                              strokeWidth={isSpecial ? "2" : "8"} 
                               strokeLinejoin="round" 
                               filter="url(#shadow-preview)" 
                             />
                             {tile.label ? (
-                              <text 
-                                x="0" 
-                                y={tile.ring === 'inner' ? -145 : (tile.ring === 'middle' ? -220 : -295)} 
-                                textAnchor="middle" 
-                                fill="#FFF" 
-                                fontSize="8" 
-                                fontWeight="bold"
-                                style={{ pointerEvents: 'none' }}
-                              >
-                                {tile.label.substring(0, 5)}
-                              </text>
+                              <g transform={isSpecial ? "translate(0, 0)" : ""}>
+                                {tile.label.split('\n').map((line, i, arr) => (
+                                  <text 
+                                    key={i}
+                                    x="0" 
+                                    y={isSpecial ? (-(arr.length-1)*5 + i*10) : (tile.ring === 'inner' ? -145 : (tile.ring === 'middle' ? -220 : -295)) + (i*8)} 
+                                    textAnchor="middle" 
+                                    fill={isSpecial ? "#333" : "#FFF"} 
+                                    fontSize={isSpecial ? "10" : "8"} 
+                                    fontWeight="bold"
+                                    style={{ pointerEvents: 'none' }}
+                                  >
+                                    {line.substring(0, 15)}
+                                  </text>
+                                ))}
+                              </g>
                             ) : (
                               <circle 
                                 cx="0" 
@@ -485,15 +496,31 @@ const BoardEditor = () => {
                                 style={{ pointerEvents: 'none' }} 
                               />
                             )}
+                            {tile.action === 'MOVE_INNER' && (
+                              <use 
+                                href="#arrow-inner-p" 
+                                transform={`translate(18, ${tile.ring === 'inner' ? -150 : (tile.ring === 'middle' ? -225 : -300)})`} 
+                                style={{ pointerEvents: 'none' }} 
+                              />
+                            )}
+                            {tile.action === 'MOVE_OUTER' && (
+                              <use 
+                                href="#arrow-outer-p" 
+                                transform={`translate(18, ${tile.ring === 'inner' ? -150 : (tile.ring === 'middle' ? -225 : -300)})`} 
+                                style={{ pointerEvents: 'none' }} 
+                              />
+                            )}
                           </g>
                         );
                       })}
                     </g>
                   </svg>
                 </div>
-                <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '1rem', textAlign: 'center' }}>
-                  Clique em uma casa para editar rapidamente
-                </p>
+                {isPreviewExpanded && (
+                  <p className="preview-hint">
+                    Clique em uma casa para editar rapidamente
+                  </p>
+                )}
               </div>
             </div>
 
@@ -545,14 +572,23 @@ const BoardEditor = () => {
 
                 <div className="popup-body">
                   <div className="popup-field">
-                    <label>Rótulo da Casa</label>
-                    <input 
-                      type="text" 
+                    <label>Rótulo da Casa (Use Enter para múltiplas linhas)</label>
+                    <textarea 
                       value={currentTile.label} 
                       onChange={(e) => handleTileChange(selectedTileIndex, 'label', e.target.value)}
                       className="tile-label-input"
                       placeholder="Ex: Pule 1 casa"
+                      rows={2}
                       autoFocus
+                      style={{ 
+                        width: '100%', 
+                        padding: '12px', 
+                        borderRadius: '12px', 
+                        border: '1px solid #e2e8f0',
+                        fontSize: '0.9rem',
+                        fontFamily: 'inherit',
+                        resize: 'none'
+                      }}
                     />
                   </div>
 

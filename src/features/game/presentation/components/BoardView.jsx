@@ -142,17 +142,21 @@ const BoardView = ({ boardRotation = 0 }) => {
     return total > 95 && total < 265 ? `rotate(180, 0, ${yOffset})` : '';
   };
 
-  const arc = (fill, icon, angle, ring, r, onClick) => (
+  const arc = (fill, icon, angle, ring, r, onClick, action) => (
     <g transform={`rotate(${angle})`} style={{ pointerEvents: 'auto', cursor: 'help' }} onClick={onClick}>
       <use href={`#arc-${ring}`} fill={fill} stroke={fill} strokeWidth="16" strokeLinejoin="round" filter="url(#shadow)" />
       <use href={`#${icon}`} transform={`translate(0, -${r}) rotate(0)`} style={{ pointerEvents: 'none' }} />
+      {action === 'MOVE_INNER' && <use href="#arrow-inner" transform={`translate(22, -${r})`} style={{ pointerEvents: 'none' }} />}
+      {action === 'MOVE_OUTER' && <use href="#arrow-outer" transform={`translate(22, -${r})`} style={{ pointerEvents: 'none' }} />}
     </g>
   );
 
-  const arcText = (fill, label, angle, ring, yOff, fontSize = 13, onClick) => (
+  const arcText = (fill, label, angle, ring, yOff, fontSize = 13, onClick, action) => (
     <g transform={`rotate(${angle})`} style={{ pointerEvents: 'auto', cursor: 'help' }} onClick={onClick}>
       <use href={`#arc-${ring}`} fill={fill} stroke={fill} strokeWidth="16" strokeLinejoin="round" filter="url(#shadow)" />
       <text x="0" y={yOff} transform={flip(angle, yOff)} textAnchor="middle" fill="#FFF" fontSize={fontSize} fontWeight="600" letterSpacing="0.5" style={{ pointerEvents: 'none' }}>{label}</text>
+      {action === 'MOVE_INNER' && <use href="#arrow-inner" transform={`translate(22, ${yOff - 5})`} style={{ pointerEvents: 'none' }} />}
+      {action === 'MOVE_OUTER' && <use href="#arrow-outer" transform={`translate(22, ${yOff - 5})`} style={{ pointerEvents: 'none' }} />}
     </g>
   );
 
@@ -219,6 +223,14 @@ const BoardView = ({ boardRotation = 0 }) => {
           <g id="icon-user">
             <path d="M-8 8 Q-8 1, 0 1 Q 8 1, 8 8" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
             <circle cx="0" cy="-5" r="5" fill="currentColor" />
+          </g>
+          <g id="arrow-inner">
+            <line x1="0" y1="-12" x2="0" y2="12" stroke="#FFF" strokeWidth="3.5" strokeLinecap="round" />
+            <path d="M -7 5 L 0 12 L 7 5" fill="none" stroke="#FFF" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+          </g>
+          <g id="arrow-outer">
+            <line x1="0" y1="12" x2="0" y2="-12" stroke="#FFF" strokeWidth="3.5" strokeLinecap="round" />
+            <path d="M -7 -5 L 0 -12 L 7 -5" fill="none" stroke="#FFF" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
           </g>
         </defs>
 
@@ -287,10 +299,10 @@ const BoardView = ({ boardRotation = 0 }) => {
                if (showLabels && tile.label && tile.label.trim().length > 0) {
                  const yOff = tile.ring === 'inner' ? -145 : (tile.ring === 'middle' ? -220 : -295);
                  const fSize = tile.ring === 'inner' ? 12 : 14;
-                 return <g key={tile.id || idx}>{arcText(tile.color, tile.label, tile.angle, tile.ring, yOff, fSize, handleTileClick)}</g>;
+                 return <g key={tile.id || idx}>{arcText(tile.color, tile.label, tile.angle, tile.ring, yOff, fSize, handleTileClick, tile.action)}</g>;
                } else {
                  const r = tile.ring === 'inner' ? 150 : (tile.ring === 'middle' ? 225 : 300);
-                 return <g key={tile.id || idx}>{arc(tile.color, `icon-${tile.type}`, tile.angle, tile.ring, r, handleTileClick)}</g>;
+                 return <g key={tile.id || idx}>{arc(tile.color, `icon-${tile.type}`, tile.angle, tile.ring, r, handleTileClick, tile.action)}</g>;
                }
             })}
           </g>
@@ -313,8 +325,9 @@ const BoardView = ({ boardRotation = 0 }) => {
              return (
                <g key={tile.id} ref={cardTopRef} filter="url(#shadow)" style={{ pointerEvents: 'auto', cursor: 'help' }} onClick={handleSpecialClick}>
                  <rect x="-60" y="-35" width="120" height="70" rx="8" fill="#FFFFFF" stroke="#e0e0e0" strokeWidth="1" />
-                 <text y="-4" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>VOLTE</text>
-                 <text y="16" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>2 CASAS</text>
+                 {tile.label.split('\n').map((line, i) => (
+                   <text key={i} y={-4 + (i * 20)} textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>{line}</text>
+                 ))}
                </g>
              );
            }
@@ -322,8 +335,9 @@ const BoardView = ({ boardRotation = 0 }) => {
              return (
                <g key={tile.id} ref={cardRightRef} filter="url(#shadow)" style={{ pointerEvents: 'auto', cursor: 'help' }} onClick={handleSpecialClick}>
                  <rect x="-55" y="-45" width="110" height="90" rx="8" fill="#FFFFFF" stroke="#e0e0e0" strokeWidth="1" />
-                 <text y="-5" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>AVANCE</text>
-                 <text y="15" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>2 CASAS</text>
+                 {tile.label.split('\n').map((line, i) => (
+                   <text key={i} y={-5 + (i * 20)} textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>{line}</text>
+                 ))}
                </g>
              );
            }
@@ -331,8 +345,9 @@ const BoardView = ({ boardRotation = 0 }) => {
              return (
                <g key={tile.id} ref={cardBottomRef} filter="url(#shadow)" style={{ pointerEvents: 'auto', cursor: 'help' }} onClick={handleSpecialClick}>
                  <rect x="-70" y="-35" width="140" height="70" rx="8" fill="#FFFFFF" stroke="#e0e0e0" strokeWidth="1" />
-                 <text y="-4" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>DESAFIO EM</text>
-                 <text y="16" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>EQUIPA</text>
+                 {tile.label.split('\n').map((line, i) => (
+                   <text key={i} y={-4 + (i * 20)} textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>{line}</text>
+                 ))}
                </g>
              );
            }
@@ -340,9 +355,9 @@ const BoardView = ({ boardRotation = 0 }) => {
              return (
                <g key={tile.id} ref={cardLeftRef} filter="url(#shadow)" style={{ pointerEvents: 'auto', cursor: 'help' }} onClick={handleSpecialClick}>
                  <rect x="-55" y="-50" width="110" height="100" rx="8" fill="#FFFFFF" stroke="#e0e0e0" strokeWidth="1" />
-                 <text y="-12" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>TROQUE</text>
-                 <text y="8" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>DE</text>
-                 <text y="28" textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>LUGAR</text>
+                 {tile.label.split('\n').map((line, i) => (
+                   <text key={i} y={-12 + (i * 20)} textAnchor="middle" fill="#333" fontSize="14" fontWeight="700" style={{ pointerEvents: 'none' }}>{line}</text>
+                 ))}
                </g>
              );
            }
@@ -360,10 +375,20 @@ const BoardView = ({ boardRotation = 0 }) => {
           });
         }}>
           <circle cx="0" cy="0" r="115" fill="#FFFFFF" filter="url(#shadow)" />
-          <text y="-20" textAnchor="middle" fill="#333" fontSize="15" fontWeight="700" letterSpacing="0.2" style={{ pointerEvents: 'none' }}>A APRENDIZAGEM</text>
-          <text y="3"   textAnchor="middle" fill="#333" fontSize="15" fontWeight="700" letterSpacing="0.2" style={{ pointerEvents: 'none' }}>E UM CICLO,</text>
-          <text y="26"  textAnchor="middle" fill="#333" fontSize="15" fontWeight="700" letterSpacing="0.2" style={{ pointerEvents: 'none' }}>NAO UMA LINHA</text>
-          <text y="49"  textAnchor="middle" fill="#333" fontSize="15" fontWeight="700" letterSpacing="0.2" style={{ pointerEvents: 'none' }}>DE CHEGADA.</text>
+          {(activeBoardConfig.mechanics?.centerText || ["A APRENDIZAGEM", "É UM CICLO,", "NÃO UMA LINHA", "DE CHEGADA."]).map((line, i, arr) => (
+            <text 
+              key={i} 
+              y={-((arr.length - 1) * 11.5) + (i * 23)} 
+              textAnchor="middle" 
+              fill="#333" 
+              fontSize="15" 
+              fontWeight="700" 
+              letterSpacing="0.2" 
+              style={{ pointerEvents: 'none' }}
+            >
+              {line}
+            </text>
+          ))}
         </g>
       </svg>
     </div>
