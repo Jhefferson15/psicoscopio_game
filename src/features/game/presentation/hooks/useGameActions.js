@@ -27,6 +27,8 @@ export const useGameActions = ({
   setShowDiary,
   setPlayerSelectionTask,
   setAtelierContext,
+  setRoomStatus,
+  setActiveVerification,
 
   passTurn,
   getRingIndices,
@@ -39,35 +41,12 @@ export const useGameActions = ({
   useEffect(() => { isMovingRef.current = isMoving; }, [isMoving]);
   
   const playersRef = useRef(players);
-
-  // Atualização síncrona
-  playersRef.current = players;
+  useEffect(() => { playersRef.current = players; }, [players]);
 
 
   const pendingTileActionRef = useRef(null);
 
-  // Efeito para retomar ação pendente ao voltar para o jogo
-  useEffect(() => {
-    if (currentScreen === 'game' && pendingTileActionRef.current) {
-      const tile = pendingTileActionRef.current;
-      
-      // Aguarda um pouco para a UI do tabuleiro estabilizar
-      const timeoutId = setTimeout(() => {
-        if (!playersRef.current || playersRef.current.length === 0) return;
-        
-        const player = playersRef.current[currentPlayerIndex];
-        if (!player) return;
-
-        pendingTileActionRef.current = null;
-        handleTileAction(tile, player, playersRef.current);
-      }, 600);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [currentScreen, currentPlayerIndex]);
-
-
-  const handleTileAction = async (tile, player, allPlayers, recursionDepth = 0) => {
+  const handleTileAction = useCallback(async function recurse(tile, player, allPlayers, recursionDepth = 0) {
     if (recursionDepth > 5) return false;
     
     const result = ProcessTileActionUseCase.execute(
@@ -86,7 +65,8 @@ export const useGameActions = ({
         setFocusedCard({
           ...action.payload,
           content: cardData.content,
-          index: cardData.index
+          index: cardData.index,
+          isCustom: !!cardData.isCustom
         });
       }
 
@@ -141,7 +121,8 @@ export const useGameActions = ({
           setFocusedCard({
             ...randomCard,
             id: `custom-${randomCard.id}-${Date.now()}`,
-            fromTileAction: true
+            fromTileAction: true,
+            isCustom: true
           });
         } else {
           const categoryName = categoryFilter ? categoryFilter.toUpperCase() : 'CUSTOMIZADAS';
@@ -185,13 +166,36 @@ export const useGameActions = ({
 
     if (positionChanged) {
       const nextTile = activeBoardConfig.tiles[player.position];
-      const nextModalOpened = await handleTileAction(nextTile, player, allPlayers, recursionDepth + 1);
+      const nextModalOpened = await recurse(nextTile, player, allPlayers, recursionDepth + 1);
       modalOpened = modalOpened || nextModalOpened;
     }
 
     setPlayers([...allPlayers]);
     return modalOpened;
-  };
+  }, [activeBoardConfig, currentPlayerIndex, drawCard, getRingIndices, isOnline, roomId, setAtelierContext, setCurrentScreen, setFocusedCard, setPlayerSelectionTask, setPlayers, setShowDiary, showSystemPopup, syncRepository, passTurn]);
+
+  // Efeito para retomar ação pendente ao voltar para o jogo
+  useEffect(() => {
+    if (currentScreen === 'game' && pendingTileActionRef.current) {
+      const tile = pendingTileActionRef.current;
+      
+      // Aguarda um pouco para a UI do tabuleiro estabilizar
+      const timeoutId = setTimeout(() => {
+        if (!playersRef.current || playersRef.current.length === 0) return;
+        
+        const player = playersRef.current[currentPlayerIndex];
+        if (!player) return;
+
+        pendingTileActionRef.current = null;
+        handleTileAction(tile, player, playersRef.current);
+      }, 600);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [currentScreen, currentPlayerIndex, handleTileAction]);
+
+
+
 
 
 
@@ -291,7 +295,8 @@ export const useGameActions = ({
           index: cardData.index,
           id: `card-extra-${Date.now()}`,
           fromTileAction: true,
-          nextDraw: false
+          nextDraw: false,
+          isCustom: false
         });
       }, 300);
 
@@ -300,31 +305,30 @@ export const useGameActions = ({
 
     if (wasFromTile) {
       setTimeout(() => {
-        if (isOnline && roomId) {
-          // Inicia a verificação social antes de passar o turno
-          const verificationData = {
-            activeVerification: {
-              playerId: players[currentPlayerIndex].id,
-              cardType: focusedCard.type || 'reflexao',
-              cardText: (typeof focusedCard.content === 'string' ? focusedCard.content : focusedCard.content?.text) || focusedCard.text || 'Ação de casa',
-              timestamp: Date.now(),
-              responses: {}
-            }
-          };
+        const verificationData = {
+          playerId: players[currentPlayerIndex].id,
+          cardType: focusedCard.type || 'reflexao',
+          cardText: (typeof focusedCard.content === 'string' ? focusedCard.content : focusedCard.content?.text) || focusedCard.text || 'Ação de casa',
+          timestamp: Date.now(),
+          responses: {}
+        };
 
-          // Atualiza o status da sala e os dados da verificação de forma atômica/sequencial
+        if (isOnline && roomId) {
+          // Inicia a verificação social no modo online
           Promise.all([
             syncRepository.updateRoomStatus(roomId, 'verifying_action'),
-            syncRepository.updateGameState(roomId, verificationData)
-          ]).catch(e => console.error("Erro ao iniciar verificação:", e));
+            syncRepository.updateGameState(roomId, { activeVerification: verificationData })
+          ]).catch(e => console.error("Erro ao iniciar verificação online:", e));
         } else {
-          passTurn();
+          // Inicia a verificação social no modo offline (local)
+          setActiveVerification(verificationData);
+          setRoomStatus('verifying_action');
         }
       }, 600);
     }
 
 
-  }, [focusedCard, passTurn, setFocusedCard]);
+  }, [focusedCard, setFocusedCard, drawCard, isOnline, roomId, players, currentPlayerIndex, syncRepository, setActiveVerification, setRoomStatus]);
 
   return {
     rollDice,

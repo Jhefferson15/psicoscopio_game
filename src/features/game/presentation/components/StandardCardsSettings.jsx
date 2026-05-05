@@ -15,7 +15,9 @@ import {
   X,
   Download,
   Upload,
-  Info
+  Info,
+  Puzzle,
+  Award
 } from 'lucide-react';
 import './StandardCardsLayout.css';
 import './StandardCardsSidebar.css';
@@ -23,10 +25,10 @@ import './StandardCardsEditor.css';
 import './StandardCardsResponsive.css';
 
 const categoryIcons = {
-  memoria: Brain,
+  memoria: Puzzle,
   reflexao: Brain,
   desafio: Zap,
-  experiencia: Sparkles,
+  experiencia: Award,
   sorte: Sparkles
 };
 

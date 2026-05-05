@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { X, Check } from 'lucide-react';
 import { STANDARD_TILE_CONFIG } from '../../domain/gameConstants';

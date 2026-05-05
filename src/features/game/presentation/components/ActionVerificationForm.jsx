@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Check, X, Users, MessageCircle, AlertCircle, ShieldCheck, HelpCircle, Star, RotateCcw } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Users, MessageCircle, ShieldCheck, HelpCircle, RotateCcw } from 'lucide-react';
 import { useGame } from '../state/useGame';
 import { useAuth } from '../../../auth/presentation/state/useAuth';
 import { LIKERT_SCALE } from '../../domain/constants/meegaQuestions';
@@ -23,7 +23,9 @@ export const ActionVerificationForm = () => {
     roomId, 
     syncRepository,
     players,
-    roomStatus
+    roomStatus,
+    isOnline,
+    setActiveVerification
   } = useGame();
   
   const { user } = useAuth();
@@ -35,13 +37,21 @@ export const ActionVerificationForm = () => {
 
   const { playerId, cardType, responses = {}, cardText } = activeVerification;
   const targetPlayer = players.find(p => p.id === playerId);
-  const myResponse = responses[user?.id];
-  const hasResponded = myResponse !== undefined;
+  
+  // Filtra participantes para incluir todos os jogadores mas excluir observadores
+  const participantsArray = useMemo(() => {
+    return Object.values(roomParticipants || {}).filter(p => !p.isObserver);
+  }, [roomParticipants]);
 
-  const participantsArray = Object.values(roomParticipants);
   const totalParticipants = participantsArray.length;
   const responsesCount = Object.keys(responses).length;
   const pendingCount = totalParticipants - responsesCount;
+
+  const myResponse = isOnline ? responses[user?.id] : undefined;
+  const hasResponded = isOnline ? (myResponse !== undefined) : (responsesCount >= totalParticipants);
+
+  const pendingParticipants = participantsArray.filter(p => responses[p.id] === undefined);
+  const currentOfflineVoter = !isOnline && pendingParticipants.length > 0 ? pendingParticipants[0] : null;
 
   const question = VERIFICATION_QUESTIONS[cardType] || VERIFICATION_QUESTIONS.custom;
 
@@ -50,15 +60,27 @@ export const ActionVerificationForm = () => {
     
     setIsSubmitting(true);
     try {
-      const updatedResponses = {
-        ...responses,
-        [user.id]: value
-      };
+      if (isOnline && roomId) {
+        const updatedResponses = {
+          ...responses,
+          [user.id]: value
+        };
+        // Atualiza no RTDB
+        await syncRepository.updateGameState(roomId, {
+          "activeVerification/responses": updatedResponses
+        });
+      } else if (currentOfflineVoter) {
+        // No modo offline, registramos o voto para o jogador atual da lista de pendentes
+        const updatedResponses = {
+          ...responses,
+          [currentOfflineVoter.id]: value
+        };
 
-      // Atualiza no RTDB
-      await syncRepository.updateGameState(roomId, {
-        "activeVerification/responses": updatedResponses
-      });
+        setActiveVerification({
+          ...activeVerification,
+          responses: updatedResponses
+        });
+      }
 
     } catch (error) {
       console.error("Erro ao enviar voto:", error);
@@ -72,13 +94,21 @@ export const ActionVerificationForm = () => {
     
     setIsSubmitting(true);
     try {
-      const updatedResponses = { ...responses };
-      delete updatedResponses[user?.id];
+      if (isOnline && roomId) {
+        const updatedResponses = { ...responses };
+        delete updatedResponses[user?.id];
 
-      // Atualiza no RTDB removendo especificamente a resposta do usuário
-      await syncRepository.updateGameState(roomId, {
-        "activeVerification/responses": updatedResponses
-      });
+        // Atualiza no RTDB removendo especificamente a resposta do usuário
+        await syncRepository.updateGameState(roomId, {
+          "activeVerification/responses": updatedResponses
+        });
+      } else {
+        // No modo offline, limpamos todas as respostas
+        setActiveVerification({
+          ...activeVerification,
+          responses: {}
+        });
+      }
 
     } catch (error) {
       console.error("Erro ao desfazer voto:", error);
@@ -140,6 +170,11 @@ export const ActionVerificationForm = () => {
           <div className="question-section">
              <HelpCircle size={24} className="question-icon" />
              <h2>{question}</h2>
+             {!isOnline && currentOfflineVoter && (
+               <div className="current-voter-label" style={{ borderLeft: `4px solid ${players.find(p => p.id === currentOfflineVoter.id)?.color || 'var(--accent)'}` }}>
+                 Vez de: <strong>{currentOfflineVoter.name}</strong>
+               </div>
+             )}
           </div>
 
           {!hasResponded ? (

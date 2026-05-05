@@ -9,6 +9,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 5px;
+  min-width: 200px;
 }
 
 .sidebar-section-title {
@@ -160,15 +161,15 @@
 
 .cards-stack-modern {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+  gap: 8px;
   margin-top: 15px;
-  min-height: 180px;
+  min-height: 120px;
 }
 
 .card-stack-item {
   position: relative;
-  height: 150px;
+  aspect-ratio: 380 / 520;
 }
 
 .steps-list-modern {

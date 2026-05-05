@@ -229,6 +229,7 @@ const GameContent = () => {
                 isFocused={true} 
                 content={focusedCard.content}
                 contentType={focusedCard.contentType}
+                isCustom={focusedCard.isCustom}
               />
 
               <motion.button 

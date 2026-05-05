@@ -40,6 +40,7 @@ export const GameProvider = ({ children }) => {
   const [currentScreen, setCurrentScreen] = useState('menu');
   const [focusedCard, setFocusedCard] = useState(null);
   const [boardRotation, setBoardRotation] = useState(0);
+  const [followActivePlayer, setFollowActivePlayer] = useState(false);
   const [confirmedMobileWarning, setConfirmedMobileWarning] = useState(false);
   const [settings, setSettings] = useState({
     sound: true,
@@ -167,7 +168,7 @@ export const GameProvider = ({ children }) => {
     }
 
     setDrawnCards(prev => ({ ...prev, [type]: newUsedIndices }));
-    return { content: cardList[selectedIndex], index: selectedIndex };
+    return { content: cardList[selectedIndex], index: selectedIndex, isCustom: false };
   }, [activeCardSet, drawnCards]);
 
 
@@ -220,7 +221,8 @@ export const GameProvider = ({ children }) => {
     hostRole, setHostRole,
     showLeaveConfirm, setShowLeaveConfirm,
     passTurn: (overrides) => passTurnRef.current?.(overrides),
-    activeVerification
+    activeVerification,
+    setActiveVerification
   });
 
   useGameSync({
@@ -261,6 +263,7 @@ export const GameProvider = ({ children }) => {
     isMoving, setIsMoving, isRolling, setIsRolling,
     setLastDiceRoll, setShowModal, setFocusedCard, showSystemPopup,
     setCurrentScreen, currentScreen, setShowDiary, setAtelierContext, passTurn: (overrides) => passTurnRef.current?.(overrides), 
+    setRoomStatus, setActiveVerification,
     getRingIndices,
     generateDiceRoll, 
     focusedCard,
@@ -270,7 +273,7 @@ export const GameProvider = ({ children }) => {
   // Mantém isMovingRefForSync sincronizada com isMovingRef real
   useEffect(() => {
     if (isMovingRef) isMovingRefForSync.current = isMovingRef.current;
-  });
+  }, [isMovingRef]);
 
   const passTurn = useCallback((overrides = {}) => {
     if (isTurnBeingPassedRef.current) return;
@@ -347,7 +350,17 @@ export const GameProvider = ({ children }) => {
     const turnTime = activeBoardConfig.mechanics?.turnTime || 120;
     const initialPositions = activeBoardConfig.mechanics?.initialPositions || [0, 0, 0, 0];
     const shouldShowAtelier = !!activeBoardConfig.mechanics?.enableCardCreationStep;
-    setPlayers(newPlayers.map((p, i) => new Player(p.id || i + 1, p.name, p.color, initialPositions[i] || 0, turnTime)));
+    
+    const preparedPlayers = newPlayers.map((p, i) => new Player(p.id || i + 1, p.name, p.color, initialPositions[i] || 0, turnTime));
+    setPlayers(preparedPlayers);
+
+    // Popula participantes para o modo offline para suportar verificação social
+    const offlineParticipants = preparedPlayers.reduce((acc, p) => {
+      acc[p.id] = { id: p.id, name: p.name, color: p.color, isOnline: true };
+      return acc;
+    }, {});
+    setRoomParticipants(offlineParticipants);
+
     setCurrentPlayerIndex(0);
     setCurrentTurn(1);
     setTurnStartTime(Date.now());
@@ -367,8 +380,22 @@ export const GameProvider = ({ children }) => {
   };
 
   const rotateBoard = useCallback(() => {
-    setBoardRotation(prev => (prev + 90) % 360);
+    setFollowActivePlayer(prev => !prev);
   }, []);
+
+  // Auto-rotate board to follow active player if enabled
+  useEffect(() => {
+    if (followActivePlayer && players[currentPlayerIndex]) {
+      const tile = activeBoardConfig.tiles[players[currentPlayerIndex].position];
+      if (tile) {
+        // Smoothly rotate to bring the player's tile to the top (-angle)
+        // Use requestAnimationFrame to avoid synchronous cascading renders lint error
+        requestAnimationFrame(() => {
+          setBoardRotation(-tile.angle);
+        });
+      }
+    }
+  }, [followActivePlayer, currentPlayerIndex, players, activeBoardConfig]);
 
   return (
     <GameContext.Provider value={{
@@ -395,6 +422,7 @@ export const GameProvider = ({ children }) => {
       finishCardCreation,
       openCardAtelier,
       rotateBoard,
+      followActivePlayer,
       goToMenu,
       playerAttributes,
       setPlayerAttributes,
@@ -440,6 +468,7 @@ export const GameProvider = ({ children }) => {
           cardId: card.id,
           cardType: card.type,
           cardText: card.text,
+          isCustom: !!card.isCustom,
           playerName: playersRef.current[myPlayerIndexRef.current]?.name || 'Jogador',
           timestamp: Date.now()
         };
@@ -453,7 +482,7 @@ export const GameProvider = ({ children }) => {
         } else {
           setCardHistory(prev => [cardEntry, ...prev]);
         }
-      }, [isOnline, roomId]),
+      }, [isOnline, roomId, playersRef, setCardHistory]),
 
       showCardHistory,
       setShowCardHistory,

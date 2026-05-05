@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Brain, Zap, HelpCircle } from 'lucide-react';
+import { Sparkles, Brain, Zap, HelpCircle, Puzzle, Award, Palette, Brush } from 'lucide-react';
 import './GameCard.css';
 import { getRandomCardContent } from '../../data/repositories/cardRepository';
 import { useGame } from '../state/useGame';
@@ -25,25 +25,24 @@ const cardTypes = {
     gradient: 'linear-gradient(135deg, #F4C746, #d4a726)'
   },
   memoria: {
-    icon: Brain,
+    icon: Puzzle,
     color: '#4885CE',
     label: 'Memória',
     gradient: 'linear-gradient(135deg, #4885CE, #3567a5)'
   },
   experiencia: {
-    icon: Sparkles,
+    icon: Award,
     color: '#6FB05E',
     label: 'Experiência',
     gradient: 'linear-gradient(135deg, #6FB05E, #558a47)'
   },
   custom_card: {
-    icon: Sparkles,
+    icon: Palette,
     color: '#F4C746',
     label: 'Customizada',
     gradient: 'linear-gradient(135deg, #F4C746, #d4a726)'
   },
   default: {
-
     icon: HelpCircle,
     color: '#94a3b8',
     label: 'Info',
@@ -51,14 +50,22 @@ const cardTypes = {
   }
 };
 
-const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = false, content = null, contentType = 'text' }) => {
+const GameCard = ({ 
+  type = 'default', 
+  isStacked = false, 
+  index = 0, 
+  isFocused = false, 
+  content = null, 
+  contentType = 'text',
+  isCustom = false 
+}) => {
 
   const { closeFocusedCard, activeCardSet, recordCardDraw, showDetailPopup, activeBoardConfig } = useGame();
   const config = cardTypes[type] || cardTypes.default;
   const Icon = config.icon;
   const layoutId = `card-${type}-${index}`;
 
-  const [cardText] = useState(() => content && contentType === 'text' ? content : getRandomCardContent(type, activeCardSet?.content));
+  const [cardText] = useState(() => isCustom && contentType === 'text' ? content : getRandomCardContent(type, activeCardSet?.content));
 
 
   // Controla a rotacao CSS (com delay para permitir a CSS transition animar)
@@ -75,7 +82,7 @@ const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = 
         setShowFront(true);
         // Registra a carta no histórico para o dashboard do observador
         if (recordCardDraw) {
-          recordCardDraw({ id: index, type: type, text: cardText });
+          recordCardDraw({ id: index, type: type, text: cardText, isCustom: isCustom });
         }
       }, 900);
       return () => {
@@ -85,7 +92,7 @@ const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = 
         setShowFront(false);
       };
     }
-  }, [isFocused, index, type, cardText, recordCardDraw]);
+  }, [isFocused, index, type, cardText, recordCardDraw, isCustom]);
 
   const handleClick = () => {
     if (isFocused) {
@@ -131,19 +138,23 @@ const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = 
           <div className={`card-face ${showFront ? 'card-face-front' : ''}`}>
             {showFront ? (
               /* FRENTE - Conteudo rico em texto */
-              <div className="card-content-wrapper">
+              <div className={`card-content-wrapper ${isCustom && (contentType === 'drawing' || contentType === 'image') ? 'is-custom-media' : ''}`}>
                 {activeBoardConfig.mechanics?.showCardLabels !== false && (
                   <div className="card-header-bar" style={{ borderBottomColor: config.color }}>
-                    <Icon size={isFocused ? 28 : 16} color={config.color} />
+                    <div className="card-header-icons">
+                       <Icon size={isFocused ? 28 : 16} color={config.color} />
+                       {isCustom && <Brush size={isFocused ? 18 : 10} color={config.color} className="custom-indicator" />}
+                    </div>
                     <span style={{ color: config.color }}>
-                      {config.label.toUpperCase()}
+                      {isCustom ? `CUSTOM ${config.label.toUpperCase()}` : config.label.toUpperCase()}
                     </span>
                   </div>
                 )}
+                
                 <div className="card-body-text">
                   {contentType === 'drawing' || contentType === 'image' ? (
                     <div className="custom-card-media">
-                      <img src={content} alt="Card content" style={{ maxWidth: '100%', borderRadius: '8px' }} />
+                      <img src={content} alt="Card content" />
                     </div>
                   ) : (
                     <p>{cardText}</p>
@@ -152,7 +163,7 @@ const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = 
 
                 {activeBoardConfig.mechanics?.showCardLabels !== false && (
                   <div className="card-footer-bar">
-                    <span>PSICOSCOPIO</span>
+                    <span>PSICOSCÓPIO</span>
                     <span>#{String(index + 1).padStart(3, '0')}</span>
                   </div>
                 )}
@@ -161,9 +172,14 @@ const GameCard = ({ type = 'default', isStacked = false, index = 0, isFocused = 
               /* VERSO - Capa decorativa */
               <div className="card-cover" style={{ background: config.gradient }}>
                 <div className="logo-symbol">
-                  <Icon size={isFocused ? 80 : 40} color="white" opacity={0.9} />
+                  <div className="icon-group">
+                    <Icon size={isFocused ? 80 : 40} color="white" opacity={0.9} />
+                    {isCustom && <Brush size={isFocused ? 40 : 20} color="white" opacity={0.8} className="custom-indicator-large" />}
+                  </div>
                 </div>
-                <span className="cover-label">{config.label}</span>
+                <span className="cover-label">
+                  {isCustom ? `CUSTOM\n${config.label.toUpperCase()}` : config.label}
+                </span>
                 <div className="cover-dots"></div>
               </div>
             )}

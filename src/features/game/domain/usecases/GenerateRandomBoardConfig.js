@@ -18,7 +18,7 @@ export class GenerateRandomBoardConfig {
       
       let randomColor = colors[Math.floor(Math.random() * colors.length)];
       let randomAction = null;
-      let label = randomType.label;
+      let label = '';
 
       if (isCardType) {
         randomColor = STANDARD_TILE_CONFIG[randomType.id].color;
@@ -28,7 +28,6 @@ export class GenerateRandomBoardConfig {
         const actionObj = possibleActions[Math.floor(Math.random() * possibleActions.length)];
         randomAction = actionObj.id;
         if (actionObj.color) randomColor = actionObj.color;
-        label = '';
       }
       
       return {

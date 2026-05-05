@@ -34,7 +34,7 @@ export const useGameTimer = ({
       serverTimeOffsetRef.current = offset;
       setServerTimeOffset(prev => Math.abs(prev - offset) > 500 ? offset : prev);
     });
-  }, [syncRepository]);
+  }, [syncRepository, setServerTimeOffset]);
 
   useEffect(() => {
     if (currentScreen !== 'game' || isMoving || showModal || roomStatus === 'verifying_action') return;
@@ -81,7 +81,7 @@ export const useGameTimer = ({
     }, 500);
 
     return () => clearInterval(interval);
-  }, [currentScreen, isMoving, currentPlayerIndex, showModal, isOnline, turnStartTime, turnDuration, serverTimeOffset, ownerId, user?.id, roomParticipants, setPlayers, currentTurn]);
+  }, [currentScreen, isMoving, currentPlayerIndex, showModal, isOnline, turnStartTime, turnDuration, serverTimeOffset, ownerId, user?.id, roomParticipants, setPlayers, currentTurn, roomStatus]);
 
   return {
     serverTimeOffset,

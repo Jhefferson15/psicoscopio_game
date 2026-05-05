@@ -53,8 +53,8 @@ export const SPECIAL_TILES = [
 ];
 
 export const GAME_CARDS = [
-  { id: 'memoria', type: 'MEMÓRIA', color: '#4885CE', icon: 'brain' },
-  { id: 'experiencia', type: 'EXPERIÊNCIA', color: '#6FB05E', icon: 'sparkles' },
+  { id: 'memoria', type: 'MEMÓRIA', color: '#4885CE', icon: 'puzzle' },
+  { id: 'experiencia', type: 'EXPERIÊNCIA', color: '#6FB05E', icon: 'award' },
   { id: 'desafio', type: 'DESAFIO', color: '#D84B42', icon: 'zap' },
   { id: 'reflexao', type: 'REFLEXÃO', color: '#7B4BB1', icon: 'brain' },
   { id: 'sorte', type: 'SORTE', color: '#F4C746', icon: 'sparkles' }
@@ -89,10 +89,10 @@ export const STANDARD_TILE_CONFIG = {
   desafio: { color: '#D84B42', label: 'DESAFIO' },
   reflexao: { color: '#7B4BB1', label: 'REFLEXÃO' },
   sorte: { color: '#F4C746', label: 'SORTE' },
-  custom_memoria: { color: '#4885CE', label: 'CUSTOM\nMEM' },
-  custom_experiencia: { color: '#6FB05E', label: 'CUSTOM\nEXP' },
-  custom_desafio: { color: '#D84B42', label: 'CUSTOM\nDES' },
-  custom_reflexao: { color: '#7B4BB1', label: 'CUSTOM\nREFL' },
+  custom_memoria: { color: '#4885CE', label: 'CUSTOM\nMEMÓRIA' },
+  custom_experiencia: { color: '#6FB05E', label: 'CUSTOM\nEXPERIÊNCIA' },
+  custom_desafio: { color: '#D84B42', label: 'CUSTOM\nDESAFIO' },
+  custom_reflexao: { color: '#7B4BB1', label: 'CUSTOM\nREFLEXÃO' },
   custom_sorte: { color: '#F4C746', label: 'CUSTOM\nSORTE' },
   custom_card: { color: '#F4C746', label: 'CARTA\nCUSTOM' }
 };

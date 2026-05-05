@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { X, History, Brain, Zap, Sparkles, HelpCircle } from 'lucide-react';
+import { X, History, Brain, Zap, Sparkles, HelpCircle, Puzzle, Award, Brush } from 'lucide-react';
 import { useGame } from '../state/useGame';
 import './CardHistoryModal.css';
 
@@ -7,8 +7,8 @@ const cardTypes = {
   reflexao: { icon: Brain, color: '#7B4BB1', label: 'Reflexão' },
   desafio: { icon: Zap, color: '#D84B42', label: 'Desafio' },
   sorte: { icon: Sparkles, color: '#F4C746', label: 'Sorte' },
-  memoria: { icon: Brain, color: '#4885CE', label: 'Memória' },
-  experiencia: { icon: Sparkles, color: '#6FB05E', label: 'Experiência' },
+  memoria: { icon: Puzzle, color: '#4885CE', label: 'Memória' },
+  experiencia: { icon: Award, color: '#6FB05E', label: 'Experiência' },
   default: { icon: HelpCircle, color: '#94a3b8', label: 'Info' }
 };
 
@@ -46,6 +46,8 @@ const CardHistoryModal = ({ onClose }) => {
               {cardHistory.map((card, index) => {
                 const config = cardTypes[card.cardType] || cardTypes.default;
                 const Icon = config.icon;
+                const isCustom = !!card.isCustom;
+                const displayLabel = isCustom ? `CUSTOM ${config.label.toUpperCase()}` : config.label;
                 
                 return (
                   <motion.div 
@@ -57,8 +59,11 @@ const CardHistoryModal = ({ onClose }) => {
                   >
                     <div className="item-header">
                       <div className="type-badge" style={{ backgroundColor: config.color }}>
-                        <Icon size={14} />
-                        <span>{config.label}</span>
+                        <div className="badge-icons" style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                          <Icon size={14} />
+                          {isCustom && <Brush size={10} style={{ opacity: 0.8 }} />}
+                        </div>
+                        <span>{displayLabel}</span>
                       </div>
                       <span className="item-time">
                         {new Date(card.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

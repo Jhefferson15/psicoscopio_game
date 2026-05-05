@@ -1,4 +1,4 @@
-import { test, expect, describe, vi } from 'vitest';
+import { test, expect, describe } from 'vitest';
 
 // Simulação simplificada da lógica de drawCard para teste unitário
 function createDrawCard(activeCardSet, drawnCards, setDrawnCards) {
@@ -48,7 +48,7 @@ describe('Lógica de Sorteio de Cartas', () => {
     expect(drawnCards.reflexao.length).toBe(3);
 
     // Quarta carta deve reiniciar
-    const fourth = drawCard('reflexao');
+    drawCard('reflexao');
     expect(drawnCards.reflexao.length).toBe(1);
   });
 });

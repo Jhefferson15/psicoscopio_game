@@ -1,4 +1,4 @@
-import { test, expect, describe, vi } from 'vitest';
+import { test, expect, describe } from 'vitest';
 import { ProcessTileActionUseCase } from '../../../src/features/game/domain/usecases/ProcessTileActionUseCase';
 
 describe('Fallback de Cartas Customizadas', () => {

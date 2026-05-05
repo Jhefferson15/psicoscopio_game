@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, 
@@ -20,7 +20,10 @@ import {
   Upload,
   Settings,
   BookOpen,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Puzzle,
+  Award,
+  Palette
 } from 'lucide-react';
 import { useGame } from '../state/useGame';
 import { useBoardEditor } from '../hooks/useBoardEditor';
@@ -41,17 +44,17 @@ const COLORS = [
 ];
 
 const TILE_TYPES = [
-  { id: 'memoria', label: 'Memória', color: STANDARD_TILE_CONFIG.memoria.color, icon: Brain },
+  { id: 'memoria', label: 'Memória', color: STANDARD_TILE_CONFIG.memoria.color, icon: Puzzle },
   { id: 'reflexao', label: 'Reflexão', color: STANDARD_TILE_CONFIG.reflexao.color, icon: Brain },
   { id: 'desafio', label: 'Desafio', color: STANDARD_TILE_CONFIG.desafio.color, icon: Zap },
-  { id: 'experiencia', label: 'Experiência', color: STANDARD_TILE_CONFIG.experiencia.color, icon: Sparkles },
+  { id: 'experiencia', label: 'Experiência', color: STANDARD_TILE_CONFIG.experiencia.color, icon: Award },
   { id: 'sorte', label: 'Sorte', color: STANDARD_TILE_CONFIG.sorte.color, icon: Sparkles },
-  { id: 'custom_memoria', label: 'Custom Mem', color: STANDARD_TILE_CONFIG.memoria.color, icon: Brain },
-  { id: 'custom_reflexao', label: 'Custom Refl', color: STANDARD_TILE_CONFIG.reflexao.color, icon: Brain },
-  { id: 'custom_desafio', label: 'Custom Des', color: STANDARD_TILE_CONFIG.desafio.color, icon: Zap },
-  { id: 'custom_experiencia', label: 'Custom Exp', color: STANDARD_TILE_CONFIG.experiencia.color, icon: Sparkles },
+  { id: 'custom_memoria', label: 'Custom Memória', color: STANDARD_TILE_CONFIG.memoria.color, icon: Puzzle },
+  { id: 'custom_reflexao', label: 'Custom Reflexão', color: STANDARD_TILE_CONFIG.reflexao.color, icon: Brain },
+  { id: 'custom_desafio', label: 'Custom Desafio', color: STANDARD_TILE_CONFIG.desafio.color, icon: Zap },
+  { id: 'custom_experiencia', label: 'Custom Experiência', color: STANDARD_TILE_CONFIG.experiencia.color, icon: Award },
   { id: 'custom_sorte', label: 'Custom Sorte', color: STANDARD_TILE_CONFIG.sorte.color, icon: Sparkles },
-  { id: 'custom_card', label: 'Custom Geral', color: '#F4C746', icon: Sparkles },
+  { id: 'custom_card', label: 'Custom Geral', color: '#F4C746', icon: Palette },
   { id: 'especial', label: 'Especial', color: '#FFFFFF', icon: Settings }
 ];
 

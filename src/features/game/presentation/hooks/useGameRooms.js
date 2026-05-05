@@ -29,7 +29,8 @@ export const useGameRooms = ({
   hostRole, setHostRole,
   showLeaveConfirm, setShowLeaveConfirm,
   passTurn,
-  activeVerification
+  activeVerification,
+  setActiveVerification
 }) => {
 
 
@@ -117,7 +118,7 @@ export const useGameRooms = ({
         syncRepository.clearActiveRoomId();
       }
     }
-  }, [user, showSystemPopup, activeBoardConfig, syncRepository, setPlayers, setCurrentPlayerIndex, setPlayerAttributes, setTurnStartTime, setTurnDuration, setActiveBoardConfig, setAtelierContext, setCurrentScreen]);
+  }, [user, showSystemPopup, activeBoardConfig, syncRepository, setPlayers, setCurrentPlayerIndex, setPlayerAttributes, setTurnStartTime, setTurnDuration, setActiveBoardConfig, setAtelierContext, setCurrentScreen, setRoomId, setIsOnline, setRoomStatus, setOwnerId, setHostRole, setRoomParticipants]);
 
   const startOnlineGame = async () => {
     const isObserverRoom = hostRole === 'observer';
@@ -213,7 +214,7 @@ export const useGameRooms = ({
     syncRepository.clearActiveRoomId();
     setAtelierContext(null);
     setCurrentScreen('menu');
-  }, [isOnline, roomId, user, syncRepository, setAtelierContext, setCurrentScreen]);
+  }, [isOnline, roomId, user, syncRepository, setAtelierContext, setCurrentScreen, setRoomId, setIsOnline]);
 
   const finishCardCreation = async () => {
     if (isOnline) {
@@ -269,7 +270,7 @@ export const useGameRooms = ({
         });
       }
     }
-  }, [isOnline, user, players, myPlayerIndex]);
+  }, [isOnline, user, players, myPlayerIndex, setMyPlayerIndex]);
 
   useEffect(() => {
     if (isOnline && roomStatus === 'finished' && currentScreen !== 'menu' && currentScreen !== 'evaluation') {
@@ -298,12 +299,15 @@ export const useGameRooms = ({
     }
   }, [isOnline, roomId, roomStatus, hostRole, roomParticipants, readyPlayers, user?.id, startPlayingGame]);
   
-  // Monitoramento de conclusão da verificação social
+  // Monitoramento de conclusão da verificação social (ONLINE)
   useEffect(() => {
     if (!isOnline || roomStatus !== 'verifying_action' || !activeVerification || !roomId) return;
     
     const responses = activeVerification.responses || {};
-    const participantsIds = Object.keys(roomParticipants);
+    
+    // Todos os jogadores (não observadores) devem responder, incluindo quem está na vez
+    const requiredVoters = Object.values(roomParticipants).filter(p => !p.isObserver);
+    const participantsIds = requiredVoters.map(p => p.id.toString());
     const responsesIds = Object.keys(responses);
     
     // Todos responderam?
@@ -342,6 +346,37 @@ export const useGameRooms = ({
       }
     }
   }, [isOnline, roomStatus, activeVerification, roomParticipants, roomId, user?.id, passTurn, syncRepository]);
+
+  // Monitoramento de conclusão da verificação social (OFFLINE)
+  useEffect(() => {
+    if (isOnline || roomStatus !== 'verifying_action' || !activeVerification) return;
+    
+    const responses = activeVerification.responses || {};
+    
+    // Todos os jogadores (não observadores) devem responder, incluindo quem está na vez
+    const requiredVoters = Object.values(roomParticipants).filter(p => !p.isObserver);
+    const participantsIds = requiredVoters.map(p => p.id.toString());
+    const responsesIds = Object.keys(responses);
+    
+    // Todos responderam?
+    if (participantsIds.length > 0 && responsesIds.length >= participantsIds.length) {
+      const finalizeOffline = () => {
+        try {
+          // Limpa verificação e volta status para playing
+          setRoomStatus('playing');
+          setActiveVerification(null);
+          
+          // Passa o turno
+          passTurn();
+        } catch(e) {
+          console.error("Erro ao finalizar verificação offline:", e);
+        }
+      };
+      
+      const timer = setTimeout(finalizeOffline, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [isOnline, roomStatus, activeVerification, roomParticipants, passTurn, setRoomStatus, setActiveVerification]);
 
 
 

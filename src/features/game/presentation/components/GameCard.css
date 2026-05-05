@@ -2,7 +2,9 @@
   border-radius: 12px;
   cursor: pointer;
   width: 100%;
-  height: 100%;
+  aspect-ratio: 380 / 520;
+  height: auto;
+  position: relative;
 }
 
 .card-perspective-wrapper {
@@ -106,11 +108,12 @@
 }
 
 .card-face .card-body-text p {
-  font-size: 10px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.4;
   color: #0f172a;
-  font-weight: 600;
+  font-weight: 700;
   margin: 0;
+  padding: 8px;
 }
 
 .card-face .card-footer-bar {
@@ -141,16 +144,105 @@
 
   .game-card.focused {
     width: 85vw !important;
-    height: 60vh !important;
-    min-height: 400px;
+    max-width: 400px;
+    height: auto !important;
+    aspect-ratio: 380 / 520;
+    min-height: auto;
   }
 
   .game-card.focused .card-body-text p {
-    font-size: 16px !important;
+    font-size: 1.4rem !important;
+    line-height: 1.3;
   }
 
   .game-card.focused .card-header-bar {
     font-size: 14px !important;
     letter-spacing: 1px !important;
   }
+}
+
+/* Custom Icon Combinations */
+.card-header-icons {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.custom-indicator {
+  margin-left: -6px;
+  margin-top: 6px;
+  background: white;
+  border-radius: 50%;
+  padding: 1px;
+  z-index: 2;
+  box-shadow: 0 0 0 1px white;
+}
+
+.icon-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-indicator-large {
+  position: absolute;
+  bottom: -5px;
+  right: -15px;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+  transform: rotate(15deg);
+}
+
+/* Custom Media Layout (Drawing/Image) */
+.card-content-wrapper.is-custom-media {
+  padding: 0 !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-content-wrapper.is-custom-media .card-body-text {
+  height: 100%;
+  width: 100%;
+}
+
+.card-content-wrapper.is-custom-media .custom-card-media {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-content-wrapper.is-custom-media .custom-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  background: white;
+}
+
+/* Overlay header/footer for custom media cards */
+.card-content-wrapper.is-custom-media .card-header-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(4px);
+  z-index: 10;
+  padding: 8px 12px;
+  margin: 0;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.card-content-wrapper.is-custom-media .card-footer-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(4px);
+  z-index: 10;
+  padding: 4px 12px;
+  margin: 0;
 }

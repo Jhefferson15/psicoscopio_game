@@ -163,6 +163,30 @@
   line-height: 1.4;
 }
 
+.current-voter-label {
+  margin-top: 16px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  background: var(--bg-darker);
+  padding: 8px 16px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border-soft);
+  animation: slide-up 0.3s ease-out;
+}
+
+.current-voter-label strong {
+  color: var(--text);
+  font-weight: 800;
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .vote-scale-container {
   display: flex;
   flex-direction: column;

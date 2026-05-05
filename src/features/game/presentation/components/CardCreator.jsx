@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../state/useGame';
-import { Trash2, Brush, Plus, Brain, Sparkles, Zap, Image as ImageIcon, Type, Upload, Layers, RotateCcw, CheckCircle, Undo2, Redo2, Eraser } from 'lucide-react';
+import { Trash2, Brush, Plus, Brain, Sparkles, Zap, Image as ImageIcon, Type, Upload, Layers, CheckCircle, Undo2, Redo2, Eraser, Puzzle, Award, AlertCircle } from 'lucide-react';
 
 import { GAME_CARDS } from '../../domain/gameConstants';
 import { CustomCard } from '../../domain/entities/CustomCard';
@@ -307,10 +307,15 @@ const CardCreator = () => {
                 >
                   <div className="card-inner-frame">
                     <div className="card-header-badge" style={{ background: selectedType.color }}>
-                       {selectedType.icon === 'brain' && <Brain size={14} />}
-                       {selectedType.icon === 'zap' && <Zap size={14} />}
-                       {selectedType.icon === 'sparkles' && <Sparkles size={14} />}
-                       <span>{selectedType.type}</span>
+                       <div className="badge-icons">
+                         {selectedType.icon === 'brain' && <Brain size={12} />}
+                         {selectedType.icon === 'zap' && <Zap size={12} />}
+                         {selectedType.icon === 'sparkles' && <Sparkles size={12} />}
+                         {selectedType.icon === 'puzzle' && <Puzzle size={12} />}
+                         {selectedType.icon === 'award' && <Award size={12} />}
+                         <Brush size={8} className="custom-indicator-mini" />
+                       </div>
+                       <span>CUSTOM {selectedType.type}</span>
                     </div>
 
                     
@@ -382,7 +387,14 @@ const CardCreator = () => {
                         if (creationMode === 'drawing') setColor(type.color);
                     }}
                   >
-                    {type.type}
+                    <div className="chip-icon-wrapper">
+                      {type.icon === 'brain' && <Brain size={14} />}
+                      {type.icon === 'zap' && <Zap size={14} />}
+                      {type.icon === 'sparkles' && <Sparkles size={14} />}
+                      {type.icon === 'puzzle' && <Puzzle size={14} />}
+                      {type.icon === 'award' && <Award size={14} />}
+                    </div>
+                    <span>{type.type}</span>
                   </button>
                 ))}
 

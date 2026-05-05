@@ -92,16 +92,26 @@
     box-sizing: border-box !important;
   }
 
-  .dashboard-center, .dashboard-sidebar { display: contents !important; }
+  .dashboard-center { 
+    display: flex !important; 
+    flex-direction: column; 
+    width: 100%; 
+    order: 1 !important; 
+    align-items: center;
+    justify-content: center;
+    min-height: 320px; /* Garante espaço mínimo no mobile */
+  }
+  .dashboard-sidebar { display: contents !important; }
 
   .board-hero-wrapper {
-    order: 1 !important;
-    width: 100% !important;
-    max-width: 100% !important;
+    width: 92vw !important;
+    max-width: 450px !important;
     aspect-ratio: 1 / 1 !important;
-    margin: 0 !important;
-    padding: 10px !important;
+    margin: 10px auto !important;
+    padding: 0 !important;
     box-shadow: 0 15px 35px rgba(0,0,0,0.08) !important;
+    height: auto !important;
+    flex-shrink: 0 !important;
   }
 
   .action-area-modern { order: 2 !important; }
@@ -120,7 +130,6 @@
   }
 
   .profile-gallery-area { order: 7 !important; }
-  .special-tiles-panel { order: 8 !important; }
 
   .dashboard-center.is-fullscreen {
     display: flex !important;
@@ -128,14 +137,15 @@
     inset: 0;
     z-index: 2000;
     background: white;
-    padding: 0 !important;
+    padding: 20px !important;
     justify-content: center;
     align-items: center;
   }
 
   .dashboard-center.is-fullscreen .board-hero-wrapper {
-    height: 80dvh !important;
-    aspect-ratio: auto !important;
+    width: min(90vw, 90dvh) !important;
+    height: auto !important;
+    aspect-ratio: 1 / 1 !important;
   }
 
   .dashboard-center.is-fullscreen .bottom-dashboard-row-large { display: none !important; }
@@ -163,7 +173,7 @@
     box-sizing: border-box !important;
   }
 
-  .card-stack-item { flex: 0 0 90px !important; height: 135px !important; }
+  .card-stack-item { flex: 0 0 90px !important; aspect-ratio: 380 / 520 !important; height: auto !important; }
 
   .action-area-modern {
     padding: 15px !important;

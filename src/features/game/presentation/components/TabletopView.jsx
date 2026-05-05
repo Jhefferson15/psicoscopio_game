@@ -17,9 +17,6 @@ import {
   Maximize2, 
   BookOpen, 
   Layers, 
-  ArrowRight,
-  ArrowLeft,
-  Shuffle,
   Users,
   RotateCw,
   MessageSquare,
@@ -36,6 +33,7 @@ const TabletopView = () => {
   const { 
     boardRotation,
     rotateBoard,
+    followActivePlayer,
     diaryEntries,
     activeCardSet,
     players,
@@ -91,8 +89,16 @@ const TabletopView = () => {
           <span className="slogan-minimal">COMO VOCÊ APRENDE, LEMBRA E TRANSFORMA</span>
         </div>
         <div className="header-actions">
-          <button className="btn-rotate-modern" onClick={rotateBoard} title="Rotacionar Tabuleiro">
-            <RotateCw size={18} />
+          <button 
+            className={`btn-rotate-modern ${followActivePlayer ? 'active' : ''}`} 
+            onClick={rotateBoard} 
+            title={followActivePlayer ? "Desativar Acompanhar Jogador" : "Acompanhar Jogador"}
+          >
+            <RotateCw size={18} style={{ 
+              color: followActivePlayer ? 'var(--secondary)' : 'inherit',
+              transform: followActivePlayer ? 'rotate(180deg)' : 'none', 
+              transition: 'all 0.3s ease' 
+            }} />
           </button>
           <button className="btn-fullscreen-modern" onClick={() => setShowCollection(true)} title="Minha Coleção">
             <BookOpen size={18} />
@@ -175,10 +181,6 @@ const TabletopView = () => {
             <div className="board-reflection"></div>
             <BoardView boardRotation={boardRotation} />
           </motion.div>
-
-          <div className="bottom-dashboard-row-large">
-              {/* Espaço central inferior agora limpo conforme solicitado */}
-          </div>
         </section>
 
         {/* Right Side Panels */}
@@ -239,18 +241,7 @@ const TabletopView = () => {
             <Dice />
           </div>
 
-          <div className="special-tiles-panel glass-light">
-            <div className="panel-header">
-              <Shuffle size={16} />
-              <h3>CASAS ESPECIAIS</h3>
-            </div>
-            <div className="tiles-icons-row">
-               <ArrowRight size={16} />
-               <ArrowLeft size={16} />
-               <Shuffle size={16} />
-               <Users size={16} />
-            </div>
-          </div>
+
         </aside>
       </main>
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../state/useGame';
 import { customCardRepository } from '../../data/repositories/LocalStorageCardRepository';
-import { Trash2, ChevronLeft, Brain, Sprout, Puzzle, RotateCcw, Image as ImageIcon, Send } from 'lucide-react';
+import { Trash2, ChevronLeft, Brain, Puzzle, Zap, Award, Sparkles, Brush, Image as ImageIcon, Send } from 'lucide-react';
 
 import './CustomCardsGallery.css';
 
@@ -40,12 +40,14 @@ const CustomCardsGallery = ({ isModal = false, onClose }) => {
 
 
   const getIcon = (type) => {
+    const iconProps = { size: 16 };
     switch (type.toLowerCase()) {
-      case 'reflexão': return <Brain size={16} />;
-      case 'desafio': return <Sprout size={16} />;
-      case 'sorte': return <Puzzle size={16} />;
-      case 'experiência': return <RotateCcw size={16} />;
-      default: return <Brain size={16} />;
+      case 'reflexão': return <Brain {...iconProps} />;
+      case 'memória': return <Puzzle {...iconProps} />;
+      case 'desafio': return <Zap {...iconProps} />;
+      case 'experiência': return <Award {...iconProps} />;
+      case 'sorte': return <Sparkles {...iconProps} />;
+      default: return <Brain {...iconProps} />;
     }
   };
 
@@ -103,8 +105,11 @@ const CustomCardsGallery = ({ isModal = false, onClose }) => {
                 >
                   <div className="gallery-card-inner">
                     <div className="gallery-card-header" style={{ background: card.color }}>
-                      {getIcon(card.type)}
-                      <span>{card.type}</span>
+                      <div className="badge-icons" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        {getIcon(card.type)}
+                        <Brush size={12} style={{ opacity: 0.8 }} />
+                      </div>
+                      <span>{`CUSTOM ${card.type.toUpperCase()}`}</span>
                     </div>
                     
                     <div className="gallery-card-body">

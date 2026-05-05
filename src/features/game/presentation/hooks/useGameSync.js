@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { Player } from '../../domain/entities/Player';
 import { BoardConfig } from '../../domain/entities/BoardConfig';
 import { CardSet } from '../../domain/entities/CardSet';
@@ -89,7 +89,6 @@ export const useGameSync = ({
   setIsRolling,
   setPlayerAttributes,
   setTurnStartTime,
-  setTurnDuration,
   setActiveBoardConfig,
   setActiveCardSet,
   setRoomStatus,
@@ -104,9 +103,9 @@ export const useGameSync = ({
   setActiveVerification,
   joinOnlineGame,
   isMovingRef,
-  turnDuration,
   setCurrentTurn,
   isTurnBeingPassedRef,
+  setTurnDuration,
 }) => {
 
   // EFEITO 1: Listener de gameState (estado dinamico do jogo - RTDB)
