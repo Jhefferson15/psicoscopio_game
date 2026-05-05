@@ -222,8 +222,13 @@ exports.gameAction = onCall({
 
       case "UPDATE_STATUS": {
         const isObsRoom = room.metadata?.hostRole === "observer";
-        if (!isOwner && !isObsRoom) {
-          throw new HttpsError("permission-denied", "Apenas o anfitrião pode mudar o status.");
+        const gameState = room.gameState || {};
+        const players = gameState.players || [];
+        const currentIndex = gameState.currentPlayerIndex;
+        const isCurrentPlayer = players[currentIndex] && players[currentIndex].id === uid;
+
+        if (!isOwner && !isObsRoom && !isCurrentPlayer) {
+          throw new HttpsError("permission-denied", "Apenas o anfitrião ou o jogador atual podem mudar o status.");
         }
         
         const statusUpdates = { status: data.status };

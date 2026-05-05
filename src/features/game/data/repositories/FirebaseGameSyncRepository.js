@@ -264,11 +264,16 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
   listenToRoomConfig(roomId, callback) {
     if (!firestore || !roomId) return () => {};
     const docRef = doc(firestore, "roomConfigs", roomId);
-    return onSnapshot(docRef, (snap) => {
-      if (snap.exists()) {
-        callback(snap.data());
+    return onSnapshot(docRef, 
+      (snap) => {
+        if (snap.exists()) {
+          callback(snap.data());
+        }
+      },
+      (error) => {
+        console.error("Erro ao escutar configuração da sala:", error);
       }
-    });
+    );
   }
 
   // ============================================================
@@ -390,18 +395,40 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
    * Escuta as salas criadas por este anfitrião
    */
   listenToOwnerRooms(ownerId, callback) {
-    if (!firestore || !ownerId) return () => {};
+    if (!firestore || !ownerId) {
+      console.warn("Firestore não configurado ou ownerId ausente. Retornando lista vazia.");
+      if (callback) callback([]);
+      return () => {};
+    }
     
-    const roomsRef = collection(firestore, 'rooms');
-    const q = query(roomsRef, where('ownerId', '==', ownerId), orderBy('createdAt', 'desc'));
-    
-    return onSnapshot(q, (snapshot) => {
-      const ownerRooms = snapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id
-      }));
-      callback(ownerRooms);
-    });
+    try {
+      const roomsRef = collection(firestore, 'rooms');
+      const q = query(roomsRef, where('ownerId', '==', ownerId), orderBy('createdAt', 'desc'));
+      
+      return onSnapshot(q, 
+        (snapshot) => {
+          const ownerRooms = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+              ...data,
+              id: doc.id,
+              // Converte Timestamp para milissegundos para evitar erros de renderização
+              createdAt: data.createdAt?.toMillis ? data.createdAt.toMillis() : (data.createdAt || Date.now())
+            };
+          });
+          callback(ownerRooms);
+        },
+        (error) => {
+          console.error("Erro ao escutar salas do dono:", error);
+          // IMPORTANTE: Chama o callback com lista vazia para liberar o loading em caso de erro (ex: índice faltando)
+          callback([]);
+        }
+      );
+    } catch (error) {
+      console.error("Erro ao configurar listener de salas:", error);
+      callback([]);
+      return () => {};
+    }
   }
 
   /**
@@ -426,6 +453,11 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
         });
         historyState.turns = turns;
         callback({ ...historyState });
+      },
+      (error) => {
+        console.error("Erro ao escutar histórico de turnos:", error);
+        // Mantém o estado atual mas notifica o callback se necessário
+        callback({ ...historyState });
       }
     );
 
@@ -442,6 +474,10 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
           };
         });
         historyState.cards = cards;
+        callback({ ...historyState });
+      },
+      (error) => {
+        console.error("Erro ao escutar histórico de cartas:", error);
         callback({ ...historyState });
       }
     );

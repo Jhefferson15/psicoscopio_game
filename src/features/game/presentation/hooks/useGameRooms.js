@@ -312,9 +312,8 @@ export const useGameRooms = ({
     
     // Todos responderam?
     if (participantsIds.length > 0 && responsesIds.length >= participantsIds.length) {
-      // Somente o primeiro participante online finaliza
-      const sortedParticipants = participantsIds.sort();
-      if (user?.id === sortedParticipants[0]) {
+      // Somente o jogador da vez finaliza (pois ele tem permissão de UPDATE_STATUS)
+      if (user?.id === activeVerification.playerId) {
         const finalize = async () => {
           try {
              // 1. Salva no Firestore

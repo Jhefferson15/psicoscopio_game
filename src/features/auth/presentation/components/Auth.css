@@ -43,6 +43,17 @@
   gap: 10px;
 }
 
+.user-info-badge.clickable {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 12px;
+  transition: background 0.2s;
+}
+
+.user-info-badge.clickable:hover {
+  background: var(--bg-darker);
+}
+
 .user-avatar {
   width: 32px;
   height: 32px;

@@ -38,11 +38,7 @@ const StartMenu = () => {
               animate={{ rotate: 360 }}
               transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
             >
-              {/* Representação minimalista do tabuleiro no logo */}
-              <svg viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="5,5" />
-                <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" strokeWidth="1" />
-              </svg>
+              <img src="/logo.svg" alt="Psicoscópio Logo" style={{ width: '100%', height: '100%' }} />
             </motion.div>
             <h1>PSICOSCÓPIO</h1>
             <p className="subtitle">A Jornada do Conhecimento</p>

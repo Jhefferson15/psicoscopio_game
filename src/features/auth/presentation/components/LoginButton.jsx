@@ -1,10 +1,13 @@
 import { motion } from 'framer-motion';
 import { useAuth } from '../state/useAuth';
+import { useGame } from '../../../game/presentation/state/useGame';
+
 import { LogOut, User as UserIcon } from 'lucide-react';
 import './Auth.css';
 
 export const LoginButton = () => {
   const { user, login, logout, loading, isFirebaseConfigured } = useAuth();
+  const { setCurrentScreen } = useGame();
 
   if (!isFirebaseConfigured) {
     return (
@@ -27,12 +30,16 @@ export const LoginButton = () => {
   if (user) {
     return (
       <div className="user-profile-container">
-        <div className="user-info-badge">
+        <motion.div 
+          className="user-info-badge"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
           <div className="user-avatar-placeholder">
             <UserIcon size={16} />
           </div>
           <span className="user-name">{user.name}</span>
-        </div>
+        </motion.div>
         <motion.button 
           className="btn-tertiary"
           onClick={logout}
@@ -45,6 +52,7 @@ export const LoginButton = () => {
       </div>
     );
   }
+
 
   return (
     <motion.button 

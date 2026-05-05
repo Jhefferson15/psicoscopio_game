@@ -5,13 +5,14 @@
   align-items: center;
   justify-content: center;
   background: rgba(0,0,0,0.01);
+  overflow: hidden;
 }
 
 .card-mockup-container { perspective: 2000px; }
 
 .card-mockup {
-  width: 380px;
-  height: 520px;
+  width: 350px;
+  height: 480px;
   background: var(--white);
   border-radius: var(--radius-lg);
   padding: 8px;
@@ -19,6 +20,7 @@
   border: 6px solid var(--accent-color);
   position: relative;
   transition: transform var(--transition-fast);
+  margin: auto;
 }
 
 .card-inner-frame {

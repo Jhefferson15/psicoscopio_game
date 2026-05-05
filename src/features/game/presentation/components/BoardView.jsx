@@ -194,8 +194,8 @@ const BoardView = ({ boardRotation = 0, isReadOnly = false }) => {
     const observer = new ResizeObserver((entries) => {
       for (let entry of entries) {
         const { width, height } = entry.contentRect;
-        const scale = Math.min(width / 820, height / 820) * 0.98;
-        setBoardScale(Math.max(scale, 0.35));
+        const scale = Math.min(width / 820, height / 820) * 1.02;
+        setBoardScale(scale);
       }
     });
     

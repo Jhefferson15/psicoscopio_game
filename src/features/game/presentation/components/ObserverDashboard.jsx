@@ -15,6 +15,7 @@ const ObserverDashboard = () => {
   const [selectedRoomId, setSelectedRoomId] = useState(null);
   const [selectedBatch, setSelectedBatch] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -22,13 +23,14 @@ const ObserverDashboard = () => {
       return;
     }
 
+    setLoading(true);
     const unsubscribe = syncRepository.listenToOwnerRooms(user.id, (ownerRooms) => {
       setRooms(ownerRooms.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [user, setCurrentScreen]);
+  }, [user, setCurrentScreen, refreshKey]);
 
   if (selectedRoomId) {
     return <RoomMonitor roomId={selectedRoomId} onBack={() => setSelectedRoomId(null)} />;
@@ -80,7 +82,7 @@ const ObserverDashboard = () => {
               ))}
             </select>
           )}
-          <button className="refresh-btn" onClick={() => setLoading(true)}>
+          <button className="refresh-btn" onClick={() => setRefreshKey(prev => prev + 1)}>
             <RefreshCw size={18} className={loading ? 'spinning' : ''} />
           </button>
           <div className="user-badge">

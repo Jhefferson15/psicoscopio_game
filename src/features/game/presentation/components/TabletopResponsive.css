@@ -49,15 +49,17 @@
   }
   
   .tabletop-header-modern {
-    height: 64px !important;
+    position: relative !important;
+    height: 46px !important;
     padding: 0 12px !important;
     justify-content: space-between !important;
     background: white;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    z-index: 100 !important;
   }
 
   .game-logo-modern h1 {
-    font-size: 18px !important;
+    font-size: 16px !important;
     letter-spacing: 2px !important;
     margin: 0 !important;
   }
@@ -84,10 +86,10 @@
   .tabletop-dashboard-grid {
     display: flex !important;
     flex-direction: column !important;
-    padding: 10px !important;
-    gap: 15px !important;
+    padding: 0 !important;
+    gap: 8px !important;
     overflow-y: auto !important;
-    height: calc(100dvh - 64px - 60px) !important;
+    height: calc(100dvh - 46px - 50px) !important;
     background: #f8fafc;
     box-sizing: border-box !important;
   }
@@ -98,19 +100,19 @@
     width: 100%; 
     order: 1 !important; 
     align-items: center;
-    justify-content: center;
-    min-height: 320px; /* Garante espaço mínimo no mobile */
+    justify-content: flex-start;
+    min-height: 100vw;
   }
   .dashboard-sidebar { display: contents !important; }
 
   .board-hero-wrapper {
-    width: 92vw !important;
-    max-width: 450px !important;
+    width: 100vw !important;
+    max-width: 850px !important;
     aspect-ratio: 1 / 1 !important;
-    margin: 10px auto !important;
+    margin: 0 auto !important;
     padding: 0 !important;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.08) !important;
-    height: auto !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important;
+    height: 100vw !important;
     flex-shrink: 0 !important;
   }
 
@@ -176,26 +178,26 @@
   .card-stack-item { flex: 0 0 90px !important; aspect-ratio: 380 / 520 !important; height: auto !important; }
 
   .action-area-modern {
-    padding: 15px !important;
+    padding: 10px !important;
     background: white !important;
-    border-radius: 20px !important;
+    border-radius: 18px !important;
     box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important;
+    margin-bottom: 20px !important;
+    width: 96% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
   }
 
   .dashboard-footer-modern {
-    height: 70px !important;
+    position: relative !important;
+    height: 50px !important;
     padding: 0 15px !important;
-    flex-direction: row !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 1000 !important;
     background: white !important;
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.05) !important;
+    z-index: 100 !important;
     border-top: 1px solid rgba(0,0,0,0.05) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
   }
 
   .footer-right-area {

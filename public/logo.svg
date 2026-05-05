@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Modern Android-style Rounded Square (Squircle) Background -->
+  <!-- We use a slightly off-white to make it visible, or just pure white with a subtle border -->
+  <rect x="0" y="0" width="512" height="512" rx="112" ry="112" fill="#ffffff" />
+  
+  <!-- The Home Screen Circles Pattern in the exact blue color (#4885CE) -->
+  <g transform="translate(256, 256)">
+    <!-- Outer dashed circle: r=45% of 512 is ~230, strokeWidth=2% of 512 is ~10 -->
+    <circle cx="0" cy="0" r="230" fill="none" stroke="#4885CE" stroke-width="10" stroke-dasharray="25,25" />
+    <!-- Inner solid circle: r=30% of 512 is ~153, strokeWidth=1% of 512 is ~5 -->
+    <circle cx="0" cy="0" r="153" fill="none" stroke="#4885CE" stroke-width="5" />
+  </g>
+</svg>

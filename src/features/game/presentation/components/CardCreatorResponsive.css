@@ -1,4 +1,11 @@
 /* CardCreatorResponsive.css */
+@media (max-width: 1100px) {
+  .creator-layout { width: 98%; height: 95vh; }
+  .creator-body { grid-template-columns: 1fr 360px; }
+  .card-mockup { width: 300px; height: 420px; }
+  .toolbox-section { padding: 1.5rem; }
+}
+
 @media (max-width: 768px) {
   .creator-layout {
     width: 100%;

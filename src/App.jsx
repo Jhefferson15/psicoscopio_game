@@ -28,6 +28,7 @@ import PlayerSelectorModal from './features/game/presentation/components/PlayerS
 
 
 
+
 const GameContent = () => {
   const { 
     players, 
@@ -138,6 +139,7 @@ const GameContent = () => {
             <EvaluationForm onComplete={confirmGoToMenu} />
           </motion.div>
         ) : !isBoardFullScreen ? (
+
           <motion.div
             key="tabletop"
             initial={{ opacity: 0 }}

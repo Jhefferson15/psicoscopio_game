@@ -32,16 +32,16 @@ export const ActionVerificationForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hoveredValue, setHoveredValue] = useState(null);
 
+  // Filtra participantes para incluir todos os jogadores mas excluir observadores
+  const participantsArray = useMemo(() => {
+    return Object.values(roomParticipants || {}).filter(p => !p.isObserver);
+  }, [roomParticipants]);
+
   // Se não houver verificação ativa ou o status não for este, não renderiza
   if (roomStatus !== 'verifying_action' || !activeVerification) return null;
 
   const { playerId, cardType, responses = {}, cardText } = activeVerification;
   const targetPlayer = players.find(p => p.id === playerId);
-  
-  // Filtra participantes para incluir todos os jogadores mas excluir observadores
-  const participantsArray = useMemo(() => {
-    return Object.values(roomParticipants || {}).filter(p => !p.isObserver);
-  }, [roomParticipants]);
 
   const totalParticipants = participantsArray.length;
   const responsesCount = Object.keys(responses).length;

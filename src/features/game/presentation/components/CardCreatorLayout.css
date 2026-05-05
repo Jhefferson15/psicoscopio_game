@@ -26,7 +26,7 @@
 
 .creator-layout {
   width: 95%;
-  max-width: 1200px;
+  max-width: 1400px;
   height: 90vh;
   background: var(--glass-bg);
   border: 1px solid var(--border-glass);
@@ -50,7 +50,6 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-left: 60px;
 }
 
 .creator-main-title h1 {
@@ -137,7 +136,7 @@
 .creator-body {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: 1fr 420px;
   overflow: hidden;
 }
 

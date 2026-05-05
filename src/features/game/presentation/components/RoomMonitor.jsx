@@ -206,7 +206,16 @@ const RoomMonitor = ({ roomId, onBack }) => {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <div className="t-time">{new Date(card.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                  <div className="t-time">
+                    {(() => {
+                      try {
+                        const date = card.timestamp instanceof Date ? card.timestamp : new Date(card.timestamp);
+                        return isNaN(date.getTime()) ? '--:--' : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                      } catch (e) {
+                        return '--:--';
+                      }
+                    })()}
+                  </div>
                   <div className="t-content">
                     <div className="t-header">
                       <span className="t-player">{card.playerName}</span>
