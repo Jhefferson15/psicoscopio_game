@@ -1,5 +1,5 @@
 export class GameSyncRepository {
-  async createRoom(_gameData) { // eslint-disable-line no-unused-vars
+  async createRoom(_gameData, _ownerId, _ownerName) { // eslint-disable-line no-unused-vars
     throw new Error('Method not implemented');
   }
 

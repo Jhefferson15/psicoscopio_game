@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, X, ChevronRight } from 'lucide-react';
+import { Users, X, ChevronRight, Map as MapIcon } from 'lucide-react';
 import { useGame } from '../state/useGame';
+import BoardView from './BoardView';
 import './PlayerSelectorModal.css';
 
 const PlayerSelectorModal = () => {
@@ -8,7 +9,7 @@ const PlayerSelectorModal = () => {
 
   if (!playerSelectionTask) return null;
 
-  const { title, message, excludeSelf = true, onSelect } = playerSelectionTask;
+  const { title, message, excludeSelf = true, onSelect, action } = playerSelectionTask;
   
   const selectablePlayers = players.filter((_, index) => {
     if (excludeSelf && index === currentPlayerIndex) return false;
@@ -23,17 +24,19 @@ const PlayerSelectorModal = () => {
     setPlayerSelectionTask(null);
   };
 
+  const isSwapAction = action === 'SWAP_POSITIONS';
+
   return (
     <AnimatePresence>
       <motion.div 
-        className="player-selector-overlay"
+        className={`player-selector-overlay ${isSwapAction ? 'with-preview' : ''}`}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={handleClose}
       >
         <motion.div 
-          className="player-selector-content"
+          className={`player-selector-content ${isSwapAction ? 'wide-content' : ''}`}
           initial={{ scale: 0.9, y: 20, opacity: 0 }}
           animate={{ scale: 1, y: 0, opacity: 1 }}
           exit={{ scale: 0.9, y: 20, opacity: 0 }}
@@ -52,26 +55,42 @@ const PlayerSelectorModal = () => {
             </button>
           </div>
 
-          <div className="players-grid">
-            {selectablePlayers.map((player) => (
-              <motion.button
-                key={player.id}
-                className="player-option-card"
-                whileHover={{ scale: 1.02, backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => handleSelect(player.id)}
-                style={{ '--player-color': player.color }}
-              >
-                <div className="player-option-avatar" style={{ backgroundColor: player.color }}>
-                  {player.name.charAt(0).toUpperCase()}
+          <div className="selector-main-layout">
+            {isSwapAction && (
+              <div className="board-preview-mini-container">
+                <div className="preview-label">
+                  <MapIcon size={14} />
+                  <span>Mapa de Posições</span>
                 </div>
-                <div className="player-option-info">
-                  <span className="player-option-name">{player.name}</span>
-                  <span className="player-option-status">Pronto para trocar</span>
+                <div className="preview-svg-holder">
+                  <BoardView isReadOnly={true} />
                 </div>
-                <ChevronRight className="option-chevron" size={20} />
-              </motion.button>
-            ))}
+              </div>
+            )}
+
+            <div className="players-list-section">
+              <div className="players-grid">
+                {selectablePlayers.map((player) => (
+                  <motion.button
+                    key={player.id}
+                    className="player-option-card"
+                    whileHover={{ scale: 1.02, backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handleSelect(player.id)}
+                    style={{ '--player-color': player.color }}
+                  >
+                    <div className="player-option-avatar" style={{ backgroundColor: player.color }}>
+                      {player.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="player-option-info">
+                      <span className="player-option-name">{player.name}</span>
+                      <span className="player-option-status">Pronto para trocar</span>
+                    </div>
+                    <ChevronRight className="option-chevron" size={20} />
+                  </motion.button>
+                ))}
+              </div>
+            </div>
           </div>
           
           <p className="selector-hint">Selecione um jogador para prosseguir com a ação.</p>

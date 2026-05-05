@@ -98,10 +98,16 @@ export class ProcessTileActionUseCase {
       }
 
       case 'SWAP_PLACE': {
-        const otherIndex = (currentPlayerIndex + 1) % allPlayers.length;
-        const tempPos = player.position;
-        player.position = allPlayers[otherIndex].position;
-        allPlayers[otherIndex].position = tempPos;
+        uiActions.push({
+          type: 'SELECT_PLAYER',
+          payload: {
+            action: 'SWAP_POSITIONS',
+            title: 'Troca de Lugar',
+            message: 'Escolha um jogador para trocar de posição com você!',
+            excludeSelf: true
+          }
+        });
+        modalOpened = true;
         break;
       }
 

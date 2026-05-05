@@ -17,7 +17,7 @@ import { database, functions, firestore } from "../../../../config/firebase.js";
 import { GameSyncRepository } from "../../domain/repositories/GameSyncRepository.js";
 
 export class FirebaseGameSyncRepository extends GameSyncRepository {
-  async createRoom(gameData, ownerId) {
+  async createRoom(gameData, ownerId, ownerName) {
     if (!database) {
       throw new Error("Firebase não configurado");
     }
@@ -34,7 +34,7 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
       status: 'waiting',
       createdAt: Date.now(),
       participants: (ownerId && gameData.metadata?.hostRole !== 'observer') 
-        ? { [ownerId]: { id: ownerId, name: 'Anfitrião', isOnline: true } } 
+        ? { [ownerId]: { id: ownerId, name: ownerName || 'Anfitrião', isOnline: true } } 
         : {}, 
       gameState: dynamicState // Apenas estado dinâmico no RTDB
     };
@@ -163,7 +163,7 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
     // Tenta entrar via function para validar limites e permissões
     await this._callGameAction(roomId, "JOIN_ROOM", { 
       name: user.name, 
-      photoURL: user.photoURL 
+      photoURL: null 
     });
 
     // Após entrar, lê os dados da sala via RTDB (mais eficiente para leitura do estado dinâmico)

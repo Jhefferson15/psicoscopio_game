@@ -25,12 +25,13 @@ import {
 import { useGame } from '../state/useGame';
 import { useBoardEditor } from '../hooks/useBoardEditor';
 import { STANDARD_TILE_CONFIG } from '../../domain/gameConstants';
+import BoardPreview from './BoardPreview';
+import TileEditorPopup from './TileEditorPopup';
 import './BoardEditorLayout.css';
 import './BoardEditorSidebar.css';
 import './BoardEditorContent.css';
 import './BoardEditorPreview.css';
 import './BoardEditorResponsive.css';
-
 
 const COLORS = [
   '#4885CE', '#6FB05E', '#D84B42', '#7B4BB1', '#F4C746', 
@@ -45,13 +46,11 @@ const TILE_TYPES = [
   { id: 'desafio', label: 'Desafio', color: STANDARD_TILE_CONFIG.desafio.color, icon: Zap },
   { id: 'experiencia', label: 'Experiência', color: STANDARD_TILE_CONFIG.experiencia.color, icon: Sparkles },
   { id: 'sorte', label: 'Sorte', color: STANDARD_TILE_CONFIG.sorte.color, icon: Sparkles },
-  
   { id: 'custom_memoria', label: 'Custom Mem', color: STANDARD_TILE_CONFIG.memoria.color, icon: Brain },
   { id: 'custom_reflexao', label: 'Custom Refl', color: STANDARD_TILE_CONFIG.reflexao.color, icon: Brain },
   { id: 'custom_desafio', label: 'Custom Des', color: STANDARD_TILE_CONFIG.desafio.color, icon: Zap },
   { id: 'custom_experiencia', label: 'Custom Exp', color: STANDARD_TILE_CONFIG.experiencia.color, icon: Sparkles },
   { id: 'custom_sorte', label: 'Custom Sorte', color: STANDARD_TILE_CONFIG.sorte.color, icon: Sparkles },
-
   { id: 'custom_card', label: 'Custom Geral', color: '#F4C746', icon: Sparkles },
   { id: 'especial', label: 'Especial', color: '#FFFFFF', icon: Settings }
 ];
@@ -62,7 +61,8 @@ const TILE_ACTIONS = [
   { id: 'BACK_2', label: 'Voltar 2', icon: RotateCcw, color: '#EF4444' },
   { id: 'MOVE_INNER', label: 'Ir p/ Centro', icon: ChevronLeft, color: '#6366F1' },
   { id: 'MOVE_OUTER', label: 'Ir p/ Borda', icon: ChevronLeft, color: '#F59E0B' },
-  { id: 'DRAW_2', label: 'Comprar 2', icon: Plus, color: '#8B5CF6' }
+  { id: 'DRAW_2', label: 'Comprar 2', icon: Plus, color: '#8B5CF6' },
+  { id: 'SWAP_PLACE', label: 'Trocar de Lugar', icon: Users, color: '#F43F5E' }
 ];
 
 const BoardEditor = () => {
@@ -110,11 +110,9 @@ const BoardEditor = () => {
     COLORS
   });
 
-
-
   const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
   const [showCollectionsMobile, setShowCollectionsMobile] = useState(false);
-
+  const [isFullScreenPreviewOpen, setIsFullScreenPreviewOpen] = useState(false);
 
   if (!editingConfig) return null;
 
@@ -169,10 +167,7 @@ const BoardEditor = () => {
                 </label>
               </div>
 
-              <button 
-                className="btn-randomize-premium" 
-                onClick={handleRandomize} 
-              >
+              <button className="btn-randomize-premium" onClick={handleRandomize}>
                 <Sparkles size={16} />
                 <span>GERAR ALEATÓRIO</span>
               </button>
@@ -309,9 +304,7 @@ const BoardEditor = () => {
 
                     <div className="mechanic-card span-2">
                       <h4><Users size={16} /> Posições Iniciais</h4>
-                      <p className="mechanic-hint">
-                        Clique em um jogador abaixo e depois em uma casa no tabuleiro.
-                      </p>
+                      <p className="mechanic-hint">Clique em um jogador abaixo e depois em uma casa no tabuleiro.</p>
                       <div className="initial-positions-grid">
                         {[0, 1, 2, 3].map((playerIdx) => (
                           <button 
@@ -349,16 +342,13 @@ const BoardEditor = () => {
                           <span className="slider-premium round"></span>
                         </label>
                       </div>
-                      <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>
-                        Se habilitado, os jogadores passarão pelo ateliê de criação antes da partida.
-                      </p>
                     </div>
 
                     <div className="mechanic-card">
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <BookOpen size={16} color="#7B4BB1" />
-                          <h4 style={{ margin: 0 }}>Informações no Tabuleiro</h4>
+                          <h4 style={{ margin: 0 }}>Rótulos Tabuleiro</h4>
                         </div>
                         <label className="switch-premium">
                           <input 
@@ -374,16 +364,13 @@ const BoardEditor = () => {
                           <span className="slider-premium round"></span>
                         </label>
                       </div>
-                      <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>
-                        Mostra ou oculta os nomes das casas no tabuleiro.
-                      </p>
                     </div>
 
                     <div className="mechanic-card">
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <Sparkles size={16} color="#6FB05E" />
-                          <h4 style={{ margin: 0 }}>Informações nas Cartas</h4>
+                          <h4 style={{ margin: 0 }}>Rótulos Cartas</h4>
                         </div>
                         <label className="switch-premium">
                           <input 
@@ -399,9 +386,6 @@ const BoardEditor = () => {
                           <span className="slider-premium round"></span>
                         </label>
                       </div>
-                      <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>
-                        Mostra ou oculta o tipo e o número da carta.
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -414,111 +398,15 @@ const BoardEditor = () => {
                     {isPreviewExpanded ? 'Recolher' : 'Ver Tabuleiro'}
                   </button>
                 </div>
-                <div className="preview-svg-wrapper">
-                  <svg viewBox="0 0 800 800" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <filter id="shadow-preview" x="-10%" y="-10%" width="120%" height="120%">
-                        <feDropShadow dx="1" dy="2" stdDeviation="2" floodOpacity="0.1" />
-                      </filter>
-                      <path id="arc-inner-p" d="M -28 -133 L 28 -133 L 36 -167 L -36 -167 Z" />
-                      <path id="arc-middle-p" d="M -34 -208 L 34 -208 L 40 -242 L -40 -242 Z" />
-                      <path id="arc-outer-p" d="M -37 -283 L 37 -283 L 43 -317 L -43 -317 Z" />
-                      <rect id="arc-special-p" x="-50" y="-15" width="100" height="30" rx="4" />
-                      <g id="arrow-inner-p">
-                        <line x1="0" y1="-8" x2="0" y2="8" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round" />
-                        <path d="M -5 3 L 0 8 L 5 3" fill="none" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </g>
-                      <g id="arrow-outer-p">
-                        <line x1="0" y1="8" x2="0" y2="-8" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round" />
-                        <path d="M -5 -3 L 0 -8 L 5 -3" fill="none" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </g>
-                    </defs>
-                    <g transform="translate(400, 400)">
-                      <circle r="115" fill="#f8fafc" stroke="#e2e8f0" strokeWidth="1" />
-                      <text textAnchor="middle" y="5" fill="#94a3b8" fontSize="12" fontWeight="700">CENTRO</text>
-                      {editingConfig.tiles.filter(t => t.ring !== 'center').map((tile) => {
-                        const actualIdx = editingConfig.tiles.findIndex(t => t.id === tile.id);
-                        const isSpecial = tile.ring === 'special';
-                        
-                        let transform = `rotate(${tile.angle})`;
-                        if (isSpecial) {
-                           let tx = 0, ty = 0;
-                           if (tile.id === 's4') ty = -305;
-                           if (tile.id === 's1') tx = 310;
-                           if (tile.id === 's2') ty = 320;
-                           if (tile.id === 's3') tx = -310;
-                           transform = `translate(${tx}, ${ty})`;
-                        }
-
-                        return (
-                          <g 
-                            key={tile.id} 
-                            transform={transform} 
-                            className={`preview-tile-group ${selectedTileIndex === actualIdx ? 'selected' : ''} ${isSpecial ? 'special-preview' : ''}`}
-                            onClick={() => {
-                              if (selectedPlayerIdx !== null) {
-                                handleInitialPositionChange(selectedPlayerIdx, actualIdx);
-                                setSelectedPlayerIdx(null);
-                              } else {
-                                setSelectedTileIndex(actualIdx);
-                              }
-                            }}
-                          >
-                            <use 
-                              href={`#arc-${tile.ring}-p`} 
-                              fill={tile.color} 
-                              stroke={selectedTileIndex === actualIdx ? '#6366f1' : tile.color} 
-                              strokeWidth={isSpecial ? "2" : "8"} 
-                              strokeLinejoin="round" 
-                              filter="url(#shadow-preview)" 
-                            />
-                            {tile.label ? (
-                              <g transform={isSpecial ? "translate(0, 0)" : ""}>
-                                {tile.label.split('\n').map((line, i, arr) => (
-                                  <text 
-                                    key={i}
-                                    x="0" 
-                                    y={isSpecial ? (-(arr.length-1)*5 + i*10) : (tile.ring === 'inner' ? -145 : (tile.ring === 'middle' ? -220 : -295)) + (i*8)} 
-                                    textAnchor="middle" 
-                                    fill={isSpecial ? "#333" : "#FFF"} 
-                                    fontSize={isSpecial ? "10" : "8"} 
-                                    fontWeight="bold"
-                                    style={{ pointerEvents: 'none' }}
-                                  >
-                                    {line.substring(0, 15)}
-                                  </text>
-                                ))}
-                              </g>
-                            ) : (
-                              <circle 
-                                cx="0" 
-                                cy={tile.ring === 'inner' ? -150 : (tile.ring === 'middle' ? -225 : -300)} 
-                                r="5" 
-                                fill="#FFF" 
-                                opacity="0.5" 
-                                style={{ pointerEvents: 'none' }} 
-                              />
-                            )}
-                            {tile.action === 'MOVE_INNER' && (
-                              <use 
-                                href="#arrow-inner-p" 
-                                transform={`translate(18, ${tile.ring === 'inner' ? -150 : (tile.ring === 'middle' ? -225 : -300)})`} 
-                                style={{ pointerEvents: 'none' }} 
-                              />
-                            )}
-                            {tile.action === 'MOVE_OUTER' && (
-                              <use 
-                                href="#arrow-outer-p" 
-                                transform={`translate(18, ${tile.ring === 'inner' ? -150 : (tile.ring === 'middle' ? -225 : -300)})`} 
-                                style={{ pointerEvents: 'none' }} 
-                              />
-                            )}
-                          </g>
-                        );
-                      })}
-                    </g>
-                  </svg>
-                </div>
+                <BoardPreview 
+                  editingConfig={editingConfig}
+                  selectedTileIndex={selectedTileIndex}
+                  setSelectedTileIndex={setSelectedTileIndex}
+                  selectedPlayerIdx={selectedPlayerIdx}
+                  setSelectedPlayerIdx={setSelectedPlayerIdx}
+                  handleInitialPositionChange={handleInitialPositionChange}
+                  onOpenFullScreen={() => setIsFullScreenPreviewOpen(true)}
+                />
               </div>
             </div>
 
@@ -539,7 +427,6 @@ const BoardEditor = () => {
                     <div className="tile-color-dot" style={{ width: '20px', height: '20px', borderRadius: '50%', background: tile.color, border: '1px solid rgba(0,0,0,0.1)' }} />
                     <Edit3 className="tile-edit-icon" size={14} color="#64748b" />
                   </div>
-
                 ))}
               </div>
             </div>
@@ -548,132 +435,50 @@ const BoardEditor = () => {
       </motion.div>
 
       <AnimatePresence>
-        {selectedTileIndex !== null && currentTile && (
+        <TileEditorPopup 
+          selectedTileIndex={selectedTileIndex}
+          currentTile={currentTile}
+          setSelectedTileIndex={setSelectedTileIndex}
+          handleTileChange={handleTileChange}
+          TILE_TYPES={TILE_TYPES}
+          TILE_ACTIONS={TILE_ACTIONS}
+          COLORS={COLORS}
+          setEditingConfig={setEditingConfig}
+        />
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isFullScreenPreviewOpen && (
           <motion.div 
-            className="tile-popup-overlay"
+            className="fullscreen-preview-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setSelectedTileIndex(null)}
+            onClick={() => setIsFullScreenPreviewOpen(false)}
           >
             <motion.div 
-              className="tile-popup-content glass-light"
-              initial={{ scale: 0.9, y: 50, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.9, y: 50, opacity: 0 }}
+              className="fullscreen-preview-content"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="popup-header">
-                <h3>Editar Casa #{selectedTileIndex + 1}</h3>
-                <button className="btn-close-popup" onClick={() => setSelectedTileIndex(null)}>
-                  <X size={20} />
+              <div className="fullscreen-header">
+                <h3>Preview Expandido</h3>
+                <button className="btn-close-fullscreen" onClick={() => setIsFullScreenPreviewOpen(false)}>
+                  <X size={24} />
                 </button>
               </div>
-
-              <div className="popup-body">
-                <div className="popup-field">
-                  <label>Rótulo da Casa</label>
-                  <textarea 
-                    value={currentTile.label || ''} 
-                    onChange={(e) => handleTileChange(selectedTileIndex, 'label', e.target.value)}
-                    className="tile-label-input"
-                    placeholder="Ex: Ponto de Partida"
-                    rows={2}
-                  />
-                </div>
-
-                <div className="popup-field">
-                  <label>Descrição da Casa</label>
-                  <textarea 
-                    value={currentTile.description || ''} 
-                    onChange={(e) => handleTileChange(selectedTileIndex, 'description', e.target.value)}
-                    className="tile-description-input"
-                    placeholder="Explique o que acontece nesta casa..."
-                    rows={3}
-                  />
-                </div>
-
-                <div className="popup-field">
-                  <label>Tipo de Casa</label>
-                  <div className="type-grid-quick">
-                    {TILE_TYPES.map(type => (
-                      <button 
-                        key={type.id}
-                        className={`type-btn-quick ${currentTile.type === type.id ? 'active' : ''}`}
-                        style={{ '--cat-color': type.color }}
-                        onClick={() => {
-                          const tileConfig = STANDARD_TILE_CONFIG[type.id];
-                          setEditingConfig(prev => {
-                            const newTiles = [...prev.tiles];
-                            newTiles[selectedTileIndex] = {
-                              ...newTiles[selectedTileIndex],
-                              type: type.id,
-                              ...(tileConfig ? {
-                                color: tileConfig.color,
-                                label: tileConfig.label
-                              } : {})
-                            };
-                            return { ...prev, tiles: newTiles };
-                          });
-                        }}
-                      >
-                        <type.icon size={16} />
-                        <span>{type.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="popup-field">
-                  <label>Ação Especial</label>
-                  <div className="action-grid-quick">
-                    {TILE_ACTIONS.map(action => (
-                      <button 
-                        key={action.id || 'none'}
-                        className={`action-btn-quick ${currentTile.action === action.id ? 'active' : ''}`}
-                        onClick={() => {
-                          setEditingConfig(prev => {
-                            const newTiles = [...prev.tiles];
-                            const isStandard = !!STANDARD_TILE_CONFIG[newTiles[selectedTileIndex].type];
-                            newTiles[selectedTileIndex] = {
-                              ...newTiles[selectedTileIndex],
-                              action: action.id,
-                              ...(action.id && action.color && !isStandard ? { color: action.color } : {})
-                            };
-                            return { ...prev, tiles: newTiles };
-                          });
-                        }}
-                      >
-                        <action.icon size={14} />
-                        <span>{action.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-
-                {!STANDARD_TILE_CONFIG[currentTile.type] && (
-                  <div className="popup-field">
-                    <label>Cor da Casa</label>
-                    <div className="color-grid-quick">
-                      {COLORS.map(color => (
-                        <div 
-                          key={color}
-                          className={`color-dot-quick ${currentTile.color === color ? 'active' : ''}`}
-                          style={{ background: color }}
-                          onClick={() => handleTileChange(selectedTileIndex, 'color', color)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
-                <button className="btn-save-board" onClick={() => setSelectedTileIndex(null)}>
-                  <Check size={18} />
-                  <span>Concluir</span>
-                </button>
+              <div className="fullscreen-body">
+                <BoardPreview 
+                  editingConfig={editingConfig}
+                  selectedTileIndex={selectedTileIndex}
+                  setSelectedTileIndex={setSelectedTileIndex}
+                  selectedPlayerIdx={selectedPlayerIdx}
+                  setSelectedPlayerIdx={setSelectedPlayerIdx}
+                  handleInitialPositionChange={handleInitialPositionChange}
+                  isLarge={true}
+                />
               </div>
             </motion.div>
           </motion.div>

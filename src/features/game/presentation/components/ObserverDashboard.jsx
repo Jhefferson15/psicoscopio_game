@@ -84,7 +84,7 @@ const ObserverDashboard = () => {
             <RefreshCw size={18} className={loading ? 'spinning' : ''} />
           </button>
           <div className="user-badge">
-            <img src={user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=teacher'} alt="User" />
+            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id || 'teacher'}`} alt="User" />
             <span>{user?.displayName || 'Professor'}</span>
           </div>
         </div>
@@ -392,7 +392,7 @@ const RoomCard = ({ room, onClick }) => {
             }}
             title={p.name}
           >
-            <img src={p.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`} alt={p.name} />
+            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`} alt={p.name} />
           </div>
         ))}
         {participantsSummary.length === 0 && <span className="no-players">Ninguém entrou ainda</span>}

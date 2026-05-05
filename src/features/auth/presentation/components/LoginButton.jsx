@@ -28,13 +28,9 @@ export const LoginButton = () => {
     return (
       <div className="user-profile-container">
         <div className="user-info-badge">
-          {user.photoURL ? (
-            <img src={user.photoURL} alt={user.name} className="user-avatar" />
-          ) : (
-            <div className="user-avatar-placeholder">
-              <UserIcon size={16} />
-            </div>
-          )}
+          <div className="user-avatar-placeholder">
+            <UserIcon size={16} />
+          </div>
           <span className="user-name">{user.name}</span>
         </div>
         <motion.button 

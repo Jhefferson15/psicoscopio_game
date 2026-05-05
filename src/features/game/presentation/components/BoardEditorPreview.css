@@ -17,7 +17,7 @@
 .tile-popup-overlay {
   position: fixed;
   inset: 0;
-  z-index: 5000;
+  z-index: 11000; /* Increased to be above fullscreen preview (10000) */
   background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(12px);
   display: flex;
@@ -34,13 +34,13 @@
   max-width: 500px;
   max-height: 90vh;
   border-radius: 35px;
-  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.15);
   padding: 2.5rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
   overflow-y: auto;
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .popup-header { 
@@ -204,5 +204,191 @@
   border-color: #cbd5e1;
   background: white;
   box-shadow: 0 0 0 4px rgba(203, 213, 225, 0.1);
+}
+
+/* Fullscreen Preview Styles */
+.preview-svg-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.03); /* Thinner border */
+  border-radius: 16px;
+}
+
+.preview-svg-wrapper svg {
+  cursor: grab;
+  user-select: none;
+}
+
+.preview-svg-wrapper svg:active {
+  cursor: grabbing;
+}
+
+.btn-open-fullscreen {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: white;
+  border: 1px solid rgba(0,0,0,0.1);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748b;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.btn-open-fullscreen:hover {
+  background: #f8fafc;
+  color: #6366f1;
+  transform: scale(1.1);
+}
+
+.fullscreen-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(15px);
+  z-index: 10000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.fullscreen-preview-content {
+  background: white;
+  width: 95vw;
+  height: 90vh;
+  max-width: 1200px;
+  border-radius: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 50px 100px -20px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.fullscreen-header {
+  padding: 1.5rem 2.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.fullscreen-header h3 {
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: #1e293b;
+  margin: 0;
+}
+
+.btn-close-fullscreen {
+  background: #f1f5f9;
+  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.2s;
+}
+
+.btn-close-fullscreen:hover {
+  background: #fee2e2;
+  color: #ef4444;
+  transform: rotate(90deg);
+}
+
+.fullscreen-body {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  overflow: hidden;
+  background: radial-gradient(circle at center, #f8fafc, #f1f5f9);
+}
+
+.fullscreen-body .preview-svg-wrapper.large {
+  height: 100%;
+  max-width: 90vh; /* Keep it square-ish for the board */
+}
+
+@media (max-width: 1024px) {
+  .btn-open-fullscreen {
+    display: none; /* Hide on mobile/tablet where toggle preview is already present */
+  }
+}
+
+/* Zoom Controls */
+.zoom-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 20;
+}
+
+.btn-zoom {
+  background: white;
+  border: 1px solid rgba(0,0,0,0.1);
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748b;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+}
+
+.btn-zoom:hover {
+  background: #f8fafc;
+  color: #6366f1;
+  transform: scale(1.1);
+}
+
+.zoom-level {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748b;
+  text-align: center;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.fullscreen-body .zoom-controls {
+  bottom: 40px;
+  right: 40px;
+}
+
+.fullscreen-body .btn-zoom {
+  width: 50px;
+  height: 50px;
+  border-radius: 15px;
+}
+
+.preview-svg-content {
+  /* Removed transition: transform because it conflicts with framer-motion drag */
+  transform-origin: center;
 }
 

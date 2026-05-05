@@ -95,13 +95,9 @@ const WaitingPlayers = () => {
                 className={`ready-item-premium ${readyPlayers[p.id] ? 'is-ready' : ''}`}
               >
                 <div className="player-avatar-wrapper" style={{ borderColor: players[index]?.color || '#64748b' }}>
-                   {p.photoURL ? (
-                     <img src={p.photoURL} alt={p.name} className="avatar-img-premium" />
-                   ) : (
-                     <div className="avatar-placeholder-premium" style={{ backgroundColor: players[index]?.color || '#64748b' }}>
-                        {p.name?.charAt(0).toUpperCase() || '?'}
-                     </div>
-                   )}
+                   <div className="avatar-placeholder-premium" style={{ backgroundColor: players[index]?.color || '#64748b' }}>
+                      {p.name?.charAt(0).toUpperCase() || '?'}
+                   </div>
                    {/* Indicador de Presença */}
                    <div className={`presence-indicator-modern ${p.isOnline ? 'is-online' : 'is-offline'}`} 
                         title={p.isOnline ? 'Online' : 'Offline'}>

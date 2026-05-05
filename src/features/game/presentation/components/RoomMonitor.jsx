@@ -125,7 +125,7 @@ const RoomMonitor = ({ roomId, onBack }) => {
             {participants.map((p, idx) => (
               <div key={p.id} className={`p-item ${roomData.gameState?.currentPlayerIndex === idx ? 'current' : ''}`}>
                 <div className="p-avatar">
-                  <img src={p.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`} alt={p.name} />
+                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`} alt={p.name} />
                   <div className={`p-online-dot ${p.isOnline ? 'online' : 'offline'}`}></div>
                 </div>
                 <div className="p-info">

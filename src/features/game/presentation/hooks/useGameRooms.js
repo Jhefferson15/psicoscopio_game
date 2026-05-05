@@ -49,7 +49,7 @@ export const useGameRooms = ({
     };
 
     try {
-      const id = await syncRepository.createRoom(gameState, user?.id);
+      const id = await syncRepository.createRoom(gameState, user?.id, user?.name);
       setRoomId(id);
       setIsOnline(true);
       setPlayers(initialPlayers);

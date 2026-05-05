@@ -61,11 +61,7 @@ const Lobby = () => {
                     backgroundColor: players[index]?.color || '#64748b',
                     color: 'white'
                   }}>
-                    {p.photoURL ? (
-                      <img src={p.photoURL} alt={p.name} className="avatar-img" />
-                    ) : (
-                      <span>{p.name?.charAt(0).toUpperCase() || '?'}</span>
-                    )}
+                    <span>{p.name?.charAt(0).toUpperCase() || '?'}</span>
                     {/* Indicador de Presença */}
                     <div className={`presence-indicator-modern ${p.isOnline ? 'is-online' : 'is-offline'}`} 
                          style={{ width: '12px', height: '12px', border: '1.5px solid white' }}>
@@ -124,7 +120,11 @@ const Lobby = () => {
                 <div className="loading-animation">
                   <Loader2 size={32} className="spinner-modern" />
                 </div>
-                <p>O anfitrião está preparando o tabuleiro...</p>
+                {(() => {
+                  const host = Object.values(roomParticipants).find(p => p.id === ownerId);
+                  const hostName = host ? host.name : 'O anfitrião';
+                  return <p>{hostName} está preparando o tabuleiro...</p>;
+                })()}
               </div>
             )}
           </div>

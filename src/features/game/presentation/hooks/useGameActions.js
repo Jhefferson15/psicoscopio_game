@@ -115,7 +115,10 @@ export const useGameActions = ({
                 showSystemPopup({
                   title: 'Troca Realizada!',
                   message: `Você trocou de lugar com ${currentPlayers[targetIndex].name}.`,
-                  type: 'success'
+                  type: 'success',
+                  onConfirm: () => {
+                    passTurn({ players: currentPlayers });
+                  }
                 });
               }
             }

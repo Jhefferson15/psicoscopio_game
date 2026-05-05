@@ -37,7 +37,7 @@ const TILE_ICONS = {
 
 
 
-const BoardView = ({ boardRotation = 0 }) => {
+const BoardView = ({ boardRotation = 0, isReadOnly = false }) => {
   const { setBoardRotation, players, activeBoardConfig, showDetailPopup } = useGame();
   const boardData = activeBoardConfig.tiles;
   const [showNameId, setShowNameId] = useState(null);
@@ -90,6 +90,7 @@ const BoardView = ({ boardRotation = 0 }) => {
   const dragStartPos = useRef(null);
 
   const onPointerDown = (e) => {
+    if (isReadOnly) return;
     isDragging.current = true;
     dragStartPos.current = { x: e.clientX, y: e.clientY };
     
@@ -146,7 +147,7 @@ const BoardView = ({ boardRotation = 0 }) => {
   };
 
   const arc = (fill, icon, angle, ring, r, onClick, action) => (
-    <g transform={`rotate(${angle})`} style={{ pointerEvents: 'auto', cursor: 'help' }} onClick={onClick}>
+    <g transform={`rotate(${angle})`} style={{ pointerEvents: isReadOnly ? 'none' : 'auto', cursor: isReadOnly ? 'default' : 'help' }} onClick={isReadOnly ? null : onClick}>
       <use href={`#arc-${ring}`} fill={fill} stroke={fill} strokeWidth="16" strokeLinejoin="round" filter="url(#shadow)" />
       <use href={`#${icon}`} transform={`translate(0, -${r}) rotate(0)`} style={{ pointerEvents: 'none' }} />
       {action === 'MOVE_INNER' && <use href="#arrow-inner" transform={`translate(22, -${r})`} style={{ pointerEvents: 'none' }} />}
@@ -155,7 +156,7 @@ const BoardView = ({ boardRotation = 0 }) => {
   );
 
   const arcText = (fill, label, angle, ring, yOff, fontSize = 13, onClick, action) => (
-    <g transform={`rotate(${angle})`} style={{ pointerEvents: 'auto', cursor: 'help' }} onClick={onClick}>
+    <g transform={`rotate(${angle})`} style={{ pointerEvents: isReadOnly ? 'none' : 'auto', cursor: isReadOnly ? 'default' : 'help' }} onClick={isReadOnly ? null : onClick}>
       <use href={`#arc-${ring}`} fill={fill} stroke={fill} strokeWidth="16" strokeLinejoin="round" filter="url(#shadow)" />
       <text x="0" y={yOff} transform={flip(angle, yOff)} textAnchor="middle" fill="#FFF" fontSize={fontSize} fontWeight="600" letterSpacing="0.5" style={{ pointerEvents: 'none' }}>{label}</text>
       {action === 'MOVE_INNER' && <use href="#arrow-inner" transform={`translate(22, ${yOff - 5})`} style={{ pointerEvents: 'none' }} />}
@@ -294,8 +295,9 @@ const BoardView = ({ boardRotation = 0 }) => {
                 <g 
                    key={player.id} 
                    transform={`rotate(${validAngle}) translate(0, ${-validR})`}
-                   style={{ cursor: 'pointer', pointerEvents: 'auto', transition: 'transform 0.3s ease-out' }}
+                   style={{ cursor: isReadOnly ? 'default' : 'pointer', pointerEvents: isReadOnly ? 'none' : 'auto', transition: 'transform 0.3s ease-out' }}
                    onClick={(e) => {
+                     if (isReadOnly) return;
                      e.stopPropagation();
                      setShowNameId(showNameId === player.id ? null : player.id);
                    }}>
@@ -412,7 +414,8 @@ const BoardView = ({ boardRotation = 0 }) => {
         })}
 
         {/* CENTRO */}
-        <g transform="translate(400, 400)" style={{ pointerEvents: 'auto', cursor: 'help' }} onClick={() => {
+        <g transform="translate(400, 400)" style={{ pointerEvents: isReadOnly ? 'none' : 'auto', cursor: isReadOnly ? 'default' : 'help' }} onClick={() => {
+          if (isReadOnly) return;
           const centerTile = boardData.find(t => t.id === 'center');
           showDetailPopup({
             title: 'CHEGADA',

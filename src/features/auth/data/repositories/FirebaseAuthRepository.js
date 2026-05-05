@@ -17,7 +17,7 @@ export class FirebaseAuthRepository extends AuthRepository {
         firebaseUser.uid,
         firebaseUser.displayName,
         firebaseUser.email,
-        firebaseUser.photoURL
+        null
       );
     } catch (error) {
       console.error("Erro ao fazer login com Google:", error);
@@ -45,7 +45,7 @@ export class FirebaseAuthRepository extends AuthRepository {
       firebaseUser.uid,
       firebaseUser.displayName,
       firebaseUser.email,
-      firebaseUser.photoURL
+      null
     );
   }
 
@@ -58,7 +58,7 @@ export class FirebaseAuthRepository extends AuthRepository {
           firebaseUser.uid,
           firebaseUser.displayName,
           firebaseUser.email,
-          firebaseUser.photoURL
+          null
         ));
       } else {
         callback(null);
