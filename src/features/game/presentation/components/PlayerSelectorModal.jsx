@@ -74,7 +74,7 @@ const PlayerSelectorModal = () => {
                   <motion.button
                     key={player.id}
                     className="player-option-card"
-                    whileHover={{ scale: 1.02, backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
+                    whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => handleSelect(player.id)}
                     style={{ '--player-color': player.color }}

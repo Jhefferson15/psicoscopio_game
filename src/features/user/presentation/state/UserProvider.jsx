@@ -10,40 +10,47 @@ export const UserProvider = ({ children }) => {
   const [cloudCardSets, setCloudCardSets] = useState([]);
   const [cloudBoardConfigs, setCloudBoardConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isLoaded, setIsLoaded] = useState(false);
   
   const userRepository = useMemo(() => new FirestoreUserRepository(), []);
 
   const loadUserData = useCallback(async () => {
-    if (!user) return;
+    if (!user || isLoaded) return;
     setLoading(true);
     try {
-      const userStats = await userRepository.getUserStats(user.id);
-      const userDiary = await userRepository.getDiaryEntries(user.id);
-      const userCardSets = await userRepository.getCardSets(user.id);
-      const userBoardConfigs = await userRepository.getBoardConfigs(user.id);
+      const [userStats, userDiary, userCardSets, userBoardConfigs] = await Promise.all([
+        userRepository.getUserStats(user.id),
+        userRepository.getDiaryEntries(user.id),
+        userRepository.getCardSets(user.id),
+        userRepository.getBoardConfigs(user.id)
+      ]);
+
       setStats(userStats);
       setDiary(userDiary);
       setCloudCardSets(userCardSets);
       setCloudBoardConfigs(userBoardConfigs);
+      setIsLoaded(true);
     } catch (error) {
       console.error("Erro ao carregar dados do usuário:", error);
     } finally {
       setLoading(false);
     }
-  }, [user, userRepository]);
+  }, [user, userRepository, isLoaded]);
 
   useEffect(() => {
     if (user) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      loadUserData();
+      if (!isLoaded) {
+        loadUserData();
+      }
     } else {
       setStats(null);
       setDiary([]);
       setCloudCardSets([]);
       setCloudBoardConfigs([]);
       setLoading(false);
+      setIsLoaded(false);
     }
-  }, [user, loadUserData]);
+  }, [user, loadUserData, isLoaded]);
 
   const addDiaryEntry = async (text, type, mood) => {
     if (!user) return;

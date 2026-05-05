@@ -112,20 +112,68 @@ export class ProcessTileActionUseCase {
       }
 
       case 'MOVE_INNER': {
-        const innerTiles = activeBoardConfig.tiles.filter(t => t.ring === 'inner');
-        if (innerTiles.length > 0) {
-          const target = innerTiles[Math.floor(deps.random() * innerTiles.length)];
-          player.position = activeBoardConfig.tiles.findIndex(t => t.id === target.id);
+        const ringSequence = ['outer', 'middle', 'inner'];
+        const currentRingIdx = ringSequence.indexOf(tile.ring);
+        
+        // Busca o próximo anel disponível para dentro
+        let targetRing = null;
+        for (let i = currentRingIdx + 1; i < ringSequence.length; i++) {
+          if (activeBoardConfig.tiles.some(t => t.ring === ringSequence[i])) {
+            targetRing = ringSequence[i];
+            break;
+          }
+        }
+
+        if (targetRing) {
+          const targetTiles = activeBoardConfig.tiles.filter(t => t.ring === targetRing);
+          // Busca a casa mais próxima por ângulo
+          let closestTile = targetTiles[0];
+          let minDiff = 360;
+          
+          targetTiles.forEach(t => {
+            let diff = Math.abs(t.angle - tile.angle);
+            if (diff > 180) diff = 360 - diff;
+            if (diff < minDiff) {
+              minDiff = diff;
+              closestTile = t;
+            }
+          });
+
+          player.position = activeBoardConfig.tiles.findIndex(t => t.id === closestTile.id);
           positionChanged = true;
         }
         break;
       }
 
       case 'MOVE_OUTER': {
-        const outerTiles = activeBoardConfig.tiles.filter(t => t.ring === 'outer');
-        if (outerTiles.length > 0) {
-          const target = outerTiles[Math.floor(deps.random() * outerTiles.length)];
-          player.position = activeBoardConfig.tiles.findIndex(t => t.id === target.id);
+        const ringSequence = ['outer', 'middle', 'inner'];
+        const currentRingIdx = ringSequence.indexOf(tile.ring);
+        
+        // Busca o próximo anel disponível para fora
+        let targetRing = null;
+        for (let i = currentRingIdx - 1; i >= 0; i--) {
+          if (activeBoardConfig.tiles.some(t => t.ring === ringSequence[i])) {
+            targetRing = ringSequence[i];
+            break;
+          }
+        }
+
+        if (targetRing) {
+          const targetTiles = activeBoardConfig.tiles.filter(t => t.ring === targetRing);
+          // Busca a casa mais próxima por ângulo
+          let closestTile = targetTiles[0];
+          let minDiff = 360;
+          
+          targetTiles.forEach(t => {
+            let diff = Math.abs(t.angle - tile.angle);
+            if (diff > 180) diff = 360 - diff;
+            if (diff < minDiff) {
+              minDiff = diff;
+              closestTile = t;
+            }
+          });
+
+          player.position = activeBoardConfig.tiles.findIndex(t => t.id === closestTile.id);
           positionChanged = true;
         }
         break;
@@ -145,20 +193,12 @@ export class ProcessTileActionUseCase {
 
       case 'SHARE_CARD':
         uiActions.push({
-          type: 'POPUP',
+          type: 'SELECT_PLAYER',
           payload: {
-            title: 'Compartilhamento',
-            message: 'Mecânica de Compartilhar Carta: Escolha uma carta para mostrar aos outros!',
-            type: 'info'
-          }
-        });
-        uiActions.push({
-          type: 'SET_FOCUSED_CARD',
-          payload: { 
-            type: 'reflexao', 
-            index: 0, 
-            id: `card-share-${deps.now()}`,
-            fromTileAction: true 
+            action: 'SHARE_CARD',
+            title: 'Compartilhar Carta',
+            message: 'Escolha um jogador para receber uma de suas cartas!',
+            excludeSelf: true
           }
         });
         modalOpened = true;

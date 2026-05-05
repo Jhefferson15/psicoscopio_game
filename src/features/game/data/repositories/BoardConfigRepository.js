@@ -1,5 +1,5 @@
 import { BoardConfig } from '../../domain/entities/BoardConfig';
-import { getDefaultBoardConfig } from './boardRepository';
+import { getDefaultBoardConfig, getDevTestBoardConfig } from './boardRepository';
 
 const STORAGE_KEY = 'psicoscopio_board_configs';
 const ACTIVE_CONFIG_KEY = 'psicoscopio_active_board_config';
@@ -7,6 +7,10 @@ const ACTIVE_CONFIG_KEY = 'psicoscopio_active_board_config';
 export class BoardConfigRepository {
   static getDefaultConfig() {
     return getDefaultBoardConfig();
+  }
+
+  static getDevTestBoardConfig() {
+    return getDevTestBoardConfig();
   }
 
   static getSavedConfigs() {
@@ -23,7 +27,7 @@ export class BoardConfigRepository {
 
   static saveConfigs(configs) {
     const toSave = configs
-      .filter(c => c.id !== 'default')
+      .filter(c => c.id !== 'default' && c.id !== 'teste_dev')
       .map(c => (typeof c.toJSON === 'function' ? c.toJSON() : c));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
   }
@@ -48,7 +52,7 @@ export class BoardConfigRepository {
   }
 
   static deleteConfig(id) {
-    if (id === 'default') return;
+    if (id === 'default' || id === 'teste_dev') return;
     const configs = this.getSavedConfigs();
     const filtered = configs.filter(c => c.id !== id);
     this.saveConfigs(filtered);

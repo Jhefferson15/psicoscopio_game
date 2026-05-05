@@ -37,11 +37,20 @@ export const ActionVerificationForm = () => {
     return Object.values(roomParticipants || {}).filter(p => !p.isObserver);
   }, [roomParticipants]);
 
+  const { playerId, cardType, responses = {}, cardText, recipientId } = activeVerification || {};
+  const targetPlayer = players.find(p => p.id === playerId);
+
+  const question = useMemo(() => {
+    if (!activeVerification) return '';
+    if (recipientId) {
+      const recipient = players.find(p => p.id === recipientId);
+      return `O(a) ${recipient?.name} se identificou ou compreendeu o que foi compartilhado por ${targetPlayer?.name}?`;
+    }
+    return VERIFICATION_QUESTIONS[cardType] || VERIFICATION_QUESTIONS.custom;
+  }, [activeVerification, recipientId, cardType, targetPlayer?.name, players]);
+
   // Se não houver verificação ativa ou o status não for este, não renderiza
   if (roomStatus !== 'verifying_action' || !activeVerification) return null;
-
-  const { playerId, cardType, responses = {}, cardText } = activeVerification;
-  const targetPlayer = players.find(p => p.id === playerId);
 
   const totalParticipants = participantsArray.length;
   const responsesCount = Object.keys(responses).length;
@@ -52,8 +61,6 @@ export const ActionVerificationForm = () => {
 
   const pendingParticipants = participantsArray.filter(p => responses[p.id] === undefined);
   const currentOfflineVoter = !isOnline && pendingParticipants.length > 0 ? pendingParticipants[0] : null;
-
-  const question = VERIFICATION_QUESTIONS[cardType] || VERIFICATION_QUESTIONS.custom;
 
   const handleVote = async (value) => {
     if (isSubmitting || hasResponded) return;
@@ -151,16 +158,35 @@ export const ActionVerificationForm = () => {
              <div className="player-avatar-large" style={{ backgroundColor: targetPlayer?.color }}>
                 {targetPlayer?.name?.charAt(0)}
              </div>
-             <div className="player-meta">
-                <h3>{targetPlayer?.name}</h3>
-                <p>realizou uma ação de <strong>{cardType.toUpperCase()}</strong></p>
-             </div>
+             {activeVerification.recipientId ? (
+               <div className="share-flow-info">
+                 <div className="player-meta">
+                    <h3>{targetPlayer?.name}</h3>
+                    <p>está compartilhando com</p>
+                 </div>
+                 <div className="share-arrow">→</div>
+                 <div className="recipient-mini">
+                    <div className="mini-avatar" style={{ backgroundColor: players.find(p => p.id === activeVerification.recipientId)?.color }}>
+                      {players.find(p => p.id === activeVerification.recipientId)?.name?.charAt(0)}
+                    </div>
+                    <strong>{players.find(p => p.id === activeVerification.recipientId)?.name}</strong>
+                 </div>
+               </div>
+             ) : (
+               <div className="player-meta">
+                  <h3>{targetPlayer?.name}</h3>
+                  <p>realizou uma ação de <strong>{cardType.toUpperCase()}</strong></p>
+               </div>
+             )}
           </div>
 
           <div className="card-content-preview">
             <MessageCircle size={18} className="quote-icon" />
             {typeof cardText === 'string' && cardText.startsWith('data:image') ? (
-              <p><em>[Conteúdo Visual - Verifique o Tabuleiro]</em></p>
+              <div className="verification-image-container">
+                <img src={cardText} alt="Conteúdo compartilhado" className="verification-image" />
+                <p className="image-caption"><em>Conteúdo Visual do Ateliê</em></p>
+              </div>
             ) : (
               <p>"{cardText}"</p>
             )}

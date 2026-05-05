@@ -1,6 +1,20 @@
 import { Tile } from '../../domain/entities/Tile';
 import { BoardConfig } from '../../domain/entities/BoardConfig';
 
+const SPECIAL_COLORS = {
+  'WRITE_DIARY': '#E91E63',
+  'CREATE_CARD': '#009688',
+  'SHARE_CARD': '#FF9800',
+  'MOVE_2': '#4CAF50',
+  'BACK_2': '#F44336',
+  'DRAW_2': '#FFD700',
+  'SWAP_PLACE': '#9C27B0',
+  'SKIP_TURN': '#757575',
+  'TEAM_CHALLENGE': '#3F51B5',
+  'MOVE_OUTER': '#795548',
+  'MOVE_INNER': '#00BCD4'
+};
+
 const OUTER_RADIUS = 300;
 const MIDDLE_RADIUS = 225;
 const INNER_RADIUS = 150;
@@ -34,22 +48,22 @@ export const boardData = [
   withDesc(new Tile('o2', 'reflexao', 'REFLEXÃO', '#7B4BB1', 'outer', 36)),
   withDesc(new Tile('o3', 'star', '', '#EEDCC0', 'outer', 54)),
   withDesc(new Tile('o4', 'mag', '', '#4885CE', 'outer', 72)),
-  withDesc(new Tile('s1', 'especial', 'AVANCE 2 CASAS', '#FFFFFF', 'special', 90, 'MOVE_2', 'Vento a favor! Sua compreensão acelerada permite que você avance 2 casas.')),
+  withDesc(new Tile('s1', 'especial', 'AVANCE 2 CASAS', SPECIAL_COLORS['MOVE_2'], 'special', 90, 'MOVE_2', 'Vento a favor! Sua compreensão acelerada permite que você avance 2 casas.')),
   withDesc(new Tile('o5', 'cycle', '', '#6FB05E', 'outer', 108)),
   withDesc(new Tile('o6', 'reflexao', 'REFLEXÃO', '#7B4BB1', 'outer', 126)),
   withDesc(new Tile('o7', 'bulb', '', '#F4C746', 'outer', 144)),
   withDesc(new Tile('o8', 'eye', '', '#4885CE', 'outer', 162)),
-  withDesc(new Tile('s2', 'especial', 'DESAFIO EM EQUIPA', '#FFFFFF', 'special', 180, 'TEAM_CHALLENGE', 'A união faz a força. Este desafio deve ser resolvido em conjunto com os outros jogadores.')),
+  withDesc(new Tile('s2', 'especial', 'DESAFIO EM EQUIPA', SPECIAL_COLORS['TEAM_CHALLENGE'], 'special', 180, 'TEAM_CHALLENGE', 'A união faz a força. Este desafio deve ser resolvido em conjunto com os outros jogadores.')),
   withDesc(new Tile('o9', 'desafio', 'DESAFIO', '#D84B42', 'outer', 198)),
   withDesc(new Tile('o10', 'mag', '', '#7B4BB1', 'outer', 216)),
   withDesc(new Tile('o11', 'brain', '', '#6FB05E', 'outer', 234)),
   withDesc(new Tile('o12', 'memoria', 'MEMÓRIA', '#4885CE', 'outer', 252)),
-  withDesc(new Tile('s3', 'especial', 'TROQUE DE LUGAR', '#FFFFFF', 'special', 270, 'SWAP_PLACE', 'Troca de perspectivas. Você pode trocar sua posição no tabuleiro com a de qualquer outro jogador.')),
+  withDesc(new Tile('s3', 'especial', 'TROQUE DE LUGAR', SPECIAL_COLORS['SWAP_PLACE'], 'special', 270, 'SWAP_PLACE', 'Troca de perspectivas. Você pode trocar sua posição no tabuleiro com a de qualquer outro jogador.')),
   withDesc(new Tile('o13', 'reflexao', 'REFLEXÃO', '#7B4BB1', 'outer', 288)),
   withDesc(new Tile('o14', 'target', '', '#D84B42', 'outer', 306)),
   withDesc(new Tile('o15', 'eye', '', '#4885CE', 'outer', 324)),
   withDesc(new Tile('o16', 'brain', '', '#D84B42', 'outer', 342)),
-  withDesc(new Tile('s4', 'especial', 'VOLTE 2 CASAS', '#FFFFFF', 'special', 0, 'BACK_2', 'Um momento para revisar. Às vezes é preciso dar alguns passos atrás para consolidar o aprendizado.')),
+  withDesc(new Tile('s4', 'especial', 'VOLTE 2 CASAS', SPECIAL_COLORS['BACK_2'], 'special', 0, 'BACK_2', 'Um momento para revisar. Às vezes é preciso dar alguns passos atrás para consolidar o aprendizado.')),
 
   // MIDDLE RING
   withDesc(new Tile('m1', 'reflexao', 'REFLEXÃO', '#7B4BB1', 'middle', 12.8)),
@@ -102,6 +116,67 @@ export const getDefaultBoardConfig = () => {
   );
 };
 
+
+export const getDevTestBoardConfig = () => {
+  const sequence = [
+    { type: 'reflexao', label: 'REFLEXÃO' },
+    { type: 'desafio', label: 'DESAFIO' },
+    { type: 'memoria', label: 'MEMÓRIA' },
+    { type: 'experiencia', label: 'EXPERIÊNCIA' },
+    { type: 'sorte', label: 'SORTE' },
+    { type: 'custom_reflexao', label: 'C. REFLEXÃO' },
+    { type: 'custom_desafio', label: 'C. DESAFIO' },
+    { type: 'custom_memoria', label: 'C. MEMÓRIA' },
+    { type: 'custom_experiencia', label: 'C. EXPERIÊNCIA' },
+    { type: 'custom_sorte', label: 'C. SORTE' },
+    { type: 'custom_card', label: 'C. GERAL' },
+    { type: 'especial', action: 'WRITE_DIARY', label: 'DIÁRIO' },
+    { type: 'especial', action: 'CREATE_CARD', label: 'CRIAR CARTA' },
+    { type: 'especial', action: 'SHARE_CARD', label: 'DAR CARTA' },
+    { type: 'especial', action: 'MOVE_2', label: 'AVANÇAR 2' },
+    { type: 'especial', action: 'BACK_2', label: 'VOLTAR 2' },
+    { type: 'especial', action: 'DRAW_2', label: 'COMPRAR 2' },
+    { type: 'especial', action: 'SWAP_PLACE', label: 'TROCAR LUGAR' },
+    { type: 'especial', action: 'SKIP_TURN', label: 'PULAR VEZ' },
+    { type: 'especial', action: 'TEAM_CHALLENGE', label: 'DESAFIO EQUIPE' },
+    { type: 'especial', action: 'MOVE_OUTER', label: 'IR P/ BORDA' },
+    { type: 'especial', action: 'MOVE_INNER', label: 'MUDAR CÍRCULO' }
+  ];
+
+  const devTiles = boardData.map((t, idx) => {
+    if (t.type === 'center') return t.toJSON();
+    
+    const item = sequence[idx % sequence.length];
+    const tileJson = t.toJSON();
+    
+    return {
+      ...tileJson,
+      type: item.type,
+      action: item.action || null,
+      label: item.label,
+      color: item.action ? (SPECIAL_COLORS[item.action] || tileJson.color) : tileJson.color,
+      description: item.action ? `Mecânica de teste: ${item.label}` : (TILE_DESCRIPTIONS[item.type] || '')
+    };
+  });
+
+  return new BoardConfig(
+    'teste_dev',
+    'Teste Dev Completo (Dado 1-2)',
+    devTiles.map(t => Tile.fromJSON(t)),
+    {
+      turnTime: 120,
+      diceMin: 1,
+      diceMax: 2,
+      enableCardCreationStep: false,
+      showBoardLabels: true,
+      showCardLabels: true,
+      maxTurns: 0,
+      centerText: ["TESTE DE", "DESENVOLVIMENTO", "DADO: 1-2", "BOAS ATIVIDADES!"],
+      initialPositions: [0, 0, 0, 0]
+    }
+  );
+};
+
 export const getTilePosition = (tile) => {
   let radius = 0;
   switch (tile.ring) {
@@ -121,3 +196,4 @@ export const getTilePosition = (tile) => {
     y: 400 + radius * Math.sin(rad)
   };
 };
+

@@ -29,8 +29,8 @@ import { CardSet } from '../../domain/entities/CardSet';
 // ============================================================
 
 // Maximo de eventos de um listener por segundo antes de parar.
-// Valor conservador: qualquer dado legitimo muda menos de 30x/s. NAO ALTERE.
-const MAX_EVENTS_PER_SECOND = 30;
+// Valor extremamente conservador para evitar custos e DoS: 4x/s.
+const MAX_EVENTS_PER_SECOND = 4;
 
 /**
  * Cria um circuit breaker para um listener do Firebase.

@@ -14,10 +14,22 @@ export class BoardConfig {
       showCardLabels: mechanics.showCardLabels !== false,
       maxTurns: mechanics.maxTurns || 0,
       centerText: mechanics.centerText || ["A APRENDIZAGEM", "É UM CICLO,", "NÃO UMA LINHA", "DE CHEGADA."],
-      initialPositions: mechanics.initialPositions || [0, 0, 0, 0]
+      initialPositions: mechanics.initialPositions || [0, 0, 0, 0],
+      randomStart: mechanics.randomStart || false
     };
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
+  }
+
+  static getRandomOuterPositions(tiles, playerCount) {
+    const outerTileIndices = (tiles || [])
+      .map((tile, idx) => (tile.ring === 'outer' || tile.ring === 'special') ? idx : -1)
+      .filter(idx => idx !== -1);
+    
+    if (outerTileIndices.length === 0) return Array(playerCount).fill(0);
+
+    const shuffled = [...outerTileIndices].sort(() => Math.random() - 0.5);
+    return Array(playerCount).fill(0).map((_, i) => shuffled[i % shuffled.length]);
   }
 
   static fromJSON(json) {

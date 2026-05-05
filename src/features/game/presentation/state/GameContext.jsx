@@ -11,6 +11,8 @@ import { useGameRooms } from '../hooks/useGameRooms';
 import { useGameTimer } from '../hooks/useGameTimer';
 import { useGameActions } from '../hooks/useGameActions';
 import { useBrowserHistorySync } from '../hooks/useBrowserHistorySync';
+import { BoardConfig } from '../../domain/entities/BoardConfig';
+
 
 
 const syncRepository = new FirebaseGameSyncRepository();
@@ -49,6 +51,8 @@ export const GameProvider = ({ children }) => {
   const [isRolling, setIsRolling] = useState(false);
   const [currentTurn, setCurrentTurn] = useState(1);
   const [showDiary, setShowDiary] = useState(false);
+  const [isDiaryRequired, setIsDiaryRequired] = useState(false);
+  const [isDiaryAction, setIsDiaryAction] = useState(false);
   const [cardHistory, setCardHistory] = useState([]);
   const [showCardHistory, setShowCardHistory] = useState(false);
   const [drawnCards, setDrawnCards] = useState({}); // { category: [index1, index2, ...] }
@@ -74,8 +78,27 @@ export const GameProvider = ({ children }) => {
   const [hostRole, setHostRole] = useState(null);
   const [serverTimeOffset, setServerTimeOffset] = useState(0);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-  const [playerSelectionTask, setPlayerSelectionTask] = useState(null);
   const [activeVerification, setActiveVerification] = useState(null);
+  const [playerSelectionTask, setPlayerSelectionTask] = useState(null);
+  const [cardSelectionTask, setCardSelectionTask] = useState(null);
+
+  // Efeito para sincronizar participantes no modo offline
+  useEffect(() => {
+    if (!isOnline) {
+      const participants = {};
+      players.forEach(p => {
+        participants[p.id] = { 
+          id: p.id, 
+          name: p.name, 
+          color: p.color,
+          isObserver: false 
+        };
+      });
+      requestAnimationFrame(() => {
+        setRoomParticipants(participants);
+      });
+    }
+  }, [isOnline, players]);
 
 
 
@@ -168,14 +191,25 @@ export const GameProvider = ({ children }) => {
     }
 
     setDrawnCards(prev => ({ ...prev, [type]: newUsedIndices }));
-    return { content: cardList[selectedIndex], index: selectedIndex, isCustom: false };
-  }, [activeCardSet, drawnCards]);
+    const isCustom = activeCardSet?.id !== 'default';
+    return { 
+      content: cardList[selectedIndex], 
+      index: selectedIndex, 
+      isCustom: isCustom,
+      cardType: type,
+      cardText: cardList[selectedIndex],
+      playerName: players[currentPlayerIndex]?.name || 'Jogador'
+    };
+  }, [activeCardSet, drawnCards, players, currentPlayerIndex]);
 
 
   // 4. Hooks de Lógica Complexa (Ordem de Dependência)
   const isTurnBeingPassedRef = useRef(false);
   const myPlayerIndexRef = useRef(myPlayerIndex);
   useEffect(() => { myPlayerIndexRef.current = myPlayerIndex; }, [myPlayerIndex]);
+
+  const currentPlayerIndexRef = useRef(currentPlayerIndex);
+  useEffect(() => { currentPlayerIndexRef.current = currentPlayerIndex; }, [currentPlayerIndex]);
 
   // Ref compartilhada de isMoving: usada pelo useGameSync antes de useGameActions ser inicializado.
   // useGameActions vai atualizar isMovingRef.current diretamente durante o movimento.
@@ -184,6 +218,9 @@ export const GameProvider = ({ children }) => {
 
   // Forward declaration of passTurn (will be defined below)
   const passTurnRef = useRef();
+
+  // Ref para evitar gravações duplicadas de cartas em sequência rápida (Anti-Loop)
+  const lastRecordedCardRef = useRef({ id: null, timestamp: 0 });
 
   const {
     createOnlineGame,
@@ -251,18 +288,39 @@ export const GameProvider = ({ children }) => {
     turnDuration, setTurnDuration
   });
 
+  const openDiary = useCallback((required = false) => {
+    setShowDiary(true);
+    setIsDiaryRequired(required);
+    setIsDiaryAction(required);
+  }, []);
+
+  const closeDiary = useCallback(() => {
+    setShowDiary(false);
+    // Se era uma ação de diário, passa o turno após fechar
+    if (isDiaryAction) {
+      setIsDiaryAction(false);
+      setIsDiaryRequired(false);
+      if (passTurnRef.current) passTurnRef.current();
+    }
+  }, [isDiaryAction]);
+
   const {
     rollDice,
+    jumpToTile,
     closeModal,
     closeFocusedCard,
     isMovingRef,
     playersRef
+
   } = useGameActions({
     isOnline, roomId, user, syncRepository, activeBoardConfig,
     players, setPlayers, currentPlayerIndex, myPlayerIndex,
     isMoving, setIsMoving, isRolling, setIsRolling,
     setLastDiceRoll, setShowModal, setFocusedCard, showSystemPopup,
-    setCurrentScreen, currentScreen, setShowDiary, setAtelierContext, passTurn: (overrides) => passTurnRef.current?.(overrides), 
+    setCurrentScreen, currentScreen, setShowDiary, setAtelierContext, 
+    setPlayerSelectionTask, setCardSelectionTask,
+    openDiary, closeDiary, setIsDiaryRequired,
+    passTurn: (overrides) => passTurnRef.current?.(overrides), 
     setRoomStatus, setActiveVerification,
     getRingIndices,
     generateDiceRoll, 
@@ -348,7 +406,9 @@ export const GameProvider = ({ children }) => {
 
   const initializeGame = (newPlayers) => {
     const turnTime = activeBoardConfig.mechanics?.turnTime || 120;
-    const initialPositions = activeBoardConfig.mechanics?.initialPositions || [0, 0, 0, 0];
+    const initialPositions = activeBoardConfig.mechanics?.randomStart 
+      ? BoardConfig.getRandomOuterPositions(activeBoardConfig.tiles, newPlayers.length)
+      : (activeBoardConfig.mechanics?.initialPositions || [0, 0, 0, 0]);
     const shouldShowAtelier = !!activeBoardConfig.mechanics?.enableCardCreationStep;
     
     const preparedPlayers = newPlayers.map((p, i) => new Player(p.id || i + 1, p.name, p.color, initialPositions[i] || 0, turnTime));
@@ -379,6 +439,8 @@ export const GameProvider = ({ children }) => {
     setCurrentScreen('card_creation');
   };
 
+
+
   const rotateBoard = useCallback(() => {
     setFollowActivePlayer(prev => !prev);
   }, []);
@@ -402,7 +464,9 @@ export const GameProvider = ({ children }) => {
       players,
       currentPlayerIndex,
       rollDice,
+      jumpToTile,
       isMoving,
+
       lastDiceRoll,
       showModal,
       setShowModal,
@@ -439,6 +503,12 @@ export const GameProvider = ({ children }) => {
       setCurrentScreen,
       showDiary,
       setShowDiary,
+      openDiary,
+      closeDiary,
+      isDiaryRequired,
+      setIsDiaryRequired,
+      isDiaryAction,
+      setIsDiaryAction,
 
       goToCustomCards: () => setCurrentScreen('custom_cards'),
 
@@ -463,26 +533,51 @@ export const GameProvider = ({ children }) => {
       },
 
       recordCardDraw: useCallback(async (card) => {
+        if (!card) return;
+
+        // Anti-Loop/Debounce: Evita gravar a mesma carta múltiplas vezes em menos de 1s
+        const now = Date.now();
+        if (lastRecordedCardRef.current.id === card.id && (now - lastRecordedCardRef.current.timestamp < 1000)) {
+          return;
+        }
+        lastRecordedCardRef.current = { id: card.id, timestamp: now };
+
+        const myIdx = myPlayerIndexRef.current;
+        const currentIdx = currentPlayerIndexRef.current;
+        
+        // Busca o nome do jogador local de forma robusta
+        const myPlayer = playersRef.current[myIdx];
+        const playerName = myPlayer?.name || user?.displayName || 'Jogador';
+        
         const cardEntry = {
           id: card.id || Date.now(),
           cardId: card.id,
           cardType: card.type,
           cardText: card.text,
           isCustom: !!card.isCustom,
-          playerName: playersRef.current[myPlayerIndexRef.current]?.name || 'Jogador',
-          timestamp: Date.now()
+          playerName,
+          timestamp: now
         };
 
         if (isOnline && roomId) {
-          await syncRepository.recordCardAction(roomId, {
-            cardId: card.id,
-            cardType: card.type,
-            cardText: card.text
-          });
+          // PROTEÇÃO CRÍTICA (Anti-DoS): Apenas o jogador dono do turno registra a ação.
+          if (currentIdx === myIdx) {
+            try {
+              await syncRepository.recordCardAction(roomId, {
+                cardId: card.id,
+                cardType: card.type,
+                cardText: card.text,
+                isCustom: !!card.isCustom,
+                playerName
+              });
+            } catch (err) {
+              console.error("[GameContext] Erro ao gravar ação de carta:", err);
+            }
+          }
         } else {
           setCardHistory(prev => [cardEntry, ...prev]);
         }
-      }, [isOnline, roomId, playersRef, setCardHistory]),
+      }, [isOnline, roomId, user?.displayName, syncRepository, setCardHistory]),
 
       showCardHistory,
       setShowCardHistory,
@@ -533,8 +628,16 @@ export const GameProvider = ({ children }) => {
       closeDetailPopup,
       playerSelectionTask,
       setPlayerSelectionTask,
+      cardSelectionTask,
+      setCardSelectionTask,
       activeVerification,
-      setActiveVerification
+      setActiveVerification,
+      isDiaryRequired,
+      setIsDiaryRequired,
+      isDiaryAction,
+      setIsDiaryAction,
+      openDiary,
+      closeDiary
     }}>
 
 

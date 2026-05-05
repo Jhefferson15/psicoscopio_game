@@ -167,3 +167,29 @@
 .btn-export-board:hover { background: var(--bg-darker); color: var(--text); transform: scale(1.05); }
 
 .action-footer { padding: 1.5rem 2rem; border-top: 1px solid var(--border-light); display: flex; justify-content: flex-end; gap: 1rem; }
+
+.btn-random-pos {
+  background: var(--bg-darker);
+  border: 1px solid var(--border-light);
+  padding: 0.5rem 1.0rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.btn-random-pos:hover {
+  background: var(--secondary-light);
+  border-color: var(--secondary);
+  color: var(--secondary);
+}
+
+.btn-random-pos svg {
+  color: var(--secondary);
+}

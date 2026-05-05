@@ -15,7 +15,21 @@ import {
   Sparkles,
   Zap,
   Info,
-  Brush
+  Brush,
+  Book,
+  PlusCircle,
+  Gift,
+  Layers,
+  UserX,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  Lightbulb,
+  Eye,
+  RefreshCw,
+  Target,
+  Puzzle,
+  MessageCircle,
+  Sliders
 } from 'lucide-react';
 
 // =================================================================//
@@ -42,17 +56,33 @@ const SPECIAL_ICONS = {
   'MOVE_2': FastForward,
   'BACK_2': Undo,
   'TEAM_CHALLENGE': Users,
-  'SWAP_PLACE': ArrowLeftRight
+  'SWAP_PLACE': ArrowLeftRight,
+  'WRITE_DIARY': Book,
+  'CREATE_CARD': PlusCircle,
+  'SHARE_CARD': Gift,
+  'DRAW_2': Layers,
+  'SKIP_TURN': UserX,
+  'MOVE_OUTER': ArrowDownCircle,
+  'MOVE_INNER': ArrowUpCircle
 };
 
 const TILE_ICONS = {
-  memoria: Brain,
-  reflexao: Brain,
+  brain: Brain,
+  reflexao: HelpCircle,
   desafio: Zap,
+  memoria: Brain,
+  especial: Zap,
+  bulb: Lightbulb,
+  eye: Eye,
+  cycle: RefreshCw,
+  target: Target,
+  puzzle: Puzzle,
+  chat: MessageCircle,
+  slider: Sliders,
+  center: Info,
   experiencia: Sparkles,
   sorte: Sparkles,
-  especial: Zap,
-  center: Info
+  ...SPECIAL_ICONS
 };
 
 const BoardPreview = ({
@@ -196,7 +226,7 @@ const BoardPreview = ({
                 {isSpecial ? (
                   <>
                     <div className="special-card-icon-container" style={{ transform: 'scale(0.7)' }}>
-                      {React.createElement(SPECIAL_ICONS[tile.effect] || HelpCircle, { size: 24, strokeWidth: 2.5, color: "#4885CE" })}
+                      {React.createElement(SPECIAL_ICONS[tile.action] || HelpCircle, { size: 24, strokeWidth: 2.5, color: "#4885CE" })}
                     </div>
                     <span className="special-card-text" style={{ fontSize: '10px', display: 'block', textAlign: 'center' }}>
                       {tile.label}
@@ -204,7 +234,7 @@ const BoardPreview = ({
                   </>
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {React.createElement(TILE_ICONS[tile.type.split('_')[1] || tile.type] || (tile.label ? 'span' : 'div'), { 
+                    {React.createElement(SPECIAL_ICONS[tile.action] || TILE_ICONS[tile.type.split('_')[1] || tile.type] || (tile.label ? 'span' : 'div'), { 
                       size: tile.ring === 'inner' ? 22 : 26, 
                       strokeWidth: 2.2,
                       style: { opacity: 0.9 },
@@ -277,6 +307,7 @@ const BoardPreview = ({
                 transform: `translate(-50%, -50%) rotate(${tile.angle}deg) translateY(-${r - radialOffset}px) translateX(${slotOffset}px)`,
                 border: '2px solid white',
                 zIndex: 100 + playerIdx,
+                pointerEvents: 'none',
                 transition: 'all 0.3s ease'
               }}
             >

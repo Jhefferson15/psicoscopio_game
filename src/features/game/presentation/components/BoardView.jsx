@@ -1,4 +1,4 @@
-import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform, AnimatePresence, animate } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
 import { useGame } from '../state/useGame';
 import { 
@@ -7,29 +7,67 @@ import {
   Zap, 
   Info,
   User,
+  RotateCcw, 
   FastForward,
   Undo,
   Users,
   ArrowLeftRight,
   HelpCircle,
-  Brush
+  Brush,
+  Book,
+  PlusCircle,
+  Gift,
+  Layers,
+  UserX,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  Lightbulb,
+  Eye,
+  RefreshCw,
+  Target,
+  Puzzle,
+  MessageCircle,
+  Sliders
 } from 'lucide-react';
 import './BoardView.css';
 
+const SPECIAL_ICONS = {
+  'MOVE_2': FastForward,
+  'BACK_2': Undo,
+  'TEAM_CHALLENGE': Users,
+  'SWAP_PLACE': ArrowLeftRight,
+  'WRITE_DIARY': Book,
+  'CREATE_CARD': PlusCircle,
+  'SHARE_CARD': Gift,
+  'DRAW_2': Layers,
+  'SKIP_TURN': UserX,
+  'MOVE_OUTER': ArrowDownCircle,
+  'MOVE_INNER': ArrowUpCircle
+};
+
 const TILE_ICONS = {
-  memoria: Brain,
-  reflexao: Brain,
+  brain: Brain,
+  reflexao: HelpCircle,
   desafio: Zap,
+  memoria: Brain,
+  especial: Zap,
+  bulb: Lightbulb,
+  eye: Eye,
+  cycle: RefreshCw,
+  target: Target,
+  puzzle: Puzzle,
+  chat: MessageCircle,
+  slider: Sliders,
+  center: Info,
   experiencia: Sparkles,
   sorte: Sparkles,
   custom_memoria: Brain,
-  custom_reflexao: Brain,
+  custom_reflexao: HelpCircle,
   custom_desafio: Zap,
   custom_experiencia: Sparkles,
   custom_sorte: Sparkles,
   custom_card: Sparkles,
-  especial: Zap,
-  center: Info
+  ...SPECIAL_ICONS
 };
 
 // =================================================================//
@@ -52,28 +90,43 @@ const BOARD_LAYOUT = {
   centerSize: 180
 };
 
-const SPECIAL_ICONS = {
-  'MOVE_2': FastForward,
-  'BACK_2': Undo,
-  'TEAM_CHALLENGE': Users,
-  'SWAP_PLACE': ArrowLeftRight
-};
-
 /**
  * PlayerMarker component handles the positioning of individual players
  * based on the board rotation and their current tile position.
  */
 const PlayerMarker = ({ player, angle, r, boardRotation, isReadOnly, showName, onClick, slotOffset = 0, radialOffset = 0 }) => {
+  // Use a motion value for the angle to handle smooth transitions and wrap-around
+  const visualAngle = useMotionValue(angle);
+  
+  // Update visualAngle whenever the target angle changes, handling shortest-path wrap-around
+  useEffect(() => {
+    const current = visualAngle.get();
+    let diff = angle - current;
+    
+    // Normalize difference to shortest path (-180 to 180 degrees)
+    // This prevents the "huge jump backwards" when crossing 0/360 boundary
+    while (diff > 180) diff -= 360;
+    while (diff < -180) diff += 360;
+    
+    const controls = animate(visualAngle, current + diff, {
+      type: "spring",
+      stiffness: 80,
+      damping: 20,
+      restDelta: 0.01
+    });
+    
+    return () => controls.stop();
+  }, [angle, visualAngle]);
+
   // Synchronize with board rotation using motion transforms
-  const rotateVal = useTransform(boardRotation, (v) => v + angle);
+  // rotateVal now uses the animated visualAngle instead of the static angle prop
+  const rotateVal = useTransform([boardRotation, visualAngle], ([br, va]) => br + va);
   
   // Calculate base X and Y
   const baseX = useTransform(rotateVal, (a) => Math.sin(a * Math.PI / 180) * r);
   const baseY = useTransform(rotateVal, (a) => -Math.cos(a * Math.PI / 180) * r);
 
   // Apply slot offset (lateral) and radial offset (towards beginning/inner)
-  // We need the direction vector for the radial offset (towards center)
-  // And the perpendicular vector for lateral offset
   const x = useTransform([baseX, rotateVal], ([bx, a]) => {
     const rad = a * Math.PI / 180;
     const lateralX = Math.cos(rad) * slotOffset;
@@ -149,7 +202,7 @@ const SpecialTile = ({ tile, boardRotation, onClick, isReadOnly }) => {
     return rx * Math.sin(rad) + ry * Math.cos(rad);
   });
 
-  const EffectIcon = SPECIAL_ICONS[tile.effect] || HelpCircle;
+  const EffectIcon = SPECIAL_ICONS[tile.action] || HelpCircle;
 
   return (
     <motion.div
@@ -180,7 +233,7 @@ const SpecialTile = ({ tile, boardRotation, onClick, isReadOnly }) => {
 };
 
 const BoardView = ({ boardRotation = 0, isReadOnly = false }) => {
-  const { setBoardRotation, players, activeBoardConfig, showDetailPopup, selectedTileIndex } = useGame();
+  const { setBoardRotation, players, activeBoardConfig, showDetailPopup, selectedTileIndex, jumpToTile } = useGame();
   const boardData = activeBoardConfig.tiles;
   const [showNameId, setShowNameId] = useState(null);
   
@@ -266,16 +319,23 @@ const BoardView = ({ boardRotation = 0, isReadOnly = false }) => {
     }
   };
 
-  const handleTileClick = (tile) => (e) => {
+  const handleTileClick = (tile, index) => (e) => {
     if (isReadOnly) return;
     e.stopPropagation();
-    showDetailPopup({
-      title: tile.label || tile.type.toUpperCase(),
-      description: tile.description,
-      icon: TILE_ICONS[tile.type] || Info,
-      color: tile.color
-    });
+
+    // Se estiver no modo de teste dev, teletransporta o jogador para testar a mecânica
+    if (activeBoardConfig.id === 'teste_dev') {
+      jumpToTile(index);
+    } else {
+      showDetailPopup({
+        title: tile.label || tile.type.toUpperCase(),
+        description: tile.description,
+        icon: SPECIAL_ICONS[tile.action] || TILE_ICONS[tile.type] || Info,
+        color: tile.color
+      });
+    }
   };
+
 
   return (
     <div
@@ -340,7 +400,7 @@ const BoardView = ({ boardRotation = 0, isReadOnly = false }) => {
             const r = BOARD_LAYOUT.radii[tile.ring];
             const ringSize = BOARD_LAYOUT.sizes[tile.ring];
             const ringClass = `tile-${tile.ring}`;
-            const Icon = TILE_ICONS[tile.type] || Info;
+            const Icon = SPECIAL_ICONS[tile.action] || TILE_ICONS[tile.type] || Info;
             const isCustom = tile.isCustom || (tile.type && tile.type.startsWith('custom_'));
             const hasPlayer = players.some(p => p.position === actualIdx);
 
@@ -354,7 +414,7 @@ const BoardView = ({ boardRotation = 0, isReadOnly = false }) => {
                   height: ringSize.h,
                   transform: `translate(-50%, -50%) rotate(${tile.angle}deg) translateY(-${r}px)`
                 }}
-                onClick={handleTileClick(tile)}
+                onClick={handleTileClick(tile, actualIdx)}
               >
                 <div className="tile-content">
                   <motion.div 
@@ -397,7 +457,7 @@ const BoardView = ({ boardRotation = 0, isReadOnly = false }) => {
             key={tile.id} 
             tile={tile} 
             boardRotation={springRot}
-            onClick={handleTileClick(tile)}
+            onClick={handleTileClick(tile, boardData.indexOf(tile))}
             isReadOnly={isReadOnly}
           />
         ))}

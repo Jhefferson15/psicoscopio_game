@@ -48,7 +48,9 @@ const TabletopView = () => {
     isOnline,
     roomId,
     detailPopup,
-    closeDetailPopup
+    closeDetailPopup,
+    openDiary,
+    closeDiary
   } = useGame();
 
   const [showHourglassDetails, setShowHourglassDetails] = React.useState(false);
@@ -138,7 +140,7 @@ const TabletopView = () => {
               <div className="header-with-action">
                 <span className="journal-subtitle">Registros da Jornada</span>
               </div>
-              <button className="btn-expand-journal" onClick={() => setShowDiary(true)} title="Expandir Diário">
+              <button className="btn-expand-journal" onClick={() => openDiary()} title="Expandir Diário">
                 <Maximize2 size={14} />
               </button>
             </div>
@@ -343,7 +345,7 @@ const TabletopView = () => {
 
       <AnimatePresence>
         {showDiary && (
-          <DiaryModal onClose={() => setShowDiary(false)} />
+          <DiaryModal onClose={closeDiary} />
         )}
       </AnimatePresence>
 
@@ -358,6 +360,7 @@ const TabletopView = () => {
         onClose={closeDetailPopup} 
         data={detailPopup} 
       />
+
     </motion.div>
 
   );

@@ -1,13 +1,11 @@
 import { motion } from 'framer-motion';
 import { useAuth } from '../state/useAuth';
-import { useGame } from '../../../game/presentation/state/useGame';
 
 import { LogOut, User as UserIcon } from 'lucide-react';
 import './Auth.css';
 
 export const LoginButton = () => {
   const { user, login, logout, loading, isFirebaseConfigured } = useAuth();
-  const { setCurrentScreen } = useGame();
 
   if (!isFirebaseConfigured) {
     return (

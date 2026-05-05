@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Brain, Zap, HelpCircle, Puzzle, Award, Palette, Brush } from 'lucide-react';
 import './GameCard.css';
@@ -72,6 +72,8 @@ const GameCard = ({
   const [shouldFlip, setShouldFlip] = useState(false);
   // Controla QUAL conteudo mostrar (troca no momento edge-on da rotacao)
   const [showFront, setShowFront] = useState(false);
+  // Ref para garantir que registramos apenas uma vez por foco (evita duplicidade em re-renders do Context)
+  const hasRecordedRef = useRef(false);
 
   useEffect(() => {
     if (isFocused) {
@@ -81,8 +83,9 @@ const GameCard = ({
       const swapTimer = setTimeout(() => {
         setShowFront(true);
         // Registra a carta no histórico para o dashboard do observador
-        if (recordCardDraw) {
+        if (recordCardDraw && !hasRecordedRef.current) {
           recordCardDraw({ id: index, type: type, text: cardText, isCustom: isCustom });
+          hasRecordedRef.current = true;
         }
       }, 900);
       return () => {
@@ -90,6 +93,7 @@ const GameCard = ({
         clearTimeout(swapTimer);
         setShouldFlip(false);
         setShowFront(false);
+        hasRecordedRef.current = false;
       };
     }
   }, [isFocused, index, type, cardText, recordCardDraw, isCustom]);

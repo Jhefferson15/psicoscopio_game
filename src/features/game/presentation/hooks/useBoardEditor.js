@@ -8,6 +8,7 @@ export const useBoardEditor = ({
   changeActiveBoardConfig,
   saveNewBoardConfig,
   updateBoardConfig,
+  deleteBoardConfig,
   importBoardConfig,
   showSystemPopup,
   TILE_TYPES,
@@ -56,7 +57,7 @@ export const useBoardEditor = ({
       ...prev,
       mechanics: { 
         ...prev.mechanics, 
-        [field]: (field === 'enableCardCreationStep' || field === 'showBoardLabels' || field === 'showCardLabels' || field === 'centerText' || field === 'initialPositions') 
+        [field]: (field === 'enableCardCreationStep' || field === 'showBoardLabels' || field === 'showCardLabels' || field === 'centerText' || field === 'initialPositions' || field === 'randomStart') 
           ? value 
           : (parseInt(value) || 0) 
       }
@@ -82,6 +83,31 @@ export const useBoardEditor = ({
         ...prev,
         mechanics: { ...prev.mechanics, initialPositions: newPositions }
       };
+    });
+  };
+
+  const handleRandomizeInitialPositions = () => {
+    const outerTileIndices = editingConfig.tiles
+      .map((tile, idx) => tile.ring === 'outer' ? idx : -1)
+      .filter(idx => idx !== -1);
+    
+    if (outerTileIndices.length === 0) return;
+
+    // Embaralha para garantir posições únicas se possível
+    const shuffled = [...outerTileIndices].sort(() => Math.random() - 0.5);
+    
+    setEditingConfig(prev => {
+      const newPositions = [0, 1, 2, 3].map((_, i) => shuffled[i % shuffled.length]);
+      return {
+        ...prev,
+        mechanics: { ...prev.mechanics, initialPositions: newPositions }
+      };
+    });
+    
+    showSystemPopup({
+      title: 'Posições Definidas',
+      message: 'Jogadores posicionados aleatoriamente na borda.',
+      type: 'success'
     });
   };
 
@@ -120,7 +146,7 @@ export const useBoardEditor = ({
 
     showSystemPopup({
       title: 'Novo Tabuleiro',
-      message: 'Um novo rascunho de tabuleiro foi criado.',
+      message: 'Um novo rascunho de tabuleiro foi criado. Ele aparecerá na lista como rascunho até que você o salve.',
       type: 'success'
     });
   };
@@ -173,6 +199,31 @@ export const useBoardEditor = ({
     changeActiveBoardConfig(config.id);
   };
 
+  const handleDelete = () => {
+    if (editingConfig.id === 'default') return;
+
+    showSystemPopup({
+      title: 'Excluir Tabuleiro?',
+      message: `Tem certeza que deseja excluir "${editingConfig.name}"? Esta ação não pode ser desfeita.`,
+      type: 'confirm',
+      onConfirm: () => {
+        if (!editingConfig.id.startsWith('temp-')) {
+          deleteBoardConfig(editingConfig.id);
+        }
+        
+        // Volta para o default após excluir
+        const defaultConfig = availableBoardConfigs.find(c => c.id === 'default') || BoardConfigRepository.getDefaultConfig();
+        selectConfig(defaultConfig);
+        
+        showSystemPopup({
+          title: 'Excluído',
+          message: 'Tabuleiro removido com sucesso.',
+          type: 'success'
+        });
+      }
+    });
+  };
+
   return {
     editingConfig,
     setEditingConfig,
@@ -187,10 +238,12 @@ export const useBoardEditor = ({
     handleMechanicChange,
     handleCenterTextChange,
     handleInitialPositionChange,
+    handleRandomizeInitialPositions,
     handleRandomize,
     startNewBoard,
     handleExport,
     handleImport,
-    selectConfig
+    selectConfig,
+    handleDelete
   };
 };

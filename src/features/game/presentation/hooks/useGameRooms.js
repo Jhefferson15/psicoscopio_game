@@ -36,7 +36,9 @@ export const useGameRooms = ({
 
   const createOnlineGame = async (newPlayers) => {
     const turnTime = activeBoardConfig.mechanics?.turnTime || 120;
-    const initialPositions = activeBoardConfig.mechanics?.initialPositions || [0, 0, 0, 0];
+    const initialPositions = activeBoardConfig.mechanics?.randomStart 
+      ? BoardConfig.getRandomOuterPositions(activeBoardConfig.tiles, newPlayers.length)
+      : (activeBoardConfig.mechanics?.initialPositions || [0, 0, 0, 0]);
     const initialPlayers = newPlayers.map((p, i) => new Player(p.id || i + 1, p.name, p.color, initialPositions[i] || 0, turnTime));
     const gameState = {
       players: initialPlayers,
@@ -137,7 +139,9 @@ export const useGameRooms = ({
     try {
       const colors = ['#D84B42', '#4885CE', '#7B4BB1', '#F59E0B', '#10B981', '#6366F1'];
       const turnTime = activeBoardConfig.mechanics?.turnTime || 120;
-      const initialPositions = activeBoardConfig.mechanics?.initialPositions || [0, 0, 0, 0];
+      const initialPositions = activeBoardConfig.mechanics?.randomStart 
+        ? BoardConfig.getRandomOuterPositions(activeBoardConfig.tiles, participantsArray.length)
+        : (activeBoardConfig.mechanics?.initialPositions || [0, 0, 0, 0]);
       
       const initialPlayers = participantsArray.map((p, i) => ({
         id: p.id,

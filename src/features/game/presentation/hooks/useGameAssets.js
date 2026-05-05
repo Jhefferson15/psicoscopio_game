@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { CardSet } from '../../domain/entities/CardSet';
 import { BoardConfig } from '../../domain/entities/BoardConfig';
 import { CardSetRepository } from '../../data/repositories/CardSetRepository';
@@ -21,16 +21,25 @@ export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudB
   });
 
   // Estados para Configuração do Tabuleiro
-  const [availableBoardConfigs, setAvailableBoardConfigs] = useState(() => {
-    const saved = BoardConfigRepository.getSavedConfigs();
-    return [BoardConfigRepository.getDefaultConfig(), ...saved];
+  const [savedBoardConfigs, setSavedBoardConfigs] = useState(() => {
+    return BoardConfigRepository.getSavedConfigs();
   });
 
+  const availableBoardConfigs = useMemo(() => {
+    const defaultConfig = BoardConfigRepository.getDefaultConfig();
+    const devTestConfig = BoardConfigRepository.getDevTestBoardConfig();
+    
+    // Filtra para evitar duplicatas se por algum motivo já estiverem no savedBoardConfigs
+    const userConfigs = savedBoardConfigs.filter(c => c.id !== 'default' && c.id !== 'teste_dev');
+    
+    return [defaultConfig, devTestConfig, ...userConfigs];
+  }, [savedBoardConfigs]);
+
   const [activeBoardConfig, setActiveBoardConfig] = useState(() => {
-    const saved = BoardConfigRepository.getSavedConfigs();
     const activeId = BoardConfigRepository.getActiveConfigId();
     const defaultConfig = BoardConfigRepository.getDefaultConfig();
-    const allConfigs = [defaultConfig, ...saved];
+    const devTestConfig = BoardConfigRepository.getDevTestBoardConfig();
+    const allConfigs = [defaultConfig, devTestConfig, ...savedBoardConfigs];
     return allConfigs.find(c => c.id === activeId) || defaultConfig;
   });
 
@@ -90,12 +99,15 @@ export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudB
       
       queueMicrotask(() => {
         const activeId = BoardConfigRepository.getActiveConfigId();
-        const defaultConfig = BoardConfigRepository.getDefaultConfig();
-        const allConfigs = [defaultConfig, ...mergedConfigs];
-        
-        setAvailableBoardConfigs(allConfigs);
+        const savedConfigs = BoardConfigRepository.getSavedConfigs();
+
+        setSavedBoardConfigs(savedConfigs);
         
         // Garante que o tabuleiro ativo reflita os dados mais recentes (ex: sincronizados)
+        // O useMemo cuidará de injetar o default e o devTest na lista final
+        const defaultConfig = BoardConfigRepository.getDefaultConfig();
+        const devTestConfig = BoardConfigRepository.getDevTestBoardConfig();
+        const allConfigs = [defaultConfig, devTestConfig, ...savedConfigs];
         const currentActive = allConfigs.find(c => c.id === activeId) || defaultConfig;
         setActiveBoardConfig(currentActive);
       });
@@ -169,13 +181,13 @@ export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudB
     const saved = BoardConfigRepository.getSavedConfigs();
     const updated = [...saved, newConfig];
     BoardConfigRepository.saveConfigs(updated);
-    setAvailableBoardConfigs([BoardConfigRepository.getDefaultConfig(), ...updated]);
+    setSavedBoardConfigs(updated);
     if (user) syncBoardConfigsToCloud(updated);
     return newConfig.id;
   };
 
   const updateBoardConfig = (id, tiles, mechanics, name) => {
-    if (id === 'default') return;
+    if (id === 'default' || id === 'teste_dev') return;
     const saved = BoardConfigRepository.getSavedConfigs();
     const index = saved.findIndex(c => c.id === id);
     if (index >= 0) {
@@ -185,7 +197,7 @@ export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudB
       saved[index].updatedAt = Date.now();
       
       BoardConfigRepository.saveConfigs(saved);
-      setAvailableBoardConfigs([BoardConfigRepository.getDefaultConfig(), ...saved]);
+      setSavedBoardConfigs([...saved]);
       if (user) syncBoardConfigsToCloud(saved);
       if (activeBoardConfig.id === id) {
         setActiveBoardConfig(BoardConfig.fromJSON(saved[index]));
@@ -194,15 +206,14 @@ export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudB
   };
 
   const deleteBoardConfig = (id) => {
-    if (id === 'default') return;
+    if (id === 'default' || id === 'teste_dev') return;
     BoardConfigRepository.deleteConfig(id);
     const saved = BoardConfigRepository.getSavedConfigs();
-    setAvailableBoardConfigs([BoardConfigRepository.getDefaultConfig(), ...saved]);
+    setSavedBoardConfigs(saved);
     if (user) syncBoardConfigsToCloud(saved);
     if (activeBoardConfig.id === id) {
       setActiveBoardConfig(BoardConfigRepository.getDefaultConfig());
     }
-
   };
 
   const importCardSet = (data) => {

@@ -25,7 +25,10 @@ export const useGameActions = ({
   setCurrentScreen,
   currentScreen,
   setShowDiary,
+  openDiary,
+  setIsDiaryRequired,
   setPlayerSelectionTask,
+  setCardSelectionTask,
   setAtelierContext,
   setRoomStatus,
   setActiveVerification,
@@ -72,7 +75,7 @@ export const useGameActions = ({
 
       if (action.type === 'POPUP') showSystemPopup(action.payload);
 
-      if (action.type === 'SELECT_PLAYER') {
+      if (action.type === 'SELECT_PLAYER' && setPlayerSelectionTask) {
         setPlayerSelectionTask({
           ...action.payload,
           onSelect: async (targetId) => {
@@ -81,6 +84,8 @@ export const useGameActions = ({
             const myIndex = currentPlayerIndex;
             
             if (targetIndex !== -1) {
+              const targetPlayer = currentPlayers[targetIndex];
+              
               if (action.payload.action === 'SWAP_POSITIONS') {
                 const tempPos = currentPlayers[myIndex].position;
                 currentPlayers[myIndex].position = currentPlayers[targetIndex].position;
@@ -94,10 +99,43 @@ export const useGameActions = ({
 
                 showSystemPopup({
                   title: 'Troca Realizada!',
-                  message: `Você trocou de lugar com ${currentPlayers[targetIndex].name}.`,
+                  message: `Você trocou de lugar com ${targetPlayer.name}.`,
                   type: 'success',
                   onConfirm: () => {
                     passTurn({ players: currentPlayers });
+                  }
+                });
+              } else if (action.payload.action === 'SHARE_CARD') {
+                // Inicia seleção de carta após escolher destinatário
+                setCardSelectionTask({
+                  title: 'Escolha a Carta',
+                  message: `Qual carta você deseja compartilhar com ${targetPlayer.name}?`,
+                  recipientId: targetId,
+                  onSelect: (card) => {
+                    setFocusedCard({
+                      ...card,
+                      content: card.cardText,
+                      type: card.cardType,
+                      id: `shared-${Date.now()}`,
+                      fromTileAction: true,
+                      recipientId: targetId // Guardamos quem recebe
+                    });
+                  },
+                  onDrawNew: () => {
+                    // Sorteia uma nova do tipo 'sorte' (ou aleatório)
+                    const types = ['reflexao', 'desafio', 'sorte', 'memoria', 'experiencia'];
+                    const randomType = types[Math.floor(Math.random() * types.length)];
+                    const cardData = drawCard(randomType);
+                    
+                    setFocusedCard({
+                      type: randomType,
+                      content: cardData.content,
+                      index: cardData.index,
+                      id: `shared-new-${Date.now()}`,
+                      fromTileAction: true,
+                      recipientId: targetId,
+                      isCustom: !!cardData.isCustom
+                    });
                   }
                 });
               }
@@ -133,7 +171,6 @@ export const useGameActions = ({
             onConfirm: () => {
               // Salva a ação pendente para retomar depois
               pendingTileActionRef.current = tile;
-              
               if (isOnline && roomId) {
                 // SALVA AS POSIÇÕES ATUAIS antes de mudar o status da sala
                 const plainPlayers = playersRef.current.map(p => ({ ...p }));
@@ -159,7 +196,14 @@ export const useGameActions = ({
     }
 
     if (result.newScreen) setCurrentScreen(result.newScreen);
-    if (result.showDiary) setShowDiary(result.showDiary);
+    if (result.showDiary) {
+      if (typeof openDiary === 'function') {
+        openDiary(true);
+      } else {
+        setShowDiary(true);
+        if (setIsDiaryRequired) setIsDiaryRequired(true);
+      }
+    }
 
     let modalOpened = result.modalOpened;
     let positionChanged = result.positionChanged;
@@ -172,7 +216,7 @@ export const useGameActions = ({
 
     setPlayers([...allPlayers]);
     return modalOpened;
-  }, [activeBoardConfig, currentPlayerIndex, drawCard, getRingIndices, isOnline, roomId, setAtelierContext, setCurrentScreen, setFocusedCard, setPlayerSelectionTask, setPlayers, setShowDiary, showSystemPopup, syncRepository, passTurn]);
+  }, [activeBoardConfig, currentPlayerIndex, drawCard, getRingIndices, isOnline, roomId, setAtelierContext, setCurrentScreen, setFocusedCard, setPlayerSelectionTask, setCardSelectionTask, setPlayers, setShowDiary, showSystemPopup, syncRepository, passTurn]);
 
   // Efeito para retomar ação pendente ao voltar para o jogo
   useEffect(() => {
@@ -218,7 +262,7 @@ export const useGameActions = ({
       player.position = ringIndices[relativePos];
       newPlayers[currentPlayerIndex] = { ...player };
       setPlayers([...newPlayers]);
-      await new Promise(r => setTimeout(r, 400));
+      await new Promise(r => setTimeout(r, 350));
     }
 
     if (isOnline && roomId) {
@@ -309,6 +353,7 @@ export const useGameActions = ({
           playerId: players[currentPlayerIndex].id,
           cardType: focusedCard.type || 'reflexao',
           cardText: (typeof focusedCard.content === 'string' ? focusedCard.content : focusedCard.content?.text) || focusedCard.text || 'Ação de casa',
+          recipientId: focusedCard.recipientId || null,
           timestamp: Date.now(),
           responses: {}
         };
@@ -330,13 +375,50 @@ export const useGameActions = ({
 
   }, [focusedCard, setFocusedCard, drawCard, isOnline, roomId, players, currentPlayerIndex, syncRepository, setActiveVerification, setRoomStatus]);
 
+  const jumpToTile = useCallback(async (tileIndex) => {
+    if (isMovingRef.current) return;
+    
+    // Bloqueia ações se for online e não for sua vez
+    if (isOnline && currentPlayerIndex !== myPlayerIndex) return;
+
+    setIsMoving(true);
+    
+    let newPlayers = [...playersRef.current];
+    let player = { ...newPlayers[currentPlayerIndex] };
+    player.position = tileIndex;
+    newPlayers[currentPlayerIndex] = player;
+    setPlayers(newPlayers);
+
+    if (isOnline && roomId) {
+      const plainPlayers = newPlayers.map(p => ({ ...p }));
+      await syncRepository.updateGameState(roomId, { 
+        players: plainPlayers,
+        lastActionBy: user?.id || null 
+      }).catch(e => console.error("Erro sync jump", e));
+    }
+
+    // Pequeno delay para a UI atualizar a posição visual antes de disparar a mecânica
+    await new Promise(r => setTimeout(r, 400));
+    
+    const currentTile = activeBoardConfig.tiles[player.position];
+    const hasModal = await handleTileAction(currentTile, player, newPlayers);
+    
+    setIsMoving(false);
+    
+    if (!hasModal) {
+      passTurn({ players: newPlayers });
+    }
+  }, [activeBoardConfig, currentPlayerIndex, handleTileAction, isOnline, myPlayerIndex, passTurn, roomId, setIsMoving, setPlayers, syncRepository, user]);
+
   return {
     rollDice,
     movePlayer,
     handleTileAction,
+    jumpToTile,
     closeModal,
     closeFocusedCard,
     isMovingRef,
     playersRef
   };
 };
+

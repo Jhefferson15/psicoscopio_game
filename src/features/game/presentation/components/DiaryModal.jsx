@@ -30,7 +30,17 @@ const TYPES = [
 ];
 
 const DiaryModal = ({ onClose }) => {
-  const { diaryEntries, addDiaryEntry, removeDiaryEntry, updateDiaryEntry } = useGame();
+  const { 
+    diaryEntries, 
+    addDiaryEntry, 
+    removeDiaryEntry, 
+    updateDiaryEntry,
+    isDiaryRequired,
+    setIsDiaryRequired,
+    showSystemPopup
+  } = useGame();
+  
+  const [hasAddedNote, setHasAddedNote] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [newText, setNewText] = useState('');
   const [selectedMood, setSelectedMood] = useState('neutral');
@@ -46,6 +56,9 @@ const DiaryModal = ({ onClose }) => {
       addDiaryEntry(newText, selectedType, selectedMood);
       setNewText('');
       setIsAdding(false);
+      setHasAddedNote(true);
+      // Uma vez que adicionou, não é mais obrigatório para este turno
+      if (setIsDiaryRequired) setIsDiaryRequired(false);
     }
   };
 
@@ -83,7 +96,17 @@ const DiaryModal = ({ onClose }) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      onClick={onClose}
+      onClick={() => {
+        if (isDiaryRequired && !hasAddedNote) {
+          showSystemPopup({
+            title: 'Registro Necessário',
+            message: 'Você precisa registrar seus pensamentos no diário antes de continuar.',
+            type: 'warning'
+          });
+          return;
+        }
+        onClose();
+      }}
     >
       <motion.div 
         className="diary-modal-container glass-light"
@@ -102,7 +125,21 @@ const DiaryModal = ({ onClose }) => {
               <p>Registre sua jornada de autoconhecimento</p>
             </div>
           </div>
-          <button className="diary-close-btn" onClick={onClose}>
+          <button 
+            className="diary-close-btn" 
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isDiaryRequired && !hasAddedNote) {
+                showSystemPopup({
+                  title: 'Registro Necessário',
+                  message: 'Você precisa registrar seus pensamentos no diário antes de continuar.',
+                  type: 'warning'
+                });
+                return;
+              }
+              onClose();
+            }}
+          >
             <X size={24} />
           </button>
         </div>

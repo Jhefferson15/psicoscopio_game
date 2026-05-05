@@ -23,7 +23,9 @@ const ObserverDashboard = () => {
       return;
     }
 
-    setLoading(true);
+    requestAnimationFrame(() => {
+      setLoading(true);
+    });
     const unsubscribe = syncRepository.listenToOwnerRooms(user.id, (ownerRooms) => {
       setRooms(ownerRooms.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
       setLoading(false);

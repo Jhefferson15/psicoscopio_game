@@ -99,7 +99,9 @@ const BoardEditor = () => {
     selectedTileIndex,
     setSelectedTileIndex,
     selectedPlayerIdx,
-    setSelectedPlayerIdx
+    setSelectedPlayerIdx,
+    handleRandomizeInitialPositions,
+    handleDelete
   } = useBoardEditor({
     activeBoardConfig,
     availableBoardConfigs,
@@ -107,6 +109,7 @@ const BoardEditor = () => {
     changeActiveBoardConfig,
     saveNewBoardConfig,
     updateBoardConfig,
+    deleteBoardConfig,
     importBoardConfig,
     TILE_TYPES,
     TILE_ACTIONS,
@@ -178,6 +181,17 @@ const BoardEditor = () => {
             
             <div className="config-list-container">
               <div className="config-list">
+                {/* Mostra o rascunho atual se for temporário e não estiver na lista salva */}
+                {editingConfig.id.startsWith('temp-') && (
+                  <div className="config-item active">
+                    <div className="config-info">
+                      <span className="config-name">{configName} (Rascunho)</span>
+                      <span className="config-meta">{editingConfig.tiles.length} casas</span>
+                    </div>
+                    <Sparkles size={16} color="#F4C746" />
+                  </div>
+                )}
+
                 {availableBoardConfigs.map(config => (
                   <div 
                     key={config.id} 
@@ -200,19 +214,7 @@ const BoardEditor = () => {
             <div className="sidebar-footer">
                <button 
                 className="btn-delete-board-styled" 
-                onClick={() => {
-                  if (editingConfig.id !== 'default') {
-                    showSystemPopup({
-                      title: 'Excluir Tabuleiro?',
-                      message: `Tem certeza que deseja excluir "${editingConfig.name}"? Esta ação não pode ser desfeita.`,
-                      type: 'confirm',
-                      onConfirm: () => {
-                        deleteBoardConfig(editingConfig.id);
-                        setEditingConfig(null);
-                      }
-                    });
-                  }
-                }}
+                onClick={handleDelete}
                 disabled={editingConfig.id === 'default'}
                >
                  <Trash2 size={16} />
@@ -306,8 +308,41 @@ const BoardEditor = () => {
                     </div>
 
                     <div className="mechanic-card span-2">
-                      <h4><Users size={16} /> Posições Iniciais</h4>
-                      <p className="mechanic-hint">Clique em um jogador abaixo e depois em uma casa no tabuleiro.</p>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <RotateCcw size={16} color="#4885CE" />
+                          <h4 style={{ margin: 0 }}>Sempre Iniciar Aleatório</h4>
+                        </div>
+                        <label className="switch-premium">
+                          <input 
+                            type="checkbox" 
+                            checked={!!editingConfig.mechanics.randomStart} 
+                            onChange={(e) => handleMechanicChange('randomStart', e.target.checked)}
+                          />
+                          <span className="slider-premium round"></span>
+                        </label>
+                      </div>
+                      <p className="mechanic-hint" style={{ marginTop: '-0.5rem', marginBottom: 0 }}>
+                        Se ativado, as posições iniciais serão sorteadas na borda a cada nova partida.
+                      </p>
+                    </div>
+
+                    <div className="mechanic-card span-2">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <Users size={16} />
+                          <h4 style={{ margin: 0 }}>Posições Iniciais</h4>
+                        </div>
+                        <button 
+                          className="btn-random-pos" 
+                          onClick={handleRandomizeInitialPositions}
+                          title="Sortear posições no círculo externo"
+                        >
+                          <Sparkles size={14} />
+                          <span>BORDA ALEATÓRIA</span>
+                        </button>
+                      </div>
+                      <p className="mechanic-hint">Selecione um jogador e clique em uma casa no tabuleiro.</p>
                       <div className="initial-positions-grid">
                         {[0, 1, 2, 3].map((playerIdx) => (
                           <button 

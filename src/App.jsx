@@ -24,6 +24,7 @@ import ConfirmLeaveModal from './features/game/presentation/components/ConfirmLe
 import { EvaluationForm } from './features/game/presentation/components/EvaluationForm';
 import { ActionVerificationForm } from './features/game/presentation/components/ActionVerificationForm';
 import PlayerSelectorModal from './features/game/presentation/components/PlayerSelectorModal';
+import CardSelectorModal from './features/game/presentation/components/CardSelectorModal';
 
 
 
@@ -259,6 +260,7 @@ const GameContent = () => {
       />
       <SystemPopup />
       <PlayerSelectorModal />
+      <CardSelectorModal />
       <ActionVerificationForm />
     </div>
 

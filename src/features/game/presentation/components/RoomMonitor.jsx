@@ -211,7 +211,7 @@ const RoomMonitor = ({ roomId, onBack }) => {
                       try {
                         const date = card.timestamp instanceof Date ? card.timestamp : new Date(card.timestamp);
                         return isNaN(date.getTime()) ? '--:--' : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                      } catch (e) {
+                      } catch {
                         return '--:--';
                       }
                     })()}
