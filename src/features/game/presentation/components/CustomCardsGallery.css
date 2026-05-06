@@ -314,3 +314,29 @@
     max-width: 100%;
   }
 }
+
+.gallery-card-item.is-reported .gallery-card-inner {
+  filter: grayscale(1) opacity(0.8);
+}
+
+.gallery-card-item.is-reported .gallery-card-actions {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.card-reported-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  z-index: var(--z-elevated);
+  gap: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  backdrop-filter: blur(2px);
+}

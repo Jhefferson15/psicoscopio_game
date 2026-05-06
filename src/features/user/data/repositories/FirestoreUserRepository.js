@@ -90,3 +90,5 @@ export class FirestoreUserRepository {
     await setDoc(userRef, { boardConfigs: plainConfigs }, { merge: true });
   }
 }
+
+

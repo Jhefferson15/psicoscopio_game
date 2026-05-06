@@ -26,10 +26,6 @@ import { ActionVerificationForm } from './features/game/presentation/components/
 import PlayerSelectorModal from './features/game/presentation/components/PlayerSelectorModal';
 import CardSelectorModal from './features/game/presentation/components/CardSelectorModal';
 
-
-
-
-
 const GameContent = () => {
   const { 
     players, 
@@ -140,7 +136,6 @@ const GameContent = () => {
             <EvaluationForm onComplete={confirmGoToMenu} />
           </motion.div>
         ) : !isBoardFullScreen ? (
-
           <motion.div
             key="tabletop"
             initial={{ opacity: 0 }}
@@ -263,8 +258,6 @@ const GameContent = () => {
       <CardSelectorModal />
       <ActionVerificationForm />
     </div>
-
-
   );
 };
 

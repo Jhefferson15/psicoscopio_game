@@ -41,7 +41,6 @@ const TabletopView = () => {
     toggleFullScreen,
     isBoardFullScreen,
     showDiary,
-    setShowDiary,
     setShowCardHistory,
     cardHistory,
     activeBoardConfig,

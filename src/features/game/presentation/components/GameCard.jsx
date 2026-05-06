@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Brain, Zap, HelpCircle, Puzzle, Award, Palette, Brush } from 'lucide-react';
+import { Sparkles, Brain, Zap, HelpCircle, Puzzle, Award, Palette, Brush, ShieldAlert, CheckCircle } from 'lucide-react';
 import './GameCard.css';
 import { getRandomCardContent } from '../../data/repositories/cardRepository';
 import { useGame } from '../state/useGame';
+import { ReportCardModal } from './ReportCardModal';
 
 const cardTypes = {
   reflexao: {
@@ -60,7 +61,14 @@ const GameCard = ({
   isCustom = false 
 }) => {
 
-  const { closeFocusedCard, activeCardSet, recordCardDraw, showDetailPopup, activeBoardConfig } = useGame();
+  const { 
+    closeFocusedCard, 
+    activeCardSet, 
+    recordCardDraw, 
+    showDetailPopup, 
+    activeBoardConfig,
+    reportCard
+  } = useGame();
   const config = cardTypes[type] || cardTypes.default;
   const Icon = config.icon;
   const layoutId = `card-${type}-${index}`;
@@ -74,6 +82,11 @@ const GameCard = ({
   const [showFront, setShowFront] = useState(false);
   // Ref para garantir que registramos apenas uma vez por foco (evita duplicidade em re-renders do Context)
   const hasRecordedRef = useRef(false);
+
+  // Estados para denúncia
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isReportedInSession, setIsReportedInSession] = useState(false);
+  const [showReportSuccess, setShowReportSuccess] = useState(false);
 
   useEffect(() => {
     if (isFocused) {
@@ -94,11 +107,16 @@ const GameCard = ({
         setShouldFlip(false);
         setShowFront(false);
         hasRecordedRef.current = false;
+        setIsReportedInSession(false);
+        setShowReportSuccess(false);
       };
     }
   }, [isFocused, index, type, cardText, recordCardDraw, isCustom]);
 
-  const handleClick = () => {
+  const handleClick = (e) => {
+    // Evita fechar a carta se clicar na denúncia
+    if (e.target.closest('.report-action-btn')) return;
+
     if (isFocused) {
       closeFocusedCard();
     } else if (isStacked) {
@@ -112,86 +130,139 @@ const GameCard = ({
     }
   };
 
+  const handleReportConfirm = async (reason) => {
+    try {
+      // Para cartas de sistema, o ID é o próprio texto. Para customizadas, é o ID único.
+      const actualCardId = isCustom ? (content?.id || index) : cardText;
+      
+      // Centralized report (handles local state, localStorage and Firebase)
+      await reportCard(actualCardId, reason);
+
+      setIsReportedInSession(true);
+      setShowReportSuccess(true);
+      
+      // Fecha a carta automaticamente após o feedback de sucesso
+      setTimeout(() => {
+        closeFocusedCard();
+      }, 2000);
+    } catch (error) {
+      console.error("Failed to report:", error);
+    }
+  };
+
   return (
-    <motion.div
-      layoutId={layoutId}
-      className={`game-card ${isStacked ? 'stacked' : ''} ${isFocused ? 'focused' : ''}`}
-      style={{
-        '--card-color': config.color,
-        '--card-gradient': config.gradient,
-        zIndex: isFocused ? 2000 : (isStacked ? 10 - index : 1),
-        cursor: (isFocused || isStacked) ? 'pointer' : 'default'
-      }}
-      animate={{ 
-        y: isFocused ? 0 : (isStacked ? index * -4 : 0),
-        rotateZ: isFocused ? 0 : (isStacked ? index * 2 - 2 : 0),
-        scale: isFocused ? 1.15 : 1
-      }}
-      transition={{ 
-        scale: { duration: 0.5 },
-        layout: { duration: 0.6, type: 'spring' }
-      }}
-      whileHover={isFocused ? { scale: 1.05 } : {}}
-      whileTap={isFocused ? { scale: 0.95 } : {}}
-      onClick={handleClick}
-    >
-      <div className="card-perspective-wrapper">
-        <div className={`card-inner ${shouldFlip ? 'card-flipped' : ''}`}>
-          
-          {/* Uma unica face: troca conteudo durante a rotacao */}
-          <div className={`card-face ${showFront ? 'card-face-front' : ''}`}>
-            {showFront ? (
-              /* FRENTE - Conteudo rico em texto */
-              <div className={`card-content-wrapper ${isCustom && (contentType === 'drawing' || contentType === 'image') ? 'is-custom-media' : ''}`}>
-                {activeBoardConfig.mechanics?.showCardLabels !== false && (
-                  <div className="card-header-bar" style={{ borderBottomColor: config.color }}>
-                    <div className="card-header-icons">
-                       <Icon size={isFocused ? 28 : 16} color={config.color} />
-                       {isCustom && <Brush size={isFocused ? 18 : 10} color={config.color} className="custom-indicator" />}
-                    </div>
-                    <span style={{ color: config.color }}>
-                      {isCustom ? `CUSTOM ${config.label.toUpperCase()}` : config.label.toUpperCase()}
-                    </span>
-                  </div>
-                )}
-                
-                <div className="card-body-text">
-                  {contentType === 'drawing' || contentType === 'image' ? (
-                    <div className="custom-card-media">
-                      <img src={content} alt="Card content" />
+    <>
+      <motion.div
+        layoutId={layoutId}
+        className={`game-card ${isStacked ? 'stacked' : ''} ${isFocused ? 'focused' : ''} ${isReportedInSession ? 'is-reported' : ''}`}
+        style={{
+          '--card-color': config.color,
+          '--card-gradient': config.gradient,
+          zIndex: isFocused ? 2000 : (isStacked ? 10 - index : 1),
+          cursor: (isFocused || isStacked) ? 'pointer' : 'default'
+        }}
+        animate={{ 
+          y: isFocused ? 0 : (isStacked ? index * -4 : 0),
+          rotateZ: isFocused ? 0 : (isStacked ? index * 2 - 2 : 0),
+          scale: isFocused ? 1.15 : 1
+        }}
+        transition={{ 
+          scale: { duration: 0.5 },
+          layout: { duration: 0.6, type: 'spring' }
+        }}
+        whileHover={isFocused ? { scale: 1.05 } : {}}
+        whileTap={isFocused ? { scale: 0.95 } : {}}
+        onClick={handleClick}
+      >
+        <div className="card-perspective-wrapper">
+          <div className={`card-inner ${shouldFlip ? 'card-flipped' : ''}`}>
+            
+            {/* Uma unica face: troca conteudo durante a rotacao */}
+            <div className={`card-face ${showFront ? 'card-face-front' : ''}`}>
+              {showFront ? (
+                /* FRENTE - Conteudo rico em texto */
+                <div className={`card-content-wrapper ${isCustom && (contentType === 'drawing' || contentType === 'image') ? 'is-custom-media' : ''}`}>
+                  {showReportSuccess ? (
+                    <div className="report-success-overlay">
+                      <CheckCircle size={48} color="#4cd137" />
+                      <p>Denúncia Enviada</p>
+                      <span>Obrigado por nos ajudar!</span>
                     </div>
                   ) : (
-                    <p>{cardText}</p>
+                    <>
+                      {activeBoardConfig.mechanics?.showCardLabels !== false && (
+                        <div className="card-header-bar" style={{ borderBottomColor: config.color }}>
+                          <div className="card-header-icons">
+                             <Icon size={isFocused ? 28 : 16} color={config.color} />
+                             {isCustom && <Brush size={isFocused ? 18 : 10} color={config.color} className="custom-indicator" />}
+                          </div>
+                          <div className="card-header-actions">
+                            <span style={{ color: config.color }}>
+                              {isCustom ? `CUSTOM ${config.label.toUpperCase()}` : config.label.toUpperCase()}
+                            </span>
+                            {isFocused && !isReportedInSession && (
+                              <button 
+                                className="report-action-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setIsReportModalOpen(true);
+                                }}
+                                title="Denunciar esta carta"
+                              >
+                                <ShieldAlert size={20} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="card-body-text">
+                        {contentType === 'drawing' || contentType === 'image' ? (
+                          <div className="custom-card-media">
+                            <img src={content} alt="Card content" />
+                          </div>
+                        ) : (
+                          <p>{cardText}</p>
+                        )}
+                      </div>
+
+                      {activeBoardConfig.mechanics?.showCardLabels !== false && (
+                        <div className="card-footer-bar">
+                          <span>PSICOSCÓPIO</span>
+                          <span>#{String(index + 1).padStart(3, '0')}</span>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
-
-                {activeBoardConfig.mechanics?.showCardLabels !== false && (
-                  <div className="card-footer-bar">
-                    <span>PSICOSCÓPIO</span>
-                    <span>#{String(index + 1).padStart(3, '0')}</span>
+              ) : (
+                /* VERSO - Capa decorativa */
+                <div className="card-cover" style={{ background: config.gradient }}>
+                  <div className="logo-symbol">
+                    <div className="icon-group">
+                      <Icon size={isFocused ? 80 : 40} color="white" opacity={0.9} />
+                      {isCustom && <Brush size={isFocused ? 40 : 20} color="white" opacity={0.8} className="custom-indicator-large" />}
+                    </div>
                   </div>
-                )}
-              </div>
-            ) : (
-              /* VERSO - Capa decorativa */
-              <div className="card-cover" style={{ background: config.gradient }}>
-                <div className="logo-symbol">
-                  <div className="icon-group">
-                    <Icon size={isFocused ? 80 : 40} color="white" opacity={0.9} />
-                    {isCustom && <Brush size={isFocused ? 40 : 20} color="white" opacity={0.8} className="custom-indicator-large" />}
-                  </div>
+                  <span className="cover-label">
+                    {isCustom ? `CUSTOM\n${config.label.toUpperCase()}` : config.label}
+                  </span>
+                  <div className="cover-dots"></div>
                 </div>
-                <span className="cover-label">
-                  {isCustom ? `CUSTOM\n${config.label.toUpperCase()}` : config.label}
-                </span>
-                <div className="cover-dots"></div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
+          </div>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+
+      <ReportCardModal 
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        onConfirm={handleReportConfirm}
+        cardId={isCustom ? (content?.id || index) : cardText}
+      />
+    </>
   );
 };
 

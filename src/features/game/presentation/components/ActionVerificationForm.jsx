@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Users, MessageCircle, ShieldCheck, HelpCircle, RotateCcw } from 'lucide-react';
+import { Users, MessageCircle, ShieldCheck, HelpCircle, RotateCcw, ShieldAlert, CheckCircle } from 'lucide-react';
 import { useGame } from '../state/useGame';
 import { useAuth } from '../../../auth/presentation/state/useAuth';
 import { LIKERT_SCALE } from '../../domain/constants/meegaQuestions';
+import { ReportCardModal } from './ReportCardModal';
 import './ActionVerificationForm.css';
 
 const VERIFICATION_QUESTIONS = {
@@ -25,19 +26,24 @@ export const ActionVerificationForm = () => {
     players,
     roomStatus,
     isOnline,
-    setActiveVerification
+    setActiveVerification,
+    reportCard
   } = useGame();
   
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hoveredValue, setHoveredValue] = useState(null);
+  
+  // Estados para denúncia
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isReportedInSession, setIsReportedInSession] = useState(false);
 
   // Filtra participantes para incluir todos os jogadores mas excluir observadores
   const participantsArray = useMemo(() => {
     return Object.values(roomParticipants || {}).filter(p => !p.isObserver);
   }, [roomParticipants]);
 
-  const { playerId, cardType, responses = {}, cardText, recipientId } = activeVerification || {};
+  const { playerId, cardType, responses = {}, cardText, recipientId, isCustom, cardId } = activeVerification || {};
   const targetPlayer = players.find(p => p.id === playerId);
 
   const question = useMemo(() => {
@@ -124,167 +130,207 @@ export const ActionVerificationForm = () => {
     }
   };
 
+  const handleReportConfirm = async (reason) => {
+    try {
+      const actualId = isCustom ? (cardId || cardText) : cardText;
+      
+      // Centralized report (handles local state, localStorage and Firebase)
+      await reportCard(actualId, reason);
+
+      setIsReportedInSession(true);
+    } catch (error) {
+      console.error("Failed to report card in verification:", error);
+    }
+  };
+
   const getResponseLabel = (value) => {
     return LIKERT_SCALE.find(s => s.value === value)?.label || "";
   };
 
   return (
-    <motion.div 
-      className="verification-overlay"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <div className="verification-ambient-glow" style={{ '--accent': targetPlayer?.color || '#7B4BB1' }}></div>
-      
+    <>
       <motion.div 
-        className="verification-card glass-panel"
-        initial={{ scale: 0.9, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
+        className="verification-overlay"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
       >
-        <header className="verification-header">
-          <div className="status-badge">
-            <ShieldCheck size={16} />
-            <span>Validação Coletiva</span>
-          </div>
-          <div className="timer-paused-indicator">
-            <div className="pulse-dot"></div>
-            Tempo Pausado
-          </div>
-        </header>
+        <div className="verification-ambient-glow" style={{ '--accent': targetPlayer?.color || '#7B4BB1' }}></div>
+        
+        <motion.div 
+          className="verification-card glass-panel"
+          initial={{ scale: 0.9, y: 20 }}
+          animate={{ scale: 1, y: 0 }}
+        >
+          <header className="verification-header">
+            <div className="status-badge">
+              <ShieldCheck size={16} />
+              <span>Validação Coletiva</span>
+            </div>
+            <div className="timer-paused-indicator">
+              <div className="pulse-dot"></div>
+              Tempo Pausado
+            </div>
+          </header>
 
-        <div className="verification-body">
-          <div className="target-player-info">
-             <div className="player-avatar-large" style={{ backgroundColor: targetPlayer?.color }}>
-                {targetPlayer?.name?.charAt(0)}
-             </div>
-             {activeVerification.recipientId ? (
-               <div className="share-flow-info">
+          <div className="verification-body">
+            <div className="target-player-info">
+               <div className="player-avatar-large" style={{ backgroundColor: targetPlayer?.color }}>
+                  {targetPlayer?.name?.charAt(0)}
+               </div>
+               {activeVerification.recipientId ? (
+                 <div className="share-flow-info">
+                   <div className="player-meta">
+                      <h3>{targetPlayer?.name}</h3>
+                      <p>está compartilhando com</p>
+                   </div>
+                   <div className="share-arrow">→</div>
+                   <div className="recipient-mini">
+                      <div className="mini-avatar" style={{ backgroundColor: players.find(p => p.id === activeVerification.recipientId)?.color }}>
+                        {players.find(p => p.id === activeVerification.recipientId)?.name?.charAt(0)}
+                      </div>
+                      <strong>{players.find(p => p.id === activeVerification.recipientId)?.name}</strong>
+                   </div>
+                 </div>
+               ) : (
                  <div className="player-meta">
                     <h3>{targetPlayer?.name}</h3>
-                    <p>está compartilhando com</p>
+                    <p>realizou uma ação de <strong>{cardType.toUpperCase()}</strong></p>
                  </div>
-                 <div className="share-arrow">→</div>
-                 <div className="recipient-mini">
-                    <div className="mini-avatar" style={{ backgroundColor: players.find(p => p.id === activeVerification.recipientId)?.color }}>
-                      {players.find(p => p.id === activeVerification.recipientId)?.name?.charAt(0)}
-                    </div>
-                    <strong>{players.find(p => p.id === activeVerification.recipientId)?.name}</strong>
-                 </div>
-               </div>
-             ) : (
-               <div className="player-meta">
-                  <h3>{targetPlayer?.name}</h3>
-                  <p>realizou uma ação de <strong>{cardType.toUpperCase()}</strong></p>
-               </div>
-             )}
-          </div>
+               )}
+            </div>
 
-          <div className="card-content-preview">
-            <MessageCircle size={18} className="quote-icon" />
-            {typeof cardText === 'string' && cardText.startsWith('data:image') ? (
-              <div className="verification-image-container">
-                <img src={cardText} alt="Conteúdo compartilhado" className="verification-image" />
-                <p className="image-caption"><em>Conteúdo Visual do Ateliê</em></p>
+            <div className="card-content-preview-container">
+              <div className="card-content-preview">
+                <MessageCircle size={18} className="quote-icon" />
+                {typeof cardText === 'string' && cardText.startsWith('data:image') ? (
+                  <div className="verification-image-container">
+                    <img src={cardText} alt="Conteúdo compartilhado" className="verification-image" />
+                    <p className="image-caption"><em>Conteúdo Visual do Ateliê</em></p>
+                  </div>
+                ) : (
+                  <p>"{cardText}"</p>
+                )}
+              </div>
+              
+              {!isReportedInSession ? (
+                <button 
+                  className="report-verification-btn"
+                  onClick={() => setIsReportModalOpen(true)}
+                  title="Denunciar conteúdo inapropriado"
+                >
+                  <ShieldAlert size={18} />
+                  <span>Denunciar</span>
+                </button>
+              ) : (
+                <div className="report-badge-verification">
+                  <CheckCircle size={14} />
+                  <span>Denunciado</span>
+                </div>
+              )}
+            </div>
+
+
+            <div className="question-section">
+               <HelpCircle size={24} className="question-icon" />
+               <h2>{question}</h2>
+               {!isOnline && currentOfflineVoter && (
+                 <div className="current-voter-label" style={{ borderLeft: `4px solid ${players.find(p => p.id === currentOfflineVoter.id)?.color || 'var(--accent)'}` }}>
+                   Vez de: <strong>{currentOfflineVoter.name}</strong>
+                 </div>
+               )}
+            </div>
+
+            {!hasResponded ? (
+              <div className="vote-scale-container">
+                 <div className="likert-scale">
+                    {LIKERT_SCALE.map((option) => (
+                      <button
+                        key={option.value}
+                        className={`likert-option ${hoveredValue >= option.value ? 'hovered' : ''}`}
+                        onClick={() => handleVote(option.value)}
+                        onMouseEnter={() => setHoveredValue(option.value)}
+                        onMouseLeave={() => setHoveredValue(null)}
+                        disabled={isSubmitting}
+                        title={option.label}
+                      >
+                        <div className="option-circle">
+                          {option.value}
+                        </div>
+                        <span className="option-label-mobile">{option.label}</span>
+                      </button>
+                    ))}
+                 </div>
+                 <div className="current-selection-label">
+                    {hoveredValue ? getResponseLabel(hoveredValue) : "Selecione uma opção"}
+                 </div>
               </div>
             ) : (
-              <p>"{cardText}"</p>
+              <div className="wait-feedback">
+                 <motion.div 
+                   className="feedback-icon-scale"
+                   initial={{ scale: 0 }}
+                   animate={{ scale: 1 }}
+                 >
+                   <div className="selected-value-badge">
+                      {myResponse}
+                   </div>
+                 </motion.div>
+                 <p>Sua avaliação: <strong>{getResponseLabel(myResponse)}</strong></p>
+                 
+                 {pendingCount > 0 && (
+                   <button 
+                    className="btn-undo-vote" 
+                    onClick={handleUndoVote}
+                    disabled={isSubmitting}
+                   >
+                     <RotateCcw size={14} />
+                     <span>Alterar meu voto</span>
+                   </button>
+                 )}
+
+                 <span className="wait-label">
+                   {pendingCount > 0 
+                     ? `Aguardando ${pendingCount} jogador(es)...` 
+                     : "Processando resultados..."}
+                 </span>
+              </div>
             )}
           </div>
 
 
-          <div className="question-section">
-             <HelpCircle size={24} className="question-icon" />
-             <h2>{question}</h2>
-             {!isOnline && currentOfflineVoter && (
-               <div className="current-voter-label" style={{ borderLeft: `4px solid ${players.find(p => p.id === currentOfflineVoter.id)?.color || 'var(--accent)'}` }}>
-                 Vez de: <strong>{currentOfflineVoter.name}</strong>
-               </div>
-             )}
-          </div>
-
-          {!hasResponded ? (
-            <div className="vote-scale-container">
-               <div className="likert-scale">
-                  {LIKERT_SCALE.map((option) => (
-                    <button
-                      key={option.value}
-                      className={`likert-option ${hoveredValue >= option.value ? 'hovered' : ''}`}
-                      onClick={() => handleVote(option.value)}
-                      onMouseEnter={() => setHoveredValue(option.value)}
-                      onMouseLeave={() => setHoveredValue(null)}
-                      disabled={isSubmitting}
-                      title={option.label}
-                    >
-                      <div className="option-circle">
-                        {option.value}
-                      </div>
-                      <span className="option-label-mobile">{option.label}</span>
-                    </button>
-                  ))}
-               </div>
-               <div className="current-selection-label">
-                  {hoveredValue ? getResponseLabel(hoveredValue) : "Selecione uma opção"}
-               </div>
-            </div>
-          ) : (
-            <div className="wait-feedback">
-               <motion.div 
-                 className="feedback-icon-scale"
-                 initial={{ scale: 0 }}
-                 animate={{ scale: 1 }}
-               >
-                 <div className="selected-value-badge">
-                    {myResponse}
-                 </div>
-               </motion.div>
-               <p>Sua avaliação: <strong>{getResponseLabel(myResponse)}</strong></p>
-               
-               {pendingCount > 0 && (
-                 <button 
-                  className="btn-undo-vote" 
-                  onClick={handleUndoVote}
-                  disabled={isSubmitting}
-                 >
-                   <RotateCcw size={14} />
-                   <span>Alterar meu voto</span>
-                 </button>
-               )}
-
-               <span className="wait-label">
-                 {pendingCount > 0 
-                   ? `Aguardando ${pendingCount} jogador(es)...` 
-                   : "Processando resultados..."}
-               </span>
+          <footer className="verification-footer">
+             <div className="progress-stats">
+                <Users size={16} />
+                <span>{responsesCount} de {totalParticipants} votos</span>
+             </div>
+             <div className="participants-progress">
+                {participantsArray.map(p => (
+                  <div 
+                    key={p.id} 
+                    className={`p-dot ${responses[p.id] !== undefined ? 'active' : ''}`}
+                    style={{ '--p-color': players.find(pl => pl.id === p.id)?.color || '#fff' }}
+                    title={p.name}
+                  ></div>
+                ))}
+             </div>
+          </footer>
+          
+          {pendingCount === 0 && (
+            <div className="processing-overlay">
+               <div className="spinner"></div>
+               <span>Finalizando verificação...</span>
             </div>
           )}
-        </div>
-
-
-        <footer className="verification-footer">
-           <div className="progress-stats">
-              <Users size={16} />
-              <span>{responsesCount} de {totalParticipants} votos</span>
-           </div>
-           <div className="participants-progress">
-              {participantsArray.map(p => (
-                <div 
-                  key={p.id} 
-                  className={`p-dot ${responses[p.id] !== undefined ? 'active' : ''}`}
-                  style={{ '--p-color': players.find(pl => pl.id === p.id)?.color || '#fff' }}
-                  title={p.name}
-                ></div>
-              ))}
-           </div>
-        </footer>
-        
-        {pendingCount === 0 && (
-          <div className="processing-overlay">
-             <div className="spinner"></div>
-             <span>Finalizando verificação...</span>
-          </div>
-        )}
+        </motion.div>
       </motion.div>
-    </motion.div>
+
+      <ReportCardModal 
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        onConfirm={handleReportConfirm}
+        cardId={isCustom ? cardId : cardText}
+      />
+    </>
   );
 };

@@ -1,0 +1,147 @@
+.print-card {
+  width: 66mm;
+  height: 95mm;
+  min-width: 66mm;
+  min-height: 95mm;
+  background: white;
+  border: 0.1mm solid #e2e8f0;
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 2.5mm;
+  overflow: hidden;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  box-shadow: none; /* No shadow for print */
+}
+
+.print-card-pattern {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  background-size: 8mm 8mm;
+  pointer-events: none;
+}
+
+.print-card-content {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border: 0.1mm solid rgba(0,0,0,0.08);
+  border-radius: 1.5mm;
+  padding: 3mm;
+  background: rgba(255, 255, 255, 0.95);
+  z-index: 1;
+}
+
+.print-card-header {
+  display: flex;
+  align-items: center;
+  gap: 2mm;
+  padding-bottom: 2mm;
+  margin-bottom: 4mm;
+  border-bottom: 0.5mm solid;
+}
+
+.print-header-icons {
+  display: flex;
+  align-items: center;
+}
+
+.print-category-label {
+  font-size: 7.5pt;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+}
+
+.print-card-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.print-card-text {
+  font-size: 10pt;
+  line-height: 1.35;
+  color: #0f172a;
+  font-weight: 700;
+  margin: 0;
+  padding: 0 1mm;
+}
+
+.print-card-footer {
+  display: flex;
+  flex-direction: column;
+  margin-top: 3mm;
+}
+
+.footer-line {
+  height: 0.2mm;
+  width: 100%;
+  margin-bottom: 1.5mm;
+  opacity: 0.2;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  opacity: 0.4;
+}
+
+.footer-brand {
+  font-size: 6pt;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+}
+
+.footer-id {
+  font-size: 6pt;
+  font-weight: 700;
+}
+
+/* Blank version */
+.print-blank-lines {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 5mm;
+}
+
+.blank-line {
+  height: 0.1mm;
+  background: #cbd5e1;
+  width: 100%;
+}
+
+/* Custom indicator */
+.custom-indicator {
+  margin-left: -1.5mm;
+  background: white;
+  border-radius: 50%;
+  padding: 0.2mm;
+  box-shadow: 0 0 0 0.2mm white;
+}
+
+/* Cut marks - more professional for physical cut */
+.cut-mark {
+  position: absolute;
+  width: 4mm;
+  height: 4mm;
+  border-color: #cbd5e1;
+  border-style: solid;
+  pointer-events: none;
+}
+
+.corner-tl { top: 0; left: 0; border-width: 0.1mm 0 0 0.1mm; }
+.corner-tr { top: 0; right: 0; border-width: 0.1mm 0.1mm 0 0; }
+.corner-bl { bottom: 0; left: 0; border-width: 0 0 0.1mm 0.1mm; }
+.corner-br { bottom: 0; right: 0; border-width: 0 0.1mm 0.1mm 0; }
+
+/* In-app preview scaling */
+.real-preview .print-card {
+  transform-origin: top left;
+}

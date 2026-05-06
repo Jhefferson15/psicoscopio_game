@@ -50,7 +50,7 @@ const CardSelectorModal = () => {
       const currentName = currentPlayer.name.trim();
       return cardName === currentName || cardName === 'Jogador' || cardName === '';
     });
-  }, [cardHistory, currentPlayer?.name]);
+  }, [cardHistory, currentPlayer]);
 
   // Flatten das cartas de todas as coleções disponíveis + Cartas do Ateliê
   const collectionCards = useMemo(() => {

@@ -13,9 +13,23 @@ export class LocalStorageCardRepository extends CardRepository {
       return null;
     }
     const cards = await this.getCards();
-    cards.push(card);
+    const index = cards.findIndex(c => c.id === card.id);
+    
+    if (index >= 0) {
+      cards[index] = card;
+    } else {
+      cards.push(card);
+    }
+    
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(cards));
     return card;
+  }
+
+  async saveAllCards(cards) {
+    const validCards = cards
+      .map(c => c instanceof CustomCard ? c : new CustomCard(c))
+      .filter(c => c.isValid());
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(validCards));
   }
 
   async getCards() {
@@ -37,6 +51,18 @@ export class LocalStorageCardRepository extends CardRepository {
     let cards = await this.getCards();
     cards = cards.filter(c => c.id !== id);
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(cards));
+  }
+
+  async reportCard(id, reason) {
+    const cards = await this.getCards();
+    const index = cards.findIndex(c => c.id === id);
+    if (index >= 0) {
+      cards[index].isReported = true;
+      cards[index].reportReason = reason;
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(cards));
+      return cards[index];
+    }
+    return null;
   }
 }
 

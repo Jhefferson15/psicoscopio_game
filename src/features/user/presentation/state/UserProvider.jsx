@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../../auth/presentation/state/useAuth';
 import { FirestoreUserRepository } from '../../data/repositories/FirestoreUserRepository';
 import { UserContext } from './UserContext';
+import { firebaseCardRepository } from '../../../game/data/repositories/FirebaseCardRepository';
+import { CustomCard } from '../../../game/domain/entities/CustomCard';
 
 export const UserProvider = ({ children }) => {
   const { user } = useAuth();
@@ -9,6 +11,7 @@ export const UserProvider = ({ children }) => {
   const [diary, setDiary] = useState([]);
   const [cloudCardSets, setCloudCardSets] = useState([]);
   const [cloudBoardConfigs, setCloudBoardConfigs] = useState([]);
+  const [cloudCustomCards, setCloudCustomCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isLoaded, setIsLoaded] = useState(false);
   
@@ -18,17 +21,20 @@ export const UserProvider = ({ children }) => {
     if (!user || isLoaded) return;
     setLoading(true);
     try {
-      const [userStats, userDiary, userCardSets, userBoardConfigs] = await Promise.all([
+      const [userStats, userDiary, userCardSets, userBoardConfigs, userCustomCards] = await Promise.all([
         userRepository.getUserStats(user.id),
         userRepository.getDiaryEntries(user.id),
         userRepository.getCardSets(user.id),
-        userRepository.getBoardConfigs(user.id)
+        userRepository.getBoardConfigs(user.id),
+        firebaseCardRepository.getCards(user.id)
       ]);
 
       setStats(userStats);
       setDiary(userDiary);
       setCloudCardSets(userCardSets);
       setCloudBoardConfigs(userBoardConfigs);
+      // Map Firestore data back to CustomCard objects if needed
+      setCloudCustomCards(userCustomCards.map(c => c instanceof CustomCard ? c.toJSON() : c));
       setIsLoaded(true);
     } catch (error) {
       console.error("Erro ao carregar dados do usuário:", error);
@@ -40,13 +46,15 @@ export const UserProvider = ({ children }) => {
   useEffect(() => {
     if (user) {
       if (!isLoaded) {
-        loadUserData();
+        // Usamos um microtask para evitar o aviso de set-state-in-effect em alguns linters
+        Promise.resolve().then(() => loadUserData());
       }
     } else {
       setStats(null);
       setDiary([]);
       setCloudCardSets([]);
       setCloudBoardConfigs([]);
+      setCloudCustomCards([]);
       setLoading(false);
       setIsLoaded(false);
     }
@@ -121,19 +129,55 @@ export const UserProvider = ({ children }) => {
     }
   };
 
+  const syncCustomCardToCloud = async (cardData) => {
+    if (!user) return;
+    try {
+      // Cria a entidade a partir do JSON para que o repository saiba lidar com ela
+      const cardEntity = CustomCard.fromJSON({ ...cardData, userId: user.id });
+      const savedCard = await firebaseCardRepository.saveCard(cardEntity);
+      
+      if (savedCard) {
+        setCloudCustomCards(prev => {
+          const index = prev.findIndex(c => c.id === savedCard.id);
+          if (index >= 0) {
+            const updated = [...prev];
+            updated[index] = savedCard.toJSON();
+            return updated;
+          }
+          return [...prev, savedCard.toJSON()];
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao sincronizar carta customizada:", error);
+    }
+  };
+
+  const deleteCustomCardFromCloud = async (cardId) => {
+    if (!user) return;
+    try {
+      await firebaseCardRepository.deleteCard(cardId); 
+      setCloudCustomCards(prev => prev.filter(c => c.id !== cardId));
+    } catch (error) {
+      console.error("Erro ao deletar carta customizada da nuvem:", error);
+    }
+  };
+
   return (
     <UserContext.Provider value={{ 
       stats, 
       diary, 
       cloudCardSets,
       cloudBoardConfigs,
+      cloudCustomCards,
       loading, 
       addDiaryEntry, 
       removeDiaryEntry, 
       updateDiaryEntry, 
       updateStats,
       syncCardSetsToCloud,
-      syncBoardConfigsToCloud
+      syncBoardConfigsToCloud,
+      syncCustomCardToCloud,
+      deleteCustomCardFromCloud
     }}>
       {children}
     </UserContext.Provider>

@@ -3,6 +3,7 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getDatabase } from "firebase/database";
 import { getFirestore } from "firebase/firestore";
 import { getFunctions } from "firebase/functions";
+import { getStorage } from "firebase/storage";
 
 // Credenciais lidas das variáveis de ambiente (Vite)
 const firebaseConfig = {
@@ -25,6 +26,7 @@ let authInstance = null;
 let databaseInstance = null;
 let firestoreInstance = null;
 let functionsInstance = null;
+let storageInstance = null;
 let googleProviderInstance = null;
 
 if (isFirebaseConfigured) {
@@ -34,6 +36,7 @@ if (isFirebaseConfigured) {
     databaseInstance = getDatabase(app);
     firestoreInstance = getFirestore(app);
     functionsInstance = getFunctions(app, "us-central1");
+    storageInstance = getStorage(app);
     googleProviderInstance = new GoogleAuthProvider();
     
     // Opcional: Configurações adicionais para o provedor Google
@@ -49,6 +52,8 @@ export const auth = authInstance;
 export const database = databaseInstance;
 export const firestore = firestoreInstance;
 export const functions = functionsInstance;
+export const storage = storageInstance;
 export const googleProvider = googleProviderInstance;
 
 export default isFirebaseConfigured;
+

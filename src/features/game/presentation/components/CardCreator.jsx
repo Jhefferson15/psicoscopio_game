@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../state/useGame';
+import { useUser } from '../../../user/presentation/state/useUser';
 import { Trash2, Brush, Plus, Brain, Sparkles, Zap, Image as ImageIcon, Type, Upload, Layers, CheckCircle, Undo2, Redo2, Eraser, Puzzle, Award, AlertCircle } from 'lucide-react';
 
 import { GAME_CARDS } from '../../domain/gameConstants';
@@ -14,6 +15,7 @@ import './CardCreatorResponsive.css';
 
 const CardCreator = () => {
   const { finishCardCreation, players, atelierContext } = useGame();
+  const { syncCustomCardToCloud } = useUser();
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
   
@@ -205,7 +207,13 @@ const CardCreator = () => {
     });
 
 
+
     await customCardRepository.saveCard(newCard);
+
+    // Sincroniza com a nuvem se estiver logado
+    if (syncCustomCardToCloud) {
+      await syncCustomCardToCloud(newCard.toJSON());
+    }
   };
 
   const handleCreateMore = async () => {

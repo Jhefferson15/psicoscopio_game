@@ -62,8 +62,8 @@ const SPECIAL_ICONS = {
   'SHARE_CARD': Gift,
   'DRAW_2': Layers,
   'SKIP_TURN': UserX,
-  'MOVE_OUTER': ArrowDownCircle,
-  'MOVE_INNER': ArrowUpCircle
+  'MOVE_OUTER': ArrowUpCircle,
+  'MOVE_INNER': ArrowDownCircle
 };
 
 const TILE_ICONS = {
@@ -237,6 +237,7 @@ const BoardPreview = ({
                     {React.createElement(SPECIAL_ICONS[tile.action] || TILE_ICONS[tile.type.split('_')[1] || tile.type] || (tile.label ? 'span' : 'div'), { 
                       size: tile.ring === 'inner' ? 22 : 26, 
                       strokeWidth: 2.2,
+                      color: (tile.color === '#000000' || tile.color === 'black') ? 'white' : undefined,
                       style: { opacity: 0.9 },
                     })}
                     {/* Custom Card Indicator - Synchronized with BoardView */}

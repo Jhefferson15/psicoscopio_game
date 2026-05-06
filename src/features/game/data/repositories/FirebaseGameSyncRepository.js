@@ -403,7 +403,7 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
     
     try {
       const roomsRef = collection(firestore, 'rooms');
-      const q = query(roomsRef, where('ownerId', '==', ownerId), orderBy('createdAt', 'desc'));
+      const q = query(roomsRef, where('ownerId', '==', ownerId));
       
       return onSnapshot(q, 
         (snapshot) => {
@@ -421,7 +421,7 @@ export class FirebaseGameSyncRepository extends GameSyncRepository {
         (error) => {
           console.error("Erro ao escutar salas do dono:", error);
           // IMPORTANTE: Chama o callback com lista vazia para liberar o loading em caso de erro (ex: índice faltando)
-          callback([]);
+          if (callback) callback([]);
         }
       );
     } catch (error) {

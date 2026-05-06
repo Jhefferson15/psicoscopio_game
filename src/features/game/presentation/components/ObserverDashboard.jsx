@@ -23,16 +23,22 @@ const ObserverDashboard = () => {
       return;
     }
 
-    requestAnimationFrame(() => {
-      setLoading(true);
-    });
+    let isMounted = true;
+    setLoading(true);
+
     const unsubscribe = syncRepository.listenToOwnerRooms(user.id, (ownerRooms) => {
-      setRooms(ownerRooms.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
+      if (!isMounted) return;
+      
+      const sortedRooms = [...ownerRooms].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      setRooms(sortedRooms);
       setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, [user, setCurrentScreen, refreshKey]);
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [user, refreshKey]);
 
   if (selectedRoomId) {
     return <RoomMonitor roomId={selectedRoomId} onBack={() => setSelectedRoomId(null)} />;

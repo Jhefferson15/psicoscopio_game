@@ -3,8 +3,12 @@ import { CardSet } from '../../domain/entities/CardSet';
 import { BoardConfig } from '../../domain/entities/BoardConfig';
 import { CardSetRepository } from '../../data/repositories/CardSetRepository';
 import { BoardConfigRepository } from '../../data/repositories/BoardConfigRepository';
+import { customCardRepository } from '../../data/repositories/LocalStorageCardRepository';
+import { firebaseCardRepository } from '../../data/repositories/FirebaseCardRepository';
 
-export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudBoardConfigs, syncBoardConfigsToCloud, showSystemPopup, setDrawnCards }) => {
+export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudBoardConfigs, syncBoardConfigsToCloud, cloudCustomCards, showSystemPopup, setDrawnCards }) => {
+
+
 
   // Estados para Conjuntos de Cartas
   const [availableCardSets, setAvailableCardSets] = useState(() => {
@@ -19,6 +23,59 @@ export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudB
     const allSets = [defaultSet, ...saved];
     return allSets.find(s => s.id === activeId) || defaultSet;
   });
+
+  const reportCard = async (id, reason) => {
+    // 1. Update repositories
+    await customCardRepository.reportCard(id, reason);
+    if (user) {
+      await firebaseCardRepository.reportCard(id, reason);
+    }
+
+    // 2. Update local state and persist
+    const updateCardInList = (cardList) => {
+      return cardList.map((card, index) => {
+        // Se for objeto customizado
+        if (typeof card === 'object' && card !== null) {
+          if (card.id === id) {
+            return { ...card, isReported: true, reportReason: reason };
+          }
+          return card;
+        }
+        
+        // Se for string (sistema) e o ID bater (ID de sistema é gerado no GameCard)
+        // Nota: IDs de sistema costumam ser 'system-tipo-index'
+        const systemId = `system-card-${index}`; // Simplificação para busca
+        if (id === systemId || id.includes(`-${index}`)) {
+           return { text: card, isReported: true, reportReason: reason, id: id };
+        }
+
+        return card;
+      });
+    };
+
+    // Update and Save available sets
+    const updatedSets = availableCardSets.map(set => {
+      const newContent = Object.keys(set.content).reduce((acc, type) => {
+        acc[type] = updateCardInList(set.content[type]);
+        return acc;
+      }, {});
+      
+      return { ...set, content: newContent };
+    });
+
+    setAvailableCardSets(updatedSets);
+    CardSetRepository.saveSets(updatedSets);
+
+    // Update active set
+    setActiveCardSet(prev => {
+      if (!prev) return prev;
+      const newContent = Object.keys(prev.content).reduce((acc, type) => {
+        acc[type] = updateCardInList(prev.content[type]);
+        return acc;
+      }, {});
+      return { ...prev, content: newContent };
+    });
+  };
 
   // Estados para Configuração do Tabuleiro
   const [savedBoardConfigs, setSavedBoardConfigs] = useState(() => {
@@ -113,6 +170,35 @@ export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudB
       });
     }
   }, [user, cloudBoardConfigs]);
+
+  // Sincroniza cartas individuais customizadas (Ateliê)
+  useEffect(() => {
+    const syncCustomCards = async () => {
+      if (user && cloudCustomCards && cloudCustomCards.length > 0) {
+        try {
+          const localCards = await customCardRepository.getCards();
+          const mergedMap = new Map();
+
+          localCards.forEach(c => mergedMap.set(c.id, c));
+
+          cloudCustomCards.forEach(cloudCard => {
+            const local = mergedMap.get(cloudCard.id);
+            // Se não existe localmente ou a da nuvem é mais recente
+            if (!local || (cloudCard.updatedAt > (local.updatedAt || 0))) {
+              mergedMap.set(cloudCard.id, cloudCard);
+            }
+          });
+
+          const mergedCards = Array.from(mergedMap.values());
+          await customCardRepository.saveAllCards(mergedCards);
+        } catch (error) {
+          console.error("Erro ao sincronizar cartas customizadas:", error);
+        }
+      }
+    };
+
+    syncCustomCards();
+  }, [user, cloudCustomCards]);
 
 
   const changeActiveCardSet = (id) => {
@@ -266,6 +352,7 @@ export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudB
     updateBoardConfig,
     deleteBoardConfig,
     importCardSet,
-    importBoardConfig
+    importBoardConfig,
+    reportCard
   };
 };

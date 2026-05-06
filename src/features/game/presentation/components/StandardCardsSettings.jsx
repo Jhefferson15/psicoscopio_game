@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useGame } from '../state/useGame';
 import { 
   Settings as SettingsIcon, 
@@ -17,7 +17,8 @@ import {
   Upload,
   Info,
   Puzzle,
-  Award
+  Award,
+  FileText
 } from 'lucide-react';
 import './StandardCardsLayout.css';
 import './StandardCardsSidebar.css';

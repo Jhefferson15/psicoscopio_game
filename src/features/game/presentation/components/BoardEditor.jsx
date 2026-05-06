@@ -62,8 +62,8 @@ const TILE_ACTIONS = [
   { id: null, label: 'Nenhuma', icon: X, color: '#FFFFFF' },
   { id: 'MOVE_2', label: 'Avançar 2', icon: Zap, color: '#10B981' },
   { id: 'BACK_2', label: 'Voltar 2', icon: RotateCcw, color: '#EF4444' },
-  { id: 'MOVE_INNER', label: 'Ir p/ Centro', icon: ChevronLeft, color: '#6366F1' },
-  { id: 'MOVE_OUTER', label: 'Ir p/ Borda', icon: ChevronLeft, color: '#F59E0B' },
+  { id: 'MOVE_INNER', label: 'Ir p/ Centro', icon: ChevronLeft, color: '#000000' },
+  { id: 'MOVE_OUTER', label: 'Ir p/ Borda', icon: ChevronLeft, color: '#000000' },
   { id: 'DRAW_2', label: 'Comprar 2', icon: Plus, color: '#8B5CF6' },
   { id: 'SWAP_PLACE', label: 'Trocar de Lugar', icon: Users, color: '#F43F5E' }
 ];
@@ -116,7 +116,6 @@ const BoardEditor = () => {
     COLORS
   });
 
-  const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
   const [showCollectionsMobile, setShowCollectionsMobile] = useState(false);
   const [isFullScreenPreviewOpen, setIsFullScreenPreviewOpen] = useState(false);
 
@@ -429,12 +428,9 @@ const BoardEditor = () => {
                 </div>
               </div>
 
-              <div className={`board-preview-container ${isPreviewExpanded ? 'expanded' : 'collapsed'}`}>
-                <div className="section-header" onClick={() => setIsPreviewExpanded(!isPreviewExpanded)}>
+              <div className="board-preview-container">
+                <div className="section-header">
                   <h2>Preview Interativo</h2>
-                  <button className="btn-toggle-preview-mobile">
-                    {isPreviewExpanded ? 'Recolher' : 'Ver Tabuleiro'}
-                  </button>
                 </div>
                 <BoardPreview 
                   editingConfig={editingConfig}

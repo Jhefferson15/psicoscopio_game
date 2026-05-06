@@ -10,12 +10,31 @@ const RoomMonitor = ({ roomId, onBack }) => {
   const [roomConfig, setRoomConfig] = useState(null);
   const [history, setHistory] = useState({ turns: {}, cards: {} });
   const [showDeck, setShowDeck] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const unsubRoom = syncRepository.listenToRoomData(roomId, (data) => setRoomData(data));
+    setLoading(true);
+    setError(null);
+
+    const unsubRoom = syncRepository.listenToRoomData(roomId, (data) => {
+      if (data) {
+        setRoomData(data);
+        setLoading(false);
+      } else {
+        // Se após 5 segundos não houver dados, assume que a sala não existe no RTDB
+        const timer = setTimeout(() => {
+          if (!data) {
+            setError('Sala não encontrada ou sem conexão em tempo real.');
+            setLoading(false);
+          }
+        }, 5000);
+        return () => clearTimeout(timer);
+      }
+    });
+
     const unsubHistory = syncRepository.listenToRoomHistory(roomId, (hist) => setHistory(hist));
 
-    // Busca configuração pesada uma única vez
     syncRepository.getRoomConfig(roomId).then(config => {
       if (config) setRoomConfig(config);
     });
@@ -26,7 +45,76 @@ const RoomMonitor = ({ roomId, onBack }) => {
     };
   }, [roomId]);
 
-  if (!roomData) return null;
+  if (loading) {
+    return (
+      <div className="monitor-loading">
+        <div className="loader"></div>
+        <p>Conectando à sala {roomId}...</p>
+        <button className="btn-back" onClick={onBack}>Cancelar</button>
+        <style>{`
+          .monitor-loading {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            background: #f8fafc;
+          }
+          .loader {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e2e8f0;
+            border-top-color: #7B4BB1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+          }
+          @keyframes spin { to { transform: rotate(360deg); } }
+          .btn-back {
+            padding: 8px 20px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  if (error || !roomData) {
+    return (
+      <div className="monitor-error">
+        <AlertCircle size={48} color="#ef4444" />
+        <h2>Ops! Algo deu errado</h2>
+        <p>{error || 'Não foi possível carregar os dados da sala.'}</p>
+        <button className="btn-primary" onClick={onBack}>Voltar ao Painel</button>
+        <style>{`
+          .monitor-error {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            background: #f8fafc;
+            padding: 20px;
+            text-align: center;
+          }
+          .btn-primary {
+            padding: 12px 30px;
+            background: #7B4BB1;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   const turnsArray = history.turns ? Object.values(history.turns).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0)) : [];
   const cardsArray = history.cards ? Object.values(history.cards).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)) : [];

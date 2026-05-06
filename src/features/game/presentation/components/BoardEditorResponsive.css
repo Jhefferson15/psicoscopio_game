@@ -34,8 +34,8 @@
 }
 
 
-.btn-toggle-preview-mobile { display: none; }
-@media (max-width: 1024px) { .btn-toggle-preview-mobile { display: block; } }
-
-.board-preview-container.collapsed .preview-svg-wrapper { max-height: 100px; overflow: hidden; opacity: 0.5; filter: blur(2px); pointer-events: none; }
-.board-preview-container.expanded .preview-svg-wrapper { max-height: 500px; opacity: 1; filter: none; }
+.preview-svg-wrapper {
+  max-height: 500px;
+  opacity: 1;
+  filter: none;
+}

@@ -45,5 +45,22 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Regras para Cartas Customizadas
+    match /customCards/{cardId} {
+      // Qualquer usuário autenticado pode ler cartas (necessário para ver cartas recebidas de outros)
+      allow read: if request.auth != null;
+      
+      // Usuários podem criar cartas se o userId no documento for o deles
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      
+      // Dono pode tudo. Outros podem apenas reportar (mudar isReported e reportReason).
+      allow update: if request.auth != null && (
+        resource.data.userId == request.auth.uid || 
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isReported', 'reportReason']))
+      );
+      
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
   }
 }

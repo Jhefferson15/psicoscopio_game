@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../state/useGame';
+import { useUser } from '../../../user/presentation/state/useUser';
 import { customCardRepository } from '../../data/repositories/LocalStorageCardRepository';
-import { Trash2, ChevronLeft, Brain, Puzzle, Zap, Award, Sparkles, Brush, Image as ImageIcon, Send } from 'lucide-react';
+import { Trash2, ChevronLeft, Brain, Puzzle, Zap, Award, Sparkles, Brush, Image as ImageIcon, Send, ShieldAlert } from 'lucide-react';
 
 import './CustomCardsGallery.css';
 
 const CustomCardsGallery = ({ isModal = false, onClose }) => {
   const { handleGoToMenu } = useGame();
+  const { deleteCustomCardFromCloud } = useUser();
   const [cards, setCards] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -27,6 +29,12 @@ const CustomCardsGallery = ({ isModal = false, onClose }) => {
   const handleDelete = async (id) => {
     if (window.confirm('Tem certeza que deseja excluir esta carta?')) {
       await customCardRepository.deleteCard(id);
+      
+      // Deleta da nuvem se estiver logado
+      if (deleteCustomCardFromCloud) {
+        await deleteCustomCardFromCloud(id);
+      }
+      
       setCards(cards.filter(c => c.id !== id));
     }
   };
@@ -100,10 +108,16 @@ const CustomCardsGallery = ({ isModal = false, onClose }) => {
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
-                  className="gallery-card-item"
+                  className={`gallery-card-item ${card.isReported ? 'is-reported' : ''}`}
                   style={{ '--accent-color': card.color }}
                 >
                   <div className="gallery-card-inner">
+                    {card.isReported && (
+                      <div className="card-reported-overlay">
+                        <ShieldAlert size={32} />
+                        <span>Bloqueada</span>
+                      </div>
+                    )}
                     <div className="gallery-card-header" style={{ background: card.color }}>
                       <div className="badge-icons" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                         {getIcon(card.type)}

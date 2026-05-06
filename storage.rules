@@ -1,0 +1,14 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /custom_cards/{userId}/{allPaths=**} {
+      // Permite ler e escrever apenas se o usuário estiver autenticado e o userId bater
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Regras padrão: nega tudo mais
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

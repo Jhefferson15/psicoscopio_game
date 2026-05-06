@@ -172,17 +172,38 @@ export const GameProvider = ({ children }) => {
 
     const usedIndices = drawnCards[type] || [];
     
-    // Filtra índices não usados
+    // Filtra índices não usados e não denunciados
     const availableIndices = cardList
-      .map((_, i) => i)
-      .filter(i => !usedIndices.includes(i));
+      .map((card, i) => ({ card, i }))
+      .filter(({ card, i }) => {
+        if (usedIndices.includes(i)) return false;
+        
+        // Verifica se está denunciada (seja objeto ou string)
+        if (typeof card === 'object' && card !== null) {
+          return !card.isReported;
+        }
+        return true; // Strings simples não estão denunciadas (se estivessem, seriam objetos)
+      })
+      .map(({ i }) => i);
 
     let selectedIndex;
     let newUsedIndices = [...usedIndices];
 
     if (availableIndices.length === 0) {
-      // Reinicia a contagem (reshuffle)
-      selectedIndex = Math.floor(Math.random() * cardList.length);
+      // Reinicia a contagem (reshuffle) filtrando denunciadas
+      const allNonReported = cardList
+        .map((card, i) => ({ card, i }))
+        .filter(({ card }) => {
+          if (typeof card === 'object' && card !== null) {
+            return !card.isReported;
+          }
+          return true;
+        })
+        .map(({ i }) => i);
+
+      if (allNonReported.length === 0) return { content: "Nenhuma carta disponível.", index: 0 };
+      
+      selectedIndex = allNonReported[Math.floor(Math.random() * allNonReported.length)];
       newUsedIndices = [selectedIndex];
     } else {
       // Sorteia um dos disponíveis
@@ -192,12 +213,15 @@ export const GameProvider = ({ children }) => {
 
     setDrawnCards(prev => ({ ...prev, [type]: newUsedIndices }));
     const isCustom = activeCardSet?.id !== 'default';
+    const rawCard = cardList[selectedIndex];
+    const cardText = typeof rawCard === 'object' ? (rawCard.text || rawCard.content) : rawCard;
+    
     return { 
-      content: cardList[selectedIndex], 
+      content: rawCard, 
       index: selectedIndex, 
       isCustom: isCustom,
       cardType: type,
-      cardText: cardList[selectedIndex],
+      cardText: cardText,
       playerName: players[currentPlayerIndex]?.name || 'Jogador'
     };
   }, [activeCardSet, drawnCards, players, currentPlayerIndex]);
@@ -586,7 +610,6 @@ export const GameProvider = ({ children }) => {
       syncRepository,
       roomId,
       isOnline,
-
       roomStatus,
       roomParticipants,
       readyPlayers,
@@ -631,13 +654,7 @@ export const GameProvider = ({ children }) => {
       cardSelectionTask,
       setCardSelectionTask,
       activeVerification,
-      setActiveVerification,
-      isDiaryRequired,
-      setIsDiaryRequired,
-      isDiaryAction,
-      setIsDiaryAction,
-      openDiary,
-      closeDiary
+      setActiveVerification
     }}>
 
 

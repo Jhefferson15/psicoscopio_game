@@ -246,3 +246,66 @@
   padding: 4px 12px;
   margin: 0;
 }
+
+.card-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  padding-left: 8px;
+}
+
+.report-action-btn {
+  background: rgba(255, 71, 87, 0.1);
+  border: 1px solid rgba(255, 71, 87, 0.2);
+  color: #ff4757;
+  padding: 4px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.report-action-btn:hover {
+  background: #ff4757;
+  color: white;
+  transform: scale(1.1);
+}
+
+.report-success-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  text-align: center;
+  padding: 20px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.report-success-overlay p {
+  color: #1a1a1a;
+  font-weight: 800;
+  font-size: 1.2rem;
+  margin: 12px 0 4px 0;
+}
+
+.report-success-overlay span {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.game-card.is-reported {
+  filter: grayscale(0.5);
+  pointer-events: none;
+}
