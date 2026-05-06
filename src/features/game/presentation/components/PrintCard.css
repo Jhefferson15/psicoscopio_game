@@ -145,3 +145,76 @@
 .real-preview .print-card {
   transform-origin: top left;
 }
+
+/* Back of the card (is-back) */
+.print-card.is-back {
+  background: var(--card-gradient);
+  color: white;
+  border: none;
+  padding: 0;
+}
+
+.card-back-pattern {
+  position: absolute;
+  inset: 0;
+  opacity: 0.12;
+  background-image: radial-gradient(white 1.2px, transparent 1.2px);
+  background-size: 15mm 15mm;
+  pointer-events: none;
+}
+
+.card-back-content {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.logo-symbol {
+  margin-bottom: 8mm;
+  filter: drop-shadow(0 4mm 8mm rgba(0,0,0,0.2));
+}
+
+.icon-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-indicator-large {
+  position: absolute;
+  bottom: -4mm;
+  right: -10mm;
+  filter: drop-shadow(0 2mm 4mm rgba(0,0,0,0.3));
+  transform: rotate(15deg);
+}
+
+.cover-label {
+  font-size: 14pt;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: white;
+  opacity: 0.95;
+  text-align: center;
+  text-transform: uppercase;
+  max-width: 80%;
+  line-height: 1.2;
+}
+
+.footer-brand-back {
+  position: absolute;
+  bottom: 8mm;
+  font-size: 7pt;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: white;
+  opacity: 0.6;
+}
+
+.print-card.is-back .cut-mark {
+  border-color: rgba(255, 255, 255, 0.3);
+}

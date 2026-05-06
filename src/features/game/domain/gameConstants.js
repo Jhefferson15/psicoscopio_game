@@ -46,40 +46,70 @@ export const SPECIAL_TILES = [
     icon: 'shuffle'
   },
   {
-    type: 'DESAFIO EM EQUIPE',
-    description: 'Todos jogam juntos para superar o desafio.',
+    type: 'TEAM_CHALLENGE',
+    label: 'Desafio em Equipe',
+    description: 'Todos jogam juntos! O grupo deve superar um desafio coletivo.',
     icon: 'users'
+  },
+  {
+    type: 'WRITE_DIARY',
+    label: 'Diário de Bordo',
+    description: 'Registre um insight ou aprendizado da rodada em seu bloco.',
+    icon: 'book'
+  },
+  {
+    type: 'MOVE_INNER',
+    label: 'Mover para Dentro',
+    description: 'Sua compreensão aumentou. Você pode avançar para o anel interno.',
+    icon: 'arrow-down'
+  },
+  {
+    type: 'MOVE_OUTER',
+    label: 'Mover para Fora',
+    description: 'Às vezes é preciso recuar para enxergar melhor. Volte um anel.',
+    icon: 'arrow-up'
   }
 ];
 
-export const GAME_CARDS = [
-  { id: 'memoria', type: 'MEMÓRIA', color: '#4885CE', icon: 'puzzle' },
-  { id: 'experiencia', type: 'EXPERIÊNCIA', color: '#6FB05E', icon: 'award' },
-  { id: 'desafio', type: 'DESAFIO', color: '#D84B42', icon: 'zap' },
-  { id: 'reflexao', type: 'REFLEXÃO', color: '#7B4BB1', icon: 'brain' },
-  { id: 'sorte', type: 'SORTE', color: '#F4C746', icon: 'sparkles' }
-];
-
+export const SYMBOL_DEFINITIONS = {
+  categories: [
+    { name: 'Memória', color: '#4885CE', description: 'Desafios focados na retenção de conceitos e lembranças.' },
+    { name: 'Experiência', color: '#6FB05E', description: 'Relacione o jogo com suas vivências práticas e reais.' },
+    { name: 'Desafio', color: '#D84B42', description: 'Tarefas de resolução de problemas e ação imediata.' },
+    { name: 'Reflexão', color: '#7B4BB1', description: 'Análise profunda sobre o próprio processo de aprendizagem.' },
+    { name: 'Sorte', color: '#F4C746', description: 'Eventos inesperados que mudam o rumo da partida.' }
+  ],
+  special: [
+    { symbol: 'MOVE_2', label: 'Avance 2', desc: 'Acelere seu caminho no anel atual.' },
+    { symbol: 'BACK_2', label: 'Volte 2', desc: 'Retorne para revisar o caminho.' },
+    { symbol: 'SWAP_PLACE', label: 'Troca', desc: 'Interação direta com outro peão.' },
+    { symbol: 'TEAM_CHALLENGE', label: 'Equipe', desc: 'Ação colaborativa entre todos.' },
+    { symbol: 'WRITE_DIARY', label: 'Diário', desc: 'Momento de registro e escrita.' },
+    { symbol: 'MOVE_INNER', label: 'Entrar', desc: 'Transição para o próximo anel interno.' },
+    { symbol: 'MOVE_OUTER', label: 'Sair', desc: 'Retorno para o anel anterior.' }
+  ]
+};
 
 export const GAME_RULES = {
   about: "Psicoscópio é um jogo de tabuleiro que investiga os processos de aprendizagem por meio da memória, da experiência e da reflexão. A cada escolha, o jogador se torna protagonista do próprio caminho e descobre novas formas de aprender.",
-  objective: "Viver experiências, superar desafios e refletir sobre o próprio jeito de aprender.",
-  components: [
-    "1 tabuleiro circular",
-    "120 cartas (4 categorias)",
-    "1 ampulheta (1 minuto)",
-    "Fichas de jogador",
-    "1 marcador de cada cor",
-    "1 bloco de anotações",
-    "1 guia de avaliação"
+  objective: "O objetivo é atravessar os anéis de conhecimento (Externo, Médio e Interno) até chegar ao Centro (Sabedoria), acumulando reflexões e superando desafios pelo caminho.",
+  setup: [
+    "Cada jogador escolhe um marcador e uma posição inicial no anel externo.",
+    "Embaralhe as cartas por cor e coloque-as nos montes correspondentes.",
+    "Defina quem começa (ex: o último que aprendeu algo novo)."
   ],
-  steps: [
-    "Escolha um ponto do tabuleiro para começar.",
-    "Na sua vez, compre uma carta e siga as instruções.",
-    "Use a ampulheta quando solicitado.",
-    "Avance (ou volte) de acordo com o resultado da ação.",
-    "Ao cair em uma casa especial, siga a orientação dela.",
-    "Reflita, anote e continue o ciclo!"
+  round_flow: [
+    "Lançar o Dado: O número indica quantas casas você deve avançar.",
+    "Ação da Casa: Ao parar em uma casa, execute a ação (Carta ou Símbolo).",
+    "Verificação Social: Se cair em uma carta, sua resposta deve ser validada pelos outros jogadores.",
+    "Transição: Se parar em uma casa de Seta, você pode mudar de anel na próxima rodada."
+  ],
+  components: [
+    "1 Tabuleiro Circular",
+    "Cartas de Categorias",
+    "Marcadores de Jogador",
+    "Dados",
+    "Bloco de Anotações (Digital ou Físico)"
   ]
 };
 
