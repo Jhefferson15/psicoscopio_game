@@ -1,9 +1,15 @@
 import { memo, useRef, useState, useEffect } from 'react';
-import { 
-  Target, 
-  List, 
-  RefreshCw, 
+import {
+  Target,
+  List,
+  RefreshCw,
   Info,
+  Brain,
+  Zap,
+  Sparkles,
+  Book,
+  Puzzle,
+  Award
 } from 'lucide-react';
 import { GAME_RULES, SYMBOL_DEFINITIONS } from '../../../domain/gameConstants';
 import { TILE_ICONS, SPECIAL_ICONS } from '../board_constants';
@@ -33,7 +39,7 @@ export const CardSlot = ({ label, icon, color }) => (
 const PagePreview = memo(({ type, data, settings, pageNumber, isExport = false }) => {
   const { margin } = settings;
   // Limit margin to 4mm for card pages to prevent 3-column overflow
-  const isCardPage = type === 'cards' || type === 'blank' || type === 'cards-back' || type === 'blank-back' || type === 'accessories';
+  const isCardPage = type === 'cards' || type === 'blank' || type === 'cards-back' || type === 'blank-back' || type === 'accessories' || type === 'padding';
   const safeMargin = isCardPage ? Math.min(margin, 4) : margin;
   const padding = `${safeMargin}mm`;
   const sheetRef = useRef(null);
@@ -79,7 +85,7 @@ const PagePreview = memo(({ type, data, settings, pageNumber, isExport = false }
         // CSS transforms (scale) happen AFTER positioning.
         const boardScale = settings.boardScale || 1.3;
         const overlapPx = (settings.overlap || 0) * 3.7795275591; // mm to px
-        
+
         // We want the VISUAL overlap to be overlapPx.
         // VisualOverlap = UnscaledOverlap * boardScale
         // UnscaledOverlap = overlapPx / boardScale
@@ -93,16 +99,16 @@ const PagePreview = memo(({ type, data, settings, pageNumber, isExport = false }
                 <>
                   <div className="board-title-vertical">PSICOSCÓPIO</div>
                   <div className="card-stack-slots">
-                    <CardSlot label="MEMÓRIA" icon={<Brain size={16} />} color={CATEGORY_COLORS.memoria} />
-                    <CardSlot label="REFLEXÃO" icon={<HelpCircle size={16} />} color={CATEGORY_COLORS.reflexao} />
-                    <CardSlot label="DESAFIO" icon={<Zap size={16} />} color={CATEGORY_COLORS.desafio} />
+                    <CardSlot label="MEMÓRIA" icon={<Puzzle size={48} />} color={CATEGORY_COLORS.memoria} />
+                    <CardSlot label="REFLEXÃO" icon={<Brain size={48} />} color={CATEGORY_COLORS.reflexao} />
+                    <CardSlot label="DESAFIO" icon={<Zap size={48} />} color={CATEGORY_COLORS.desafio} />
                   </div>
                 </>
               ) : (
                 <>
                   <div className="card-stack-slots">
-                    <CardSlot label="EXPERIÊNCIA" icon={<Sparkles size={16} />} color={CATEGORY_COLORS.experiencia} />
-                    <CardSlot label="SORTE" icon={<Sparkles size={16} />} color={CATEGORY_COLORS.sorte} />
+                    <CardSlot label="EXPERIÊNCIA" icon={<Award size={48} />} color={CATEGORY_COLORS.experiencia} />
+                    <CardSlot label="SORTE" icon={<Sparkles size={48} />} color={CATEGORY_COLORS.sorte} />
                   </div>
                   <div className="board-notebook-slot">
                     <div className="notebook-header">
@@ -117,7 +123,7 @@ const PagePreview = memo(({ type, data, settings, pageNumber, isExport = false }
               )}
             </div>
 
-            <div 
+            <div
               className="board-half-container"
               style={{
                 [isLeft ? 'right' : 'left']: `${offset}px`,
@@ -128,10 +134,10 @@ const PagePreview = memo(({ type, data, settings, pageNumber, isExport = false }
               <BoardView isReadOnly={true} isMiniature={true} boardRotation={0} />
             </div>
 
-            <div className="board-cut-line" style={{ 
+            <div className="board-cut-line" style={{
               right: isLeft ? 0 : 'auto',
               left: !isLeft ? 0 : 'auto',
-              opacity: settings.overlap > 0 ? 0.3 : 1 
+              opacity: settings.overlap > 0 ? 0.3 : 1
             }} />
           </div>
         );
@@ -166,11 +172,12 @@ const PagePreview = memo(({ type, data, settings, pageNumber, isExport = false }
           <div className="preview-page-cards" style={{ padding }}>
             <div className="preview-cards-grid">
               {data.map((card, i) => card ? (
-                <PrintCard 
-                  key={i} 
-                  type={card.category} 
-                  text={card.text} 
-                  index={i} 
+                <PrintCard
+                  key={i}
+                  type={card.category}
+                  text={card.text}
+                  index={i}
+                  isBlank={card.isBlank}
                   isCustom={card.category === 'custom'}
                 />
               ) : <div key={i} className="preview-mini-card empty-slot" />)}
@@ -182,45 +189,24 @@ const PagePreview = memo(({ type, data, settings, pageNumber, isExport = false }
           <div className="preview-page-cards" style={{ padding }}>
             <div className="preview-cards-grid">
               {data.map((card, i) => card ? (
-                <PrintCard 
-                  key={i} 
-                  type={card.category} 
+                <PrintCard
+                  key={i}
+                  type={card.category}
                   isBack={true}
-                  index={i} 
+                  index={i}
+                  isBlank={card.isBlank}
+                  isCustom={card.category === 'custom'}
                 />
               ) : <div key={i} className="preview-mini-card empty-slot" />)}
             </div>
           </div>
         );
-      case 'blank':
+      case 'padding':
         return (
-          <div className="preview-page-cards" style={{ padding }}>
-             <h4 style={{ fontSize: '0.4rem', marginBottom: '2mm', opacity: 0.5 }}>MODELOS: {data.category.toUpperCase()}</h4>
-             <div className="preview-cards-grid">
-              {Array.from({ length: 9 }).map((_, i) => (
-                <PrintCard 
-                  key={i} 
-                  type={data.category} 
-                  isBlank={true}
-                  index={i}
-                />
-              ))}
-            </div>
-          </div>
-        );
-      case 'blank-back':
-        return (
-          <div className="preview-page-cards" style={{ padding }}>
-             <h4 style={{ fontSize: '0.4rem', marginBottom: '2mm', opacity: 0.5 }}>VERSO: {data.category.toUpperCase()}</h4>
-             <div className="preview-cards-grid">
-              {Array.from({ length: 9 }).map((_, i) => (
-                <PrintCard 
-                  key={i} 
-                  type={data.category} 
-                  isBack={true}
-                  index={i}
-                />
-              ))}
+          <div className="preview-page-padding">
+            <div className="padding-notice">
+              <span>Página de Alinhamento (Verso em Branco)</span>
+              <p>Esta página garante que as cartas comecem em uma nova folha física.</p>
             </div>
           </div>
         );
@@ -238,6 +224,7 @@ const PagePreview = memo(({ type, data, settings, pageNumber, isExport = false }
                 <section className="rules-section">
                   <h2><Target size={18} /> Objetivo do Jogo</h2>
                   <p>{GAME_RULES.objective}</p>
+                  <p style={{ marginTop: '2mm', fontSize: '11px', fontStyle: 'italic' }}>{GAME_RULES.custom_cards}</p>
                 </section>
 
                 <section className="rules-section">
@@ -246,25 +233,25 @@ const PagePreview = memo(({ type, data, settings, pageNumber, isExport = false }
                     {GAME_RULES.setup.map((step, i) => <li key={i}>{step}</li>)}
                   </ul>
                 </section>
-
-                <section className="rules-section">
-                  <h2><RefreshCw size={18} /> Fluxo da Rodada</h2>
-                  <div className="steps-container">
-                    {GAME_RULES.round_flow.map((step, i) => {
-                      const [title, desc] = step.split(': ');
-                      return (
-                        <div key={i} className="step-item">
-                          <span className="step-number">{i + 1}</span>
-                          <div>
-                            <strong>{title}</strong>
-                            <p>{desc}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </section>
               </div>
+
+              <section className="rules-section full-width" style={{ marginBottom: '5mm' }}>
+                <h2><RefreshCw size={18} /> Fluxo da Rodada</h2>
+                <div className="steps-container">
+                  {GAME_RULES.round_flow.map((step, i) => {
+                    const [title, desc] = step.split(': ');
+                    return (
+                      <div key={i} className="step-item">
+                        <span className="step-number">{i + 1}</span>
+                        <div>
+                          <strong>{title}</strong>
+                          <p>{desc}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
 
               <div className="symbols-reference">
                 <h2>Simbologia e Categorias</h2>
@@ -313,7 +300,7 @@ const PagePreview = memo(({ type, data, settings, pageNumber, isExport = false }
 
               <footer className="rules-footer">
                 <div className="footer-line" />
-                <p>Psicoscópio © 2024 - O Jogo da Aprendizagem Protagonista</p>
+                <p>Psicoscópio © 2026 - O Jogo da Aprendizagem Protagonista</p>
               </footer>
             </div>
           </div>
@@ -326,9 +313,9 @@ const PagePreview = memo(({ type, data, settings, pageNumber, isExport = false }
   return (
     <div className="preview-page-wrapper">
       <div className="preview-page-sheet" ref={sheetRef}>
-        <div 
+        <div
           className="preview-content-scaler"
-          style={{ 
+          style={{
             transform: `scale(${scale})`,
             transformOrigin: 'top left',
             width: '210mm',

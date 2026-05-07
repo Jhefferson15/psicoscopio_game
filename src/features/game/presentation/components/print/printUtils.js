@@ -34,61 +34,60 @@ export const getPrintPages = (printSettings, activeCardSet) => {
     list.push({ type: 'board-right', id: 'board-r' });
   }
 
-  // 3. Accessories
+  // 4. Accessories
   if (printSettings.includeAccessories) {
     list.push({ type: 'accessories', id: 'acc' });
     list.push({ type: 'pawns', id: 'pawns' });
   }
 
-  // 4. Standard Cards
-  if (printSettings.includeStandardCards) {
-    const cats = ['memoria', 'reflexao', 'desafio', 'experiencia', 'sorte'];
-    let allCards = [];
-    cats.forEach(cat => {
-      const cards = (activeCardSet.content[cat] || []).map(text => ({ category: cat, text }));
-      allCards = [...allCards, ...cards];
-    });
+  // 5. Collect ALL printable items
+  let allPrintableItems = [];
+  const categories = ['memoria', 'reflexao', 'desafio', 'experiencia', 'sorte', 'custom'];
 
-    for (let i = 0; i < allCards.length; i += 9) {
-      const frontData = allCards.slice(i, i + 9);
-      list.push({ type: 'cards', id: `std-${i}`, data: frontData });
-      
-      if (printSettings.includeBacks) {
-        list.push({ 
-          type: 'cards-back', 
-          id: `std-back-${i}`, 
-          data: getMirroredData(frontData) 
-        });
+  categories.forEach(cat => {
+    // Add Real Cards for this category
+    if (cat === 'custom' && printSettings.includeCustomCards) {
+      const cards = (activeCardSet.content.custom || []).map(text => ({ 
+        category: 'custom', text, isBlank: false 
+      }));
+      allPrintableItems = [...allPrintableItems, ...cards];
+    } else if (cat !== 'custom' && printSettings.includeStandardCards) {
+      const cards = (activeCardSet.content[cat] || []).map(text => ({ 
+        category: cat, text, isBlank: false 
+      }));
+      allPrintableItems = [...allPrintableItems, ...cards];
+    }
+
+    // Add Blank Templates for this category
+    if (printSettings.includeBlankCards) {
+      for (let i = 0; i < 12; i++) {
+        allPrintableItems.push({ category: cat, isBlank: true });
       }
     }
+  });
+
+  // 6. Alignment Padding
+  // If we have backs, we must ensure the "Cards" section starts on an ODD page index (1-based).
+  // Current page count is list.length.
+  if (printSettings.includeBacks && list.length % 2 !== 0) {
+    list.push({ type: 'padding', id: 'padding-alignment' });
   }
 
-  // 5. Custom Cards
-  if (printSettings.includeCustomCards) {
-    const customCards = (activeCardSet.content.custom || []).map(text => ({ category: 'custom', text }));
-    for (let i = 0; i < customCards.length; i += 9) {
-      const frontData = customCards.slice(i, i + 9);
-      list.push({ type: 'cards', id: `cust-${i}`, data: frontData });
-      
-      if (printSettings.includeBacks) {
-        list.push({ 
-          type: 'cards-back', 
-          id: `cust-back-${i}`, 
-          data: getMirroredData(frontData) 
-        });
-      }
+  // 7. Chunk and add cards
+  for (let i = 0; i < allPrintableItems.length; i += 9) {
+    const frontData = allPrintableItems.slice(i, i + 9);
+    // Fill remaining slots with null to maintain 3x3 grid integrity
+    while (frontData.length < 9) frontData.push(null);
+
+    list.push({ type: 'cards', id: `cards-${i}`, data: frontData });
+    
+    if (printSettings.includeBacks) {
+      list.push({ 
+        type: 'cards-back', 
+        id: `cards-back-${i}`, 
+        data: getMirroredData(frontData) 
+      });
     }
-  }
-
-  // 6. Blank Templates
-  if (printSettings.includeBlankCards) {
-    ['memoria', 'reflexao', 'desafio', 'experiencia', 'sorte', 'custom'].forEach(cat => {
-      list.push({ type: 'blank', id: `blank-${cat}`, data: { category: cat } });
-      
-      if (printSettings.includeBacks) {
-        list.push({ type: 'blank-back', id: `blank-back-${cat}`, data: { category: cat } });
-      }
-    });
   }
 
   return list;

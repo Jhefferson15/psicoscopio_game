@@ -2,6 +2,12 @@ import { Tile } from '../../domain/entities/Tile';
 import { BoardConfig } from '../../domain/entities/BoardConfig';
 import { ACTION_METADATA, STANDARD_TILE_CONFIG } from '../../domain/gameConstants';
 
+export const getTileDescription = (type, action) => {
+  if (action && ACTION_METADATA[action]) return ACTION_METADATA[action].description;
+  if (type && STANDARD_TILE_CONFIG[type]) return STANDARD_TILE_CONFIG[type].description;
+  return '';
+};
+
 export const getTileColor = (type, action) => {
   if (action && ACTION_METADATA[action]) return ACTION_METADATA[action].color;
   if (type && STANDARD_TILE_CONFIG[type]) return STANDARD_TILE_CONFIG[type].color;
@@ -14,80 +20,65 @@ export const getTileLabel = (type, action) => {
   return '';
 };
 
+export const getTileDefaults = (type, action) => {
+  return {
+    color: getTileColor(type, action),
+    label: getTileLabel(type, action),
+    description: getTileDescription(type, action)
+  };
+};
+
 const OUTER_RADIUS = 300;
 const MIDDLE_RADIUS = 225;
 const INNER_RADIUS = 150;
 
-const TILE_DESCRIPTIONS = {
-  reflexao: "Casa da Pausa: Um momento para olhar para dentro e questionar suas próprias percepções.",
-  desafio: "Casa da Ação: Propõe uma tarefa prática ou social para testar suas habilidades em tempo real.",
-  memoria: "Casa da Retenção: Desafia você a lembrar de detalhes importantes da jornada até aqui.",
-  experiencia: "Casa da Prática: Relacione o conhecimento com suas vivências e experiências reais.",
-  sorte: "Casa do Imprevisto: Um evento inesperado que pode mudar o rumo da sua jornada.",
-  especial: "Casa do Destino: Aciona uma mecânica única que pode mudar drasticamente sua posição no jogo.",
-  center: "O Ápice da Jornada: Você chegou ao centro do Psicoscópio, onde o aprendizado se torna sabedoria."
-};
-
-const withDesc = (tile) => {
-  if (!tile.description) {
-    tile.description = TILE_DESCRIPTIONS[tile.type] || '';
-  }
-  return tile;
-};
 
 export const boardData = [
-  // OUTER RING
-  withDesc(new Tile('o1', 'desafio', getTileLabel('desafio'), getTileColor('desafio'), 'outer', 18)),
-  withDesc(new Tile('o2', 'reflexao', getTileLabel('reflexao'), getTileColor('reflexao'), 'outer', 36)),
-  withDesc(new Tile('o3', 'sorte', getTileLabel('sorte'), getTileColor('sorte'), 'outer', 54)),
-  withDesc(new Tile('o4', 'memoria', getTileLabel('memoria'), getTileColor('memoria'), 'outer', 72)),
-  withDesc(new Tile('s1', 'especial', getTileLabel(null, 'MOVE_2'), getTileColor(null, 'MOVE_2'), 'special', 90, 'MOVE_2', 'Vento a favor! Sua compreensão acelerada permite que você avance 2 casas.')),
-  withDesc(new Tile('o5', 'experiencia', getTileLabel('experiencia'), getTileColor('experiencia'), 'outer', 108)),
-  withDesc(new Tile('o6', 'reflexao', getTileLabel('reflexao'), getTileColor('reflexao'), 'outer', 126)),
-  withDesc(new Tile('o7', 'sorte', getTileLabel('sorte'), getTileColor('sorte'), 'outer', 144)),
-  withDesc(new Tile('o8', 'memoria', getTileLabel('memoria'), getTileColor('memoria'), 'outer', 162)),
-  withDesc(new Tile('s2', 'especial', getTileLabel(null, 'TEAM_CHALLENGE'), getTileColor(null, 'TEAM_CHALLENGE'), 'special', 180, 'TEAM_CHALLENGE', 'A união faz a força. Este desafio deve ser resolvido em conjunto com os outros jogadores.')),
-  withDesc(new Tile('o9', 'desafio', getTileLabel('desafio'), getTileColor('desafio'), 'outer', 198)),
-  withDesc(new Tile('o10', 'reflexao', getTileLabel('reflexao'), getTileColor('reflexao'), 'outer', 216)),
-  withDesc(new Tile('o11', 'experiencia', getTileLabel('experiencia'), getTileColor('experiencia'), 'outer', 234)),
-  withDesc(new Tile('o12', 'memoria', getTileLabel('memoria'), getTileColor('memoria'), 'outer', 252)),
-  withDesc(new Tile('s3', 'especial', getTileLabel(null, 'SWAP_PLACE'), getTileColor(null, 'SWAP_PLACE'), 'special', 270, 'SWAP_PLACE', 'Troca de perspectivas. Você pode trocar sua posição no tabuleiro com a de qualquer outro jogador.')),
-  withDesc(new Tile('o13', 'reflexao', getTileLabel('reflexao'), getTileColor('reflexao'), 'outer', 288)),
-  withDesc(new Tile('o14', 'desafio', getTileLabel('desafio'), getTileColor('desafio'), 'outer', 306)),
-  withDesc(new Tile('o15', 'memoria', getTileLabel('memoria'), getTileColor('memoria'), 'outer', 324)),
-  withDesc(new Tile('o16', 'desafio', getTileLabel('desafio'), getTileColor('desafio'), 'outer', 342)),
-  withDesc(new Tile('s4', 'especial', getTileLabel(null, 'BACK_2'), getTileColor(null, 'BACK_2'), 'special', 0, 'BACK_2', 'Um momento para revisar. Às vezes é preciso dar alguns passos atrás para consolidar o aprendizado.')),
-
-  // MIDDLE RING
-  withDesc(new Tile('m1', 'reflexao', getTileLabel('reflexao'), getTileColor('reflexao'), 'middle', 12.8)),
-  withDesc(new Tile('m2', 'sorte', getTileLabel('sorte'), getTileColor('sorte'), 'middle', 38.5)),
-  withDesc(new Tile('m3', 'experiencia', getTileLabel('experiencia'), getTileColor('experiencia'), 'middle', 64.2)),
-  withDesc(new Tile('m4', 'memoria', getTileLabel('memoria'), getTileColor('memoria'), 'middle', 90)),
-  withDesc(new Tile('m5', 'desafio', getTileLabel('desafio'), getTileColor('desafio'), 'middle', 115.7)),
-  withDesc(new Tile('m6', 'experiencia', getTileLabel('experiencia'), getTileColor('experiencia'), 'middle', 141.4)),
-  withDesc(new Tile('m7', 'sorte', getTileLabel('sorte'), getTileColor('sorte'), 'middle', 167.1)),
-  withDesc(new Tile('m8', 'desafio', getTileLabel('desafio'), getTileColor('desafio'), 'middle', 192.8)),
-  withDesc(new Tile('m9', 'memoria', getTileLabel('memoria'), getTileColor('memoria'), 'middle', 218.5)),
-  withDesc(new Tile('m10', 'reflexao', getTileLabel('reflexao'), getTileColor('reflexao'), 'middle', 244.2)),
-  withDesc(new Tile('m11', 'experiencia', getTileLabel('experiencia'), getTileColor('experiencia'), 'middle', 270)),
-  withDesc(new Tile('m12', 'desafio', getTileLabel('desafio'), getTileColor('desafio'), 'middle', 295.7)),
-  withDesc(new Tile('m13', 'memoria', getTileLabel('memoria'), getTileColor('memoria'), 'middle', 321.4)),
-  withDesc(new Tile('m14', 'desafio', getTileLabel('desafio'), getTileColor('desafio'), 'middle', 347.1)),
-
-  // INNER RING
-  withDesc(new Tile('i1', 'desafio', getTileLabel('desafio'), getTileColor('desafio'), 'inner', 18)),
-  withDesc(new Tile('i2', 'memoria', getTileLabel('memoria'), getTileColor('memoria'), 'inner', 54)),
-  withDesc(new Tile('i3', 'experiencia', getTileLabel('experiencia'), getTileColor('experiencia'), 'inner', 90)),
-  withDesc(new Tile('i4', 'sorte', getTileLabel('sorte'), getTileColor('sorte'), 'inner', 126)),
-  withDesc(new Tile('i5', 'reflexao', getTileLabel('reflexao'), getTileColor('reflexao'), 'inner', 162)),
-  withDesc(new Tile('i6', 'desafio', getTileLabel('desafio'), getTileColor('desafio'), 'inner', 198)),
-  withDesc(new Tile('i7', 'experiencia', getTileLabel('experiencia'), getTileColor('experiencia'), 'inner', 234)),
-  withDesc(new Tile('i8', 'sorte', getTileLabel('sorte'), getTileColor('sorte'), 'inner', 270)),
-  withDesc(new Tile('i9', 'reflexao', getTileLabel('reflexao'), getTileColor('reflexao'), 'inner', 306)),
-  withDesc(new Tile('i10', 'sorte', getTileLabel('sorte'), getTileColor('sorte'), 'inner', 342)),
-
-  // CENTER
-  withDesc(new Tile('center', 'center', 'CHEGADA', '#FFFFFF', 'center', 0))
+  new Tile('o1', 'reflexao', 'REFLEXÃO', '#7B4BB1', 'outer', 18, null, 'Análise profunda sobre o próprio processo de aprendizagem.'),
+  new Tile('o2', 'desafio', 'DESAFIO', '#D84B42', 'outer', 36, null, 'Tarefas de resolução de problemas e ação imediata.'),
+  new Tile('o3', 'experiencia', 'EXPERIÊNCIA', '#6FB05E', 'outer', 54, null, 'Relacione o jogo com suas vivências práticas e reais.'),
+  new Tile('o4', 'sorte', 'IR P/ BORDA', '#111827', 'outer', 72, 'MOVE_OUTER', 'Retorno para o anel anterior.'),
+  new Tile('s1', 'especial', 'AVANCE 2', '#F97316', 'special', 90, 'MOVE_2', 'Acelere seu caminho no anel atual.'),
+  new Tile('o5', 'reflexao', 'REFLEXÃO', '#7B4BB1', 'outer', 108, null, 'Análise profunda sobre o próprio processo de aprendizagem.'),
+  new Tile('o6', 'desafio', 'DESAFIO', '#D84B42', 'outer', 126, null, 'Tarefas de resolução de problemas e ação imediata.'),
+  new Tile('o7', 'experiencia', 'EXPERIÊNCIA', '#6FB05E', 'outer', 144, null, 'Relacione o jogo com suas vivências práticas e reais.'),
+  new Tile('o8', 'memoria', 'MEMÓRIA', '#4885CE', 'outer', 162, null, 'Desafios focados na retenção de conceitos e lembranças.'),
+  new Tile('s2', 'especial', 'PAUSA', '#78909C', 'special', 180, 'SKIP_TURN', 'Pausa reflexiva, pule uma vez.'),
+  new Tile('o9', 'especial', 'IR P/ BORDA', '#111827', 'outer', 198, 'MOVE_OUTER', 'Retorno para o anel anterior.'),
+  new Tile('o10', 'sorte', 'SORTE', '#F4C746', 'outer', 216, null, 'Eventos inesperados que mudam o rumo da partida.'),
+  new Tile('o11', 'experiencia', 'EXPERIÊNCIA', '#6FB05E', 'outer', 234, null, 'Relacione o jogo com suas vivências práticas e reais.'),
+  new Tile('o12', 'memoria', 'MEMÓRIA', '#4885CE', 'outer', 252, null, 'Desafios focados na retenção de conceitos e lembranças.'),
+  new Tile('s3', 'especial', 'TROCA', '#D946EF', 'special', 270, 'SWAP_PLACE', 'Interação direta com outro peão.'),
+  new Tile('o13', 'reflexao', 'REFLEXÃO', '#7B4BB1', 'outer', 288, null, 'Análise profunda sobre o próprio processo de aprendizagem.'),
+  new Tile('o14', 'desafio', 'DESAFIO', '#D84B42', 'outer', 306, null, 'Tarefas de resolução de problemas e ação imediata.'),
+  new Tile('o15', 'memoria', 'MEMÓRIA', '#4885CE', 'outer', 324, null, 'Desafios focados na retenção de conceitos e lembranças.'),
+  new Tile('o16', 'especial', 'IR P/ BORDA', '#111827', 'outer', 342, 'MOVE_OUTER', 'Retorno para o anel anterior.'),
+  new Tile('s4', 'especial', 'VOLTE 2', '#475569', 'special', 0, 'BACK_2', 'Retorne para revisar o caminho.'),
+  new Tile('m1', 'reflexao', 'IR P/ BORDA', '#111827', 'middle', 12.8, 'MOVE_OUTER', 'Retorno para o anel anterior.'),
+  new Tile('m2', 'custom_experiencia', 'CUSTOM\nEXPERIÊNCIA', '#6FB05E', 'middle', 38.5, null, 'Crie uma atividade personalizada baseada em vivências.'),
+  new Tile('m3', 'custom_sorte', 'CUSTOM\nSORTE', '#F4C746', 'middle', 64.2, null, 'Crie um evento inesperado personalizado.'),
+  new Tile('m4', 'custom_memoria', 'CUSTOM\nMEMÓRIA', '#4885CE', 'middle', 90, null, 'Crie um desafio personalizado de retenção de conceitos.'),
+  new Tile('m5', 'especial', 'VOLTE 2', '#475569', 'middle', 115.7, 'BACK_2', 'Retorne para revisar o caminho.'),
+  new Tile('m6', 'brain', 'TROCA', '#D946EF', 'middle', 141.4, 'SWAP_PLACE', 'Interação direta com outro peão.'),
+  new Tile('m7', 'custom_memoria', 'CUSTOM\nMEMÓRIA', '#4885CE', 'middle', 167.1, null, 'Crie um desafio personalizado de retenção de conceitos.'),
+  new Tile('m8', 'custom_desafio', 'CUSTOM\nDESAFIO', '#D84B42', 'middle', 192.8, null, 'Crie uma tarefa prática personalizada para o grupo.'),
+  new Tile('m9', 'custom_sorte', 'CUSTOM\nSORTE', '#F4C746', 'middle', 218.5, null, 'Crie um evento inesperado personalizado.'),
+  new Tile('m10', 'custom_reflexao', 'IR P/ CENTRO', '#111827', 'middle', 244.2, 'MOVE_INNER', 'Transição para o próximo anel interno.'),
+  new Tile('m11', 'custom_experiencia', 'CUSTOM\nEXPERIÊNCIA', '#6FB05E', 'middle', 270, null, 'Crie uma atividade personalizada baseada em vivências.'),
+  new Tile('m12', 'especial', 'IR P/ BORDA', '#111827', 'middle', 295.7, 'MOVE_OUTER', 'Retorno para o anel anterior.'),
+  new Tile('m13', 'custom_memoria', 'CUSTOM\nMEMÓRIA', '#4885CE', 'middle', 321.4, null, 'Crie um desafio personalizado de retenção de conceitos.'),
+  new Tile('m14', 'custom_desafio', 'CUSTOM\nDESAFIO', '#D84B42', 'middle', 347.1, null, 'Crie uma tarefa prática personalizada para o grupo.'),
+  new Tile('i1', 'custom_reflexao', 'CUSTOM\nREFLEXÃO', '#7B4BB1', 'inner', 18, null, 'Crie um questionamento personalizado sobre a aprendizagem.'),
+  new Tile('i2', 'custom_card', 'DIÁRIO', '#0D9488', 'inner', 54, 'WRITE_DIARY', 'Momento de registro e escrita.'),
+  new Tile('i3', 'custom_desafio', 'TROCA', '#D946EF', 'inner', 90, 'SWAP_PLACE', 'Interação direta com outro peão.'),
+  new Tile('i4', 'custom_card', 'IR P/ CENTRO', '#111827', 'inner', 126, 'MOVE_INNER', 'Transição para o próximo anel interno.'),
+  new Tile('i5', 'especial', 'PAUSA', '#78909C', 'inner', 162, 'SKIP_TURN', 'Pausa reflexiva, pule uma vez.'),
+  new Tile('i6', 'custom_sorte', 'CUSTOM\nSORTE', '#F4C746', 'inner', 198, null, 'Crie um evento inesperado personalizado.'),
+  new Tile('i7', 'custom_memoria', 'DIÁRIO', '#0D9488', 'inner', 234, 'WRITE_DIARY', 'Momento de registro e escrita.'),
+  new Tile('i8', 'custom_card', 'TROCA', '#D946EF', 'inner', 270, 'SWAP_PLACE', 'Interação direta com outro peão.'),
+  new Tile('i9', 'especial', 'COMPRAR 2', '#6366F1', 'inner', 306, 'DRAW_2', 'Compre duas cartas do monte.'),
+  new Tile('i10', 'custom_card', 'PAUSA', '#78909C', 'inner', 342, 'SKIP_TURN', 'Pausa reflexiva, pule uma vez.'),
+  new Tile('center', 'center', 'IR P/ BORDA', '#111827', 'center', 0, 'MOVE_OUTER', 'Retorno para o anel anterior.')
 ];
 
 export const getDefaultBoardConfig = () => {
@@ -103,7 +94,7 @@ export const getDefaultBoardConfig = () => {
       showBoardLabels: true,
       showCardLabels: true,
       maxTurns: 0,
-      centerText: ["A APRENDIZAGEM", "É UM CICLO,", "NÃO UMA LINHA", "DE CHEGADA."],
+      centerText: ["Surpresa!!", "", "", ""],
       initialPositions: [0, 0, 0, 0]
     }
   );
@@ -151,7 +142,7 @@ export const getDevTestBoardConfig = () => {
       action: item.action || null,
       label: finalLabel,
       color: finalColor,
-      description: item.action ? `Mecânica de teste: ${finalLabel}` : (TILE_DESCRIPTIONS[item.type] || '')
+      description: item.action ? `Mecânica de teste: ${finalLabel}` : getTileDescription(item.type, item.action)
     };
   });
 

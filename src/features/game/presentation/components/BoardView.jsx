@@ -14,9 +14,34 @@ import SpecialTile from './SpecialTile';
  * BoardView component renders the interactive game board.
  * It handles rotation, tile layout, and player positioning.
  */
-const BoardView = ({ boardRotation = 0, isReadOnly = false, isMiniature = false }) => {
-  const { setBoardRotation, players, activeBoardConfig, showDetailPopup, selectedTileIndex, jumpToTile, myPlayerIndex, isOnline } = useGame();
+const BoardView = ({ 
+  boardRotation: propRotation, 
+  onRotationChange,
+  isReadOnly = false, 
+  isMiniature = false,
+  activeBoardConfig: propConfig,
+  players: propPlayers,
+  selectedTileIndex: propSelectedTileIndex,
+  onTileClick,
+  showInitialPositions = false
+}) => {
+  const { 
+    setBoardRotation: contextSetRotation, 
+    players: contextPlayers, 
+    activeBoardConfig: contextConfig, 
+    showDetailPopup, 
+    selectedTileIndex: contextSelectedTileIndex, 
+    jumpToTile, 
+    myPlayerIndex, 
+    isOnline 
+  } = useGame();
+
+  const activeBoardConfig = propConfig || contextConfig;
+  const players = propPlayers || contextPlayers;
+  const selectedTileIndex = propSelectedTileIndex !== undefined ? propSelectedTileIndex : contextSelectedTileIndex;
   const boardData = activeBoardConfig.tiles;
+  const boardRotation = propRotation !== undefined ? propRotation : 0; // Se não houver prop, usa 0 ou o valor do contexto se estivéssemos usando useGame diretamente
+
   const [showNameId, setShowNameId] = useState(null);
   
   // Responsive Scaling Logic
@@ -89,7 +114,13 @@ const BoardView = ({ boardRotation = 0, isReadOnly = false, isMiniature = false 
     
     const newRot = rotMotion.get() + deltaAngle;
     rotMotion.set(newRot);
-    setBoardRotation(newRot);
+    
+    if (onRotationChange) {
+      onRotationChange(newRot);
+    } else if (!propConfig) {
+      // Só atualiza o contexto global se NÃO estivermos usando um config customizado (modo editor)
+      contextSetRotation(newRot);
+    }
   };
 
   const onPointerUp = (e) => {
@@ -101,6 +132,11 @@ const BoardView = ({ boardRotation = 0, isReadOnly = false, isMiniature = false 
   };
 
   const handleTileClick = (tile, index) => (e) => {
+    if (onTileClick) {
+      onTileClick(tile, index, e);
+      return;
+    }
+
     if (isReadOnly || isMiniature) return;
     e.stopPropagation();
 
@@ -181,6 +217,8 @@ const BoardView = ({ boardRotation = 0, isReadOnly = false, isMiniature = false 
             const Icon = SPECIAL_ICONS[tile.action] || TILE_ICONS[tile.type] || Info;
             const isCustom = tile.isCustom || (tile.type && tile.type.startsWith('custom_'));
             const hasPlayer = !isMiniature && players?.some(p => p.position === actualIdx);
+            const isInitialPos = showInitialPositions && activeBoardConfig.mechanics?.initialPositions?.includes(actualIdx);
+            const playerInitialIdx = isInitialPos ? activeBoardConfig.mechanics.initialPositions.indexOf(actualIdx) : -1;
 
             return (
               <div 
@@ -197,6 +235,31 @@ const BoardView = ({ boardRotation = 0, isReadOnly = false, isMiniature = false 
                 onClick={handleTileClick(tile, actualIdx)}
               >
                 <div className="tile-content">
+                  {isInitialPos && (
+                    <div 
+                      className="initial-pos-indicator"
+                      style={{ 
+                        position: 'absolute',
+                        top: -10,
+                        right: -10,
+                        width: 20,
+                        height: 20,
+                        borderRadius: '50%',
+                        backgroundColor: ['#D84B42', '#4885CE', '#7B4BB1', '#F59E0B'][playerInitialIdx],
+                        color: 'white',
+                        fontSize: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 'bold',
+                        border: '2px solid white',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                        zIndex: 10
+                      }}
+                    >
+                      P{playerInitialIdx + 1}
+                    </div>
+                  )}
                   <motion.div 
                     initial={false}
                     animate={{ 

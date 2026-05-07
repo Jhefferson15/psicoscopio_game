@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { GenerateRandomBoardConfig } from '../../domain/usecases/GenerateRandomBoardConfig';
 import { BoardConfigRepository } from '../../data/repositories/BoardConfigRepository';
-import { getTileColor, getTileLabel } from '../../data/repositories/boardRepository';
+import { getTileDefaults } from '../../data/repositories/boardRepository';
+import { STANDARD_TILE_CONFIG, ACTION_METADATA } from '../../domain/gameConstants';
 
 export const useBoardEditor = ({
   activeBoardConfig,
@@ -22,6 +23,30 @@ export const useBoardEditor = ({
   const [configName, setConfigName] = useState(activeBoardConfig?.name || '');
   const [selectedTileIndex, setSelectedTileIndex] = useState(null);
   const [selectedPlayerIdx, setSelectedPlayerIdx] = useState(null); // Para definir posição inicial
+
+  const normalizeConfig = useCallback((config) => {
+    if (!config) return null;
+    const normalizedTiles = config.tiles.map(tile => {
+      const isStandardType = !!STANDARD_TILE_CONFIG[tile.type];
+      const isStandardAction = tile.action && !!ACTION_METADATA[tile.action];
+      
+      // Se for um tipo padrão ou uma ação padrão, forçamos os valores de fábrica
+      if (isStandardType || isStandardAction) {
+        const defaults = getTileDefaults(tile.type, tile.action);
+        return {
+          ...tile,
+          color: defaults.color,
+          label: defaults.label,
+          description: defaults.description
+        };
+      }
+      return tile;
+    });
+    return { ...config, tiles: normalizedTiles };
+  }, []);
+
+  // Normalização removida do useEffect para evitar cascading renders.
+  // Já ocorre no handleTileChange e nos pontos de entrada (selectConfig, startNewBoard, randomize).
 
   const handleSave = () => {
     const isNew = editingConfig.id === 'default' || editingConfig.id.startsWith('temp-');
@@ -48,12 +73,15 @@ export const useBoardEditor = ({
   const handleTileChange = (index, field, value) => {
     setEditingConfig(prev => {
       const newTiles = [...prev.tiles];
-      const updatedTile = { ...newTiles[index], [field]: value };
+      let updatedTile = { ...newTiles[index], [field]: value };
       
-      // Se mudar tipo ou ação, atualiza cor e rótulo automaticamente se houver metadados
+      // Se mudar tipo ou ação, restaura TUDO de fábrica
       if (field === 'type' || field === 'action') {
-        updatedTile.color = getTileColor(updatedTile.type, updatedTile.action);
-        updatedTile.label = getTileLabel(updatedTile.type, updatedTile.action);
+        const defaults = getTileDefaults(updatedTile.type, updatedTile.action);
+        updatedTile = {
+          ...updatedTile,
+          ...defaults
+        };
       }
       
       newTiles[index] = updatedTile;
@@ -129,12 +157,12 @@ export const useBoardEditor = ({
       COLORS
     );
     
-    setEditingConfig({
+    setEditingConfig(normalizeConfig({
       ...editingConfig,
       name: randomBoard.name,
       mechanics: randomBoard.mechanics,
       tiles: randomBoard.tiles
-    });
+    }));
     setConfigName(randomBoard.name);
 
     showSystemPopup({
@@ -149,7 +177,7 @@ export const useBoardEditor = ({
     const newConfig = JSON.parse(JSON.stringify(defaultConfig));
     newConfig.id = 'temp-' + Date.now();
     newConfig.name = 'Novo Tabuleiro';
-    setEditingConfig(newConfig);
+    setEditingConfig(normalizeConfig(newConfig));
     setConfigName('Novo Tabuleiro');
     setSelectedTileIndex(null);
 

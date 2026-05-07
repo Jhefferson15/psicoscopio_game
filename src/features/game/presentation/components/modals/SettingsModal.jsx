@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Volume2, VolumeX, Printer, Brush, Image as ImageIcon, Layout, ClipboardList, RotateCcw, ChevronRight, Settings } from 'lucide-react';
+import { Volume2, VolumeX, Printer, Brush, Image as ImageIcon, Layout, ClipboardList, RotateCcw, ChevronRight } from 'lucide-react';
 import { useGame } from '../../state/useGame';
 import { PdfService } from '../../../data/services/PdfService';
 import ModalWrapper from './ModalWrapper';
@@ -217,11 +217,15 @@ const SettingsModal = ({ onClose }) => {
         id="hidden-pdf-export-container"
         style={{ 
           position: 'fixed', 
-          left: '-10000px', 
-          top: '-10000px', 
+          left: 0, 
+          top: 0, 
           width: '210mm', 
+          height: '297mm',
           zIndex: -2000,
-          background: 'white'
+          opacity: 0.01,
+          pointerEvents: 'none',
+          background: 'white',
+          overflow: 'hidden'
         }}
       >
         {printSettings && (

@@ -20,11 +20,13 @@ export const PdfService = {
       throw new Error('Nenhuma página encontrada para exportação.');
     }
 
+    // High Quality PDF Configuration
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
       format: 'a4',
-      compress: true
+      compress: true,
+      precision: 16 // Increased precision for layout
     });
 
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -37,26 +39,28 @@ export const PdfService = {
       // 1. Tell React to render page index 'i'
       if (setPageIndex) {
         setPageIndex(i);
-        // Wait for React to unmount/mount the new page
-        // We use a longer timeout here to ensure the DOM is fully ready
-        await new Promise(r => setTimeout(r, 400));
+        // Wait longer for complex layouts and font loading
+        await new Promise(r => setTimeout(r, 1000));
+        
+        // Ensure fonts are ready before capture
+        if (document.fonts && document.fonts.ready) {
+          await document.fonts.ready;
+        }
       }
       
       // 2. Strict Verification: Find the element and check its index attribute
       let pageEl = null;
       let syncRetry = 0;
       
-      while (syncRetry < 10) {
+      while (syncRetry < 15) {
         pageEl = exportContainer.querySelector('.export-page-item');
         const renderedIndex = pageEl ? pageEl.getAttribute('data-page-index') : null;
         
         if (renderedIndex === i.toString()) {
-          // Success: DOM matches the loop index
           break;
         }
         
-        // Wait and retry
-        await new Promise(r => setTimeout(r, 200));
+        await new Promise(r => setTimeout(r, 300));
         syncRetry++;
       }
 
@@ -65,14 +69,49 @@ export const PdfService = {
         continue;
       }
 
-      // 3. Capture with High Resolution
+      // 3. Capture with Extreme Quality (2K+ Resolution)
       const canvas = await html2canvas(pageEl, {
-        scale: 2.5, // Standard high resolution
+        scale: 4.0, // Higher scale for 2K+ clarity (around 3200px width)
         useCORS: true,
+        allowTaint: true,
         backgroundColor: '#FFFFFF',
         logging: false,
-        imageTimeout: 0,
-        removeContainer: true
+        imageTimeout: 20000,
+        removeContainer: true,
+        windowWidth: 1200,
+        scrollX: 0,
+        scrollY: 0,
+        onclone: (clonedDoc) => {
+          // Normalization Fixes for html2canvas glitches
+          const allElements = clonedDoc.getElementById('hidden-pdf-export-container').querySelectorAll('*');
+          
+          allElements.forEach(el => {
+            const style = window.getComputedStyle(el);
+            
+            // 1. Fix clip-path issues (common in Board tiles)
+            if (style.clipPath && style.clipPath !== 'none') {
+              // Ensure -webkit prefix is present for better compatibility in some engines
+              el.style.webkitClipPath = style.clipPath;
+            }
+            
+            // 2. Remove all transitions and animations to prevent "ghosting"
+            el.style.transition = 'none';
+            el.style.animation = 'none';
+            
+            // 3. Remove unwanted outlines/shadows that might appear as "bordas"
+            if (el.classList.contains('preview-page-sheet')) {
+              el.style.border = 'none';
+              el.style.boxShadow = 'none';
+            }
+          });
+
+          // SVG Geometric Precision
+          const svgs = clonedDoc.querySelectorAll('svg');
+          svgs.forEach(svg => {
+            svg.setAttribute('shape-rendering', 'geometricPrecision');
+            svg.style.overflow = 'visible';
+          });
+        }
       });
 
       // 4. Add to PDF
@@ -80,24 +119,31 @@ export const PdfService = {
         doc.addPage('a4', 'portrait');
       }
 
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      // Using JPEG with 0.91 quality for best balance
+      const imgData = canvas.toDataURL('image/jpeg', 0.91);
       doc.addImage(
         imgData, 
         'JPEG', 
         0, 0, 
         pageWidth, pageHeight,
         undefined, 
-        'MEDIUM'
+        'SLOW', // SLOW for better internal jsPDF quality
+        0
       );
 
       // 5. Progress Feedback
       if (onProgress) {
-        onProgress(0, { current: i + 1, total: pageCount });
+        const progressValue = Math.round(10 + ((i + 1) / pageCount) * 85);
+        onProgress(progressValue, { current: i + 1, total: pageCount });
       }
     }
 
     if (onProgress) onProgress(98);
-    doc.save('Psicoscopio_Kit_Fisico.pdf');
+    
+    // Final save
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    doc.save(`Psicoscopio_Kit_Premium_${timestamp}.pdf`);
+    
     if (onProgress) onProgress(100);
     
     // Reset to initial state

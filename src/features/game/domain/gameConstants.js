@@ -77,7 +77,8 @@ export const SYMBOL_DEFINITIONS = {
     { name: 'Experiência', color: '#6FB05E', description: 'Relacione o jogo com suas vivências práticas e reais.' },
     { name: 'Desafio', color: '#D84B42', description: 'Tarefas de resolução de problemas e ação imediata.' },
     { name: 'Reflexão', color: '#7B4BB1', description: 'Análise profunda sobre o próprio processo de aprendizagem.' },
-    { name: 'Sorte', color: '#F4C746', description: 'Eventos inesperados que mudam o rumo da partida.' }
+    { name: 'Sorte', color: '#F4C746', description: 'Eventos inesperados que mudam o rumo da partida.' },
+    { name: 'Customizada', color: '#94A3B8', description: 'Cartas criadas no Ateliê com temas e desafios únicos.' }
   ],
   special: [
     { symbol: 'MOVE_2', label: 'Avance 2', desc: 'Acelere seu caminho no anel atual.', color: '#F97316' }, 
@@ -87,7 +88,9 @@ export const SYMBOL_DEFINITIONS = {
     { symbol: 'WRITE_DIARY', label: 'Diário', desc: 'Momento de registro e escrita.', color: '#0D9488' }, 
     { symbol: 'MOVE_INNER', label: 'Centro', desc: 'Transição para o próximo anel interno.', color: '#111827' }, 
     { symbol: 'MOVE_OUTER', label: 'Borda', desc: 'Retorno para o anel anterior.', color: '#111827' },
-    { symbol: 'SKIP_TURN', label: 'Pausa', desc: 'Pausa reflexiva, pule uma vez.', color: '#64748B' }
+    { symbol: 'SKIP_TURN', label: 'Pausa', desc: 'Pausa reflexiva, pule uma vez.', color: '#64748B' },
+    { symbol: 'CREATE_CARD', label: 'Criar', desc: 'O jogador deve criar uma nova carta no Ateliê.', color: '#8B5CF6' },
+    { symbol: 'SHARE_CARD', label: 'Presente', desc: 'Escolha um colega e dê uma carta a ele.', color: '#EC4899' }
   ]
 };
 
@@ -101,10 +104,11 @@ export const GAME_RULES = {
   ],
   round_flow: [
     "Lançar o Dado: O número indica quantas casas você deve avançar.",
-    "Ação da Casa: Ao parar em uma casa, execute a ação (Carta ou Símbolo).",
+    "Ação da Casa: Execute a ação da casa (Carta ou Símbolo). Use o ícone de Pincel para identificar casas de Ateliê (Criação) e o ícone de Presente para presentear colegas.",
     "Verificação Social: Se cair em uma carta, sua resposta deve ser validada pelos outros jogadores.",
     "Transição: Se parar em uma casa de 'Ir para o Centro' ou 'Ir para a Borda', você pode mudar de anel na próxima rodada."
   ],
+  custom_cards: "Casas de Ateliê (ícone Pincel) permitem criar novas cartas personalizadas no 'Ateliê de Cartas' para adaptar o jogo aos seus próprios temas.",
   components: [
     "1 Tabuleiro Circular",
     "Cartas de Categorias",
@@ -115,31 +119,31 @@ export const GAME_RULES = {
 };
 
 export const STANDARD_TILE_CONFIG = {
-  memoria: { color: '#4885CE', label: 'MEMÓRIA', icon: 'puzzle' },
-  experiencia: { color: '#6FB05E', label: 'EXPERIÊNCIA', icon: 'award' },
-  desafio: { color: '#D84B42', label: 'DESAFIO', icon: 'zap' },
-  reflexao: { color: '#7B4BB1', label: 'REFLEXÃO', icon: 'brain' },
-  sorte: { color: '#F4C746', label: 'SORTE', icon: 'sparkles' },
-  custom_memoria: { color: '#4885CE', label: 'CUSTOM\nMEMÓRIA', icon: 'puzzle' },
-  custom_experiencia: { color: '#6FB05E', label: 'CUSTOM\nEXPERIÊNCIA', icon: 'award' },
-  custom_desafio: { color: '#D84B42', label: 'CUSTOM\nDESAFIO', icon: 'zap' },
-  custom_reflexao: { color: '#7B4BB1', label: 'CUSTOM\nREFLEXÃO', icon: 'brain' },
-  custom_sorte: { color: '#F4C746', label: 'CUSTOM\nSORTE', icon: 'sparkles' },
-  custom_card: { color: '#F4C746', label: 'CARTA\nCUSTOM', icon: 'palette' }
+  memoria: { color: '#4885CE', label: 'MEMÓRIA', icon: 'puzzle', description: 'Desafios focados na retenção de conceitos e lembranças.' },
+  experiencia: { color: '#6FB05E', label: 'EXPERIÊNCIA', icon: 'award', description: 'Relacione o jogo com suas vivências práticas e reais.' },
+  desafio: { color: '#D84B42', label: 'DESAFIO', icon: 'zap', description: 'Tarefas de resolução de problemas e ação imediata.' },
+  reflexao: { color: '#7B4BB1', label: 'REFLEXÃO', icon: 'brain', description: 'Análise profunda sobre o próprio processo de aprendizagem.' },
+  sorte: { color: '#F4C746', label: 'SORTE', icon: 'sparkles', description: 'Eventos inesperados que mudam o rumo da partida.' },
+  custom_memoria: { color: '#4885CE', label: 'CUSTOM\nMEMÓRIA', icon: 'puzzle', description: 'Crie um desafio personalizado de retenção de conceitos.' },
+  custom_experiencia: { color: '#6FB05E', label: 'CUSTOM\nEXPERIÊNCIA', icon: 'award', description: 'Crie uma atividade personalizada baseada em vivências.' },
+  custom_desafio: { color: '#D84B42', label: 'CUSTOM\nDESAFIO', icon: 'zap', description: 'Crie uma tarefa prática personalizada para o grupo.' },
+  custom_reflexao: { color: '#7B4BB1', label: 'CUSTOM\nREFLEXÃO', icon: 'brain', description: 'Crie um questionamento personalizado sobre a aprendizagem.' },
+  custom_sorte: { color: '#F4C746', label: 'CUSTOM\nSORTE', icon: 'sparkles', description: 'Crie um evento inesperado personalizado.' },
+  custom_card: { color: '#F4C746', label: 'CARTA\nCUSTOM', icon: 'palette', description: 'Crie uma carta com tema livre para o tabuleiro.' }
 };
 
 export const ACTION_METADATA = {
-  'MOVE_2': { color: '#F97316', label: 'AVANCE 2', icon: 'move-2' },
-  'BACK_2': { color: '#475569', label: 'VOLTE 2', icon: 'back-2' },
-  'TEAM_CHALLENGE': { color: '#06B6D4', label: 'EQUIPE', icon: 'team' },
-  'SWAP_PLACE': { color: '#D946EF', label: 'TROCA', icon: 'swap' },
-  'WRITE_DIARY': { color: '#0D9488', label: 'DIÁRIO', icon: 'diary' },
-  'MOVE_INNER': { color: '#000000', label: 'IR P/ CENTRO', icon: 'circle-arrow-up' },
-  'MOVE_OUTER': { color: '#000000', label: 'IR P/ BORDA', icon: 'circle-arrow-down' },
-  'CREATE_CARD': { color: '#8B5CF6', label: 'CRIAR CARTA', icon: 'create-card' },
-  'SHARE_CARD': { color: '#EC4899', label: 'DAR CARTA', icon: 'share-card' },
-  'DRAW_2': { color: '#6366F1', label: 'COMPRAR 2', icon: 'draw-2' },
-  'SKIP_TURN': { color: '#78909C', label: 'PAUSA', icon: 'pause' }
+  'MOVE_2': { color: '#F97316', label: 'AVANCE 2', icon: 'move-2', description: 'Acelere seu caminho no anel atual.' },
+  'BACK_2': { color: '#475569', label: 'VOLTE 2', icon: 'back-2', description: 'Retorne para revisar o caminho.' },
+  'TEAM_CHALLENGE': { color: '#06B6D4', label: 'EQUIPE', icon: 'team', description: 'Ação colaborativa entre todos.' },
+  'SWAP_PLACE': { color: '#D946EF', label: 'TROCA', icon: 'swap', description: 'Interação direta com outro peão.' },
+  'WRITE_DIARY': { color: '#0D9488', label: 'DIÁRIO', icon: 'diary', description: 'Momento de registro e escrita.' },
+  'MOVE_INNER': { color: '#111827', label: 'IR P/ CENTRO', icon: 'circle-arrow-up', description: 'Transição para o próximo anel interno.' },
+  'MOVE_OUTER': { color: '#111827', label: 'IR P/ BORDA', icon: 'circle-arrow-down', description: 'Retorno para o anel anterior.' },
+  'CREATE_CARD': { color: '#8B5CF6', label: 'CRIAR CARTA', icon: 'create-card', description: 'Crie uma nova carta para o jogo.' },
+  'SHARE_CARD': { color: '#EC4899', label: 'DAR CARTA', icon: 'share-card', description: 'Compartilhe uma carta com outro jogador.' },
+  'DRAW_2': { color: '#6366F1', label: 'COMPRAR 2', icon: 'draw-2', description: 'Compre duas cartas do monte.' },
+  'SKIP_TURN': { color: '#78909C', label: 'PAUSA', icon: 'pause', description: 'Pausa reflexiva, pule uma vez.' }
 };
 
 export const GAME_CARDS = [

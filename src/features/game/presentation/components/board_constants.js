@@ -11,7 +11,8 @@ import {
   Info,
   Sparkles,
   Award,
-  Palette
+  Palette,
+  Brush
 } from 'lucide-react';
 
 import {
@@ -64,6 +65,7 @@ export const TILE_ICONS = {
   custom_experiencia: Award,
   custom_sorte: Sparkles,
   custom_card: Palette,
+  customizada: Brush,
   ...SPECIAL_ICONS
 };
 

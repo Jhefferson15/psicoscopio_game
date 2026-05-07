@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { X, Check } from 'lucide-react';
-import { STANDARD_TILE_CONFIG } from '../../domain/gameConstants';
+import { X, Check, Lock } from 'lucide-react';
+import { STANDARD_TILE_CONFIG, ACTION_METADATA } from '../../domain/gameConstants';
+import { getTileDefaults } from '../../data/repositories/boardRepository';
 
 const TileEditorPopup = ({
   selectedTileIndex,
@@ -13,6 +14,10 @@ const TileEditorPopup = ({
   setEditingConfig
 }) => {
   if (selectedTileIndex === null || !currentTile) return null;
+
+  const isStandardType = !!STANDARD_TILE_CONFIG[currentTile.type];
+  const isStandardAction = currentTile.action && !!ACTION_METADATA[currentTile.action];
+  const isFixed = isStandardType || isStandardAction;
 
   return (
     <motion.div 
@@ -30,7 +35,10 @@ const TileEditorPopup = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="popup-header">
-          <h3>Editar Casa #{selectedTileIndex + 1}</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <h3>Editar Casa #{selectedTileIndex + 1}</h3>
+            {isFixed && <Lock size={14} color="#64748b" title="Esta casa segue regras fixas" />}
+          </div>
           <button className="btn-close-popup" onClick={() => setSelectedTileIndex(null)}>
             <X size={20} />
           </button>
@@ -38,24 +46,32 @@ const TileEditorPopup = ({
 
         <div className="popup-body">
           <div className="popup-field">
-            <label>Rótulo da Casa</label>
+            <label style={{ display: 'flex', justifyContent: 'space-between' }}>
+              Rótulo da Casa
+              {isFixed && <span style={{ fontSize: '0.65rem', color: '#64748b' }}>FIXO PELO TIPO</span>}
+            </label>
             <textarea 
               value={currentTile.label || ''} 
               onChange={(e) => handleTileChange(selectedTileIndex, 'label', e.target.value)}
               className="tile-label-input"
               placeholder="Ex: Ponto de Partida"
               rows={2}
+              disabled={isFixed}
             />
           </div>
 
           <div className="popup-field">
-            <label>Descrição da Casa</label>
+            <label style={{ display: 'flex', justifyContent: 'space-between' }}>
+              Descrição da Casa
+              {isFixed && <span style={{ fontSize: '0.65rem', color: '#64748b' }}>FIXO PELO TIPO</span>}
+            </label>
             <textarea 
               value={currentTile.description || ''} 
               onChange={(e) => handleTileChange(selectedTileIndex, 'description', e.target.value)}
               className="tile-description-input"
               placeholder="Explique o que acontece nesta casa..."
               rows={3}
+              disabled={isFixed}
             />
           </div>
 
@@ -68,16 +84,13 @@ const TileEditorPopup = ({
                   className={`type-btn-quick ${currentTile.type === type.id ? 'active' : ''}`}
                   style={{ '--cat-color': type.color }}
                   onClick={() => {
-                    const tileConfig = STANDARD_TILE_CONFIG[type.id];
+                    const defaults = getTileDefaults(type.id, currentTile.action);
                     setEditingConfig(prev => {
                       const newTiles = [...prev.tiles];
                       newTiles[selectedTileIndex] = {
                         ...newTiles[selectedTileIndex],
                         type: type.id,
-                        ...(tileConfig ? {
-                          color: tileConfig.color,
-                          label: tileConfig.label
-                        } : {})
+                        ...defaults
                       };
                       return { ...prev, tiles: newTiles };
                     });
@@ -98,13 +111,13 @@ const TileEditorPopup = ({
                   key={action.id || 'none'}
                   className={`action-btn-quick ${currentTile.action === action.id ? 'active' : ''}`}
                   onClick={() => {
+                    const defaults = getTileDefaults(currentTile.type, action.id);
                     setEditingConfig(prev => {
                       const newTiles = [...prev.tiles];
-                      const isStandard = !!STANDARD_TILE_CONFIG[newTiles[selectedTileIndex].type];
                       newTiles[selectedTileIndex] = {
                         ...newTiles[selectedTileIndex],
                         action: action.id,
-                        ...(action.id && action.color && !isStandard ? { color: action.color } : {})
+                        ...defaults
                       };
                       return { ...prev, tiles: newTiles };
                     });
@@ -117,7 +130,7 @@ const TileEditorPopup = ({
             </div>
           </div>
 
-          {!STANDARD_TILE_CONFIG[currentTile.type] && (
+          {!isFixed && (
             <div className="popup-field">
               <label>Cor da Casa</label>
               <div className="color-grid-quick">

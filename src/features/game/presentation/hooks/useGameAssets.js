@@ -1,15 +1,34 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { CardSet } from '../../domain/entities/CardSet';
 import { BoardConfig } from '../../domain/entities/BoardConfig';
 import { CardSetRepository } from '../../data/repositories/CardSetRepository';
 import { BoardConfigRepository } from '../../data/repositories/BoardConfigRepository';
 import { customCardRepository } from '../../data/repositories/LocalStorageCardRepository';
 import { firebaseCardRepository } from '../../data/repositories/FirebaseCardRepository';
-import { getTileColor, getTileLabel } from '../../data/repositories/boardRepository';
+import { getTileDefaults } from '../../data/repositories/boardRepository';
+import { STANDARD_TILE_CONFIG, ACTION_METADATA } from '../../domain/gameConstants';
 
 export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudBoardConfigs, syncBoardConfigsToCloud, cloudCustomCards, showSystemPopup, setDrawnCards }) => {
 
-
+  const normalizeBoardConfig = useCallback((config) => {
+    if (!config) return null;
+    const normalizedTiles = config.tiles.map(tile => {
+      const isStandardType = !!STANDARD_TILE_CONFIG[tile.type];
+      const isStandardAction = tile.action && !!ACTION_METADATA[tile.action];
+      
+      if (isStandardType || isStandardAction) {
+        const defaults = getTileDefaults(tile.type, tile.action);
+        return {
+          ...tile,
+          color: defaults.color,
+          label: defaults.label,
+          description: defaults.description
+        };
+      }
+      return tile;
+    });
+    return { ...config, tiles: normalizedTiles };
+  }, []);
 
   // Estados para Conjuntos de Cartas
   const [availableCardSets, setAvailableCardSets] = useState(() => {
@@ -90,16 +109,21 @@ export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudB
     // Filtra para evitar duplicatas se por algum motivo já estiverem no savedBoardConfigs
     const userConfigs = savedBoardConfigs.filter(c => c.id !== 'default' && c.id !== 'teste_dev');
     
-    return [defaultConfig, devTestConfig, ...userConfigs];
-  }, [savedBoardConfigs]);
+    const all = [defaultConfig, devTestConfig, ...userConfigs];
+    return all.map(c => normalizeBoardConfig(c));
+  }, [savedBoardConfigs, normalizeBoardConfig]);
 
   const [activeBoardConfig, setActiveBoardConfig] = useState(() => {
     const activeId = BoardConfigRepository.getActiveConfigId();
     const defaultConfig = BoardConfigRepository.getDefaultConfig();
     const devTestConfig = BoardConfigRepository.getDevTestBoardConfig();
     const allConfigs = [defaultConfig, devTestConfig, ...savedBoardConfigs];
-    return allConfigs.find(c => c.id === activeId) || defaultConfig;
+    const rawConfig = allConfigs.find(c => c.id === activeId) || defaultConfig;
+    return normalizeBoardConfig(rawConfig);
   });
+
+  // Removido useEffect recursivo para evitar cascading renders. 
+  // A normalização agora ocorre nos pontos de entrada de dados.
 
   // Sincroniza cartas locais com as da nuvem ao logar
   useEffect(() => {
@@ -167,10 +191,10 @@ export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudB
         const devTestConfig = BoardConfigRepository.getDevTestBoardConfig();
         const allConfigs = [defaultConfig, devTestConfig, ...savedConfigs];
         const currentActive = allConfigs.find(c => c.id === activeId) || defaultConfig;
-        setActiveBoardConfig(currentActive);
+        setActiveBoardConfig(normalizeBoardConfig(currentActive));
       });
     }
-  }, [user, cloudBoardConfigs]);
+  }, [user, cloudBoardConfigs, normalizeBoardConfig]);
 
   // Sincroniza cartas individuais customizadas (Ateliê)
   useEffect(() => {
@@ -258,7 +282,7 @@ export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudB
   const changeActiveBoardConfig = (id) => {
     const config = availableBoardConfigs.find(c => c.id === id);
     if (config) {
-      setActiveBoardConfig(config);
+      setActiveBoardConfig(normalizeBoardConfig(config));
       BoardConfigRepository.setActiveConfigId(id);
     }
   };
@@ -324,11 +348,19 @@ export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudB
       if (!data.name || !data.tiles || !data.mechanics) throw new Error("Estrutura JSON inválida para tabuleiro.");
       
       // Normaliza as casas para seguir as cores e rótulos padrão se possível
-      const normalizedTiles = data.tiles.map(tile => ({
-        ...tile,
-        color: getTileColor(tile.type, tile.action),
-        label: getTileLabel(tile.type, tile.action)
-      }));
+      const normalizedTiles = data.tiles.map(tile => {
+        const defaults = getTileDefaults(tile.type, tile.action);
+        const isStandardType = !!STANDARD_TILE_CONFIG[tile.type];
+        const isStandardAction = tile.action && !!ACTION_METADATA[tile.action];
+
+        if (isStandardType || isStandardAction) {
+          return {
+            ...tile,
+            ...defaults
+          };
+        }
+        return tile;
+      });
 
       const newName = `${data.name} (Importado)`;
       return saveNewBoardConfig(newName, normalizedTiles, data.mechanics);
