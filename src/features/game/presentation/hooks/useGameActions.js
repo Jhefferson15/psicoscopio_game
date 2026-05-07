@@ -29,10 +29,10 @@ export const useGameActions = ({
   setIsDiaryRequired,
   setPlayerSelectionTask,
   setCardSelectionTask,
+  setSharingRecipientId,
   setAtelierContext,
   setRoomStatus,
   setActiveVerification,
-
   passTurn,
   getRingIndices,
   generateDiceRoll,
@@ -136,6 +136,11 @@ export const useGameActions = ({
                       recipientId: targetId,
                       isCustom: !!cardData.isCustom
                     });
+                  },
+                  onCreateNew: () => {
+                    setSharingRecipientId(targetId);
+                    setAtelierContext('share_card');
+                    setCurrentScreen('card_creation');
                   }
                 });
               }
@@ -216,7 +221,7 @@ export const useGameActions = ({
 
     setPlayers([...allPlayers]);
     return modalOpened;
-  }, [activeBoardConfig, currentPlayerIndex, drawCard, getRingIndices, isOnline, roomId, setAtelierContext, setCurrentScreen, setFocusedCard, setPlayerSelectionTask, setCardSelectionTask, setPlayers, setShowDiary, showSystemPopup, syncRepository, passTurn]);
+  }, [activeBoardConfig, currentPlayerIndex, drawCard, getRingIndices, isOnline, roomId, setAtelierContext, setCurrentScreen, setFocusedCard, setPlayerSelectionTask, setCardSelectionTask, setPlayers, setShowDiary, showSystemPopup, syncRepository, passTurn, openDiary, setIsDiaryRequired, setSharingRecipientId]);
 
   // Efeito para retomar ação pendente ao voltar para o jogo
   useEffect(() => {
@@ -328,19 +333,24 @@ export const useGameActions = ({
     const wasFromTile = focusedCard?.fromTileAction;
     const shouldDrawAnother = focusedCard?.nextDraw;
 
+    const currentCard = { ...focusedCard };
     setFocusedCard(null);
 
     if (shouldDrawAnother) {
       setTimeout(() => {
-        const cardData = drawCard('desafio');
+        // Usa o mesmo tipo da primeira carta para o segundo sorteio
+        const drawType = currentCard.type || 'desafio';
+        const cardData = drawCard(drawType);
+        
         setFocusedCard({
-          type: 'desafio',
+          type: drawType,
           content: cardData.content,
           index: cardData.index,
           id: `card-extra-${Date.now()}`,
           fromTileAction: true,
           nextDraw: false,
-          isCustom: false
+          isCustom: !!cardData.isCustom,
+          previousCard: currentCard // Passa a carta atual para a próxima para acumular
         });
       }, 300);
 
@@ -349,11 +359,41 @@ export const useGameActions = ({
 
     if (wasFromTile) {
       setTimeout(() => {
+        // Função auxiliar para extrair texto de forma robusta
+        const getCardText = (card) => {
+          if (!card) return 'Ação de casa';
+          const content = card.content;
+          if (typeof content === 'string') return content;
+          if (content && typeof content === 'object') {
+            return content.text || content.content || card.text || 'Ação de casa';
+          }
+          return card.text || 'Ação de casa';
+        };
+
+        const currentCardText = getCardText(currentCard);
+        
+        // Se houver uma carta anterior acumulada (ex: COMPRAR 2), cria um array de cartas
+        const cards = currentCard.previousCard ? [
+          {
+            type: currentCard.previousCard.type || 'reflexao',
+            text: getCardText(currentCard.previousCard),
+            id: currentCard.previousCard.id || `card-prev-${Date.now()}`,
+            isCustom: !!currentCard.previousCard.isCustom
+          },
+          {
+            type: currentCard.type || 'reflexao',
+            text: currentCardText,
+            id: currentCard.id || `card-curr-${Date.now()}`,
+            isCustom: !!currentCard.isCustom
+          }
+        ] : null;
+
         const verificationData = {
           playerId: players[currentPlayerIndex].id,
-          cardType: focusedCard.type || 'reflexao',
-          cardText: (typeof focusedCard.content === 'string' ? focusedCard.content : focusedCard.content?.text) || focusedCard.text || 'Ação de casa',
-          recipientId: focusedCard.recipientId || null,
+          cardType: currentCard.type || 'reflexao',
+          cardText: currentCardText,
+          cards: cards, // Novo campo com a lista de cartas para o ActionVerificationForm
+          recipientId: currentCard.recipientId || null,
           timestamp: Date.now(),
           responses: {}
         };
@@ -375,18 +415,35 @@ export const useGameActions = ({
 
   }, [focusedCard, setFocusedCard, drawCard, isOnline, roomId, players, currentPlayerIndex, syncRepository, setActiveVerification, setRoomStatus]);
 
-  const jumpToTile = useCallback(async (tileIndex) => {
+  const jumpToTile = useCallback(async (tileIndex, targetPlayerIndex = null) => {
     if (isMovingRef.current) return;
     
-    // Bloqueia ações se for online e não for sua vez
-    if (isOnline && currentPlayerIndex !== myPlayerIndex) return;
+    // Determina qual jogador mover. No modo teste dev, se for online, move a si mesmo por padrão.
+    let pIdx = targetPlayerIndex;
+    if (pIdx === null) {
+      if (activeBoardConfig?.id === 'teste_dev' && isOnline && myPlayerIndex !== -1) {
+        pIdx = myPlayerIndex;
+      } else {
+        pIdx = currentPlayerIndex;
+      }
+    }
+
+    // Bloqueia ações se for online e não for sua vez (a menos que esteja movendo a si mesmo no modo teste)
+    const isMovingSelfInTest = activeBoardConfig?.id === 'teste_dev' && pIdx === myPlayerIndex;
+    
+    if (isOnline && !isMovingSelfInTest && currentPlayerIndex !== myPlayerIndex) return;
 
     setIsMoving(true);
     
     let newPlayers = [...playersRef.current];
-    let player = { ...newPlayers[currentPlayerIndex] };
+    if (!newPlayers[pIdx]) {
+      setIsMoving(false);
+      return;
+    }
+
+    let player = { ...newPlayers[pIdx] };
     player.position = tileIndex;
-    newPlayers[currentPlayerIndex] = player;
+    newPlayers[pIdx] = player;
     setPlayers(newPlayers);
 
     if (isOnline && roomId) {
@@ -405,7 +462,8 @@ export const useGameActions = ({
     
     setIsMoving(false);
     
-    if (!hasModal) {
+    // Só passa o turno automaticamente se quem se moveu era o jogador do turno atual
+    if (!hasModal && pIdx === currentPlayerIndex) {
       passTurn({ players: newPlayers });
     }
   }, [activeBoardConfig, currentPlayerIndex, handleTileAction, isOnline, myPlayerIndex, passTurn, roomId, setIsMoving, setPlayers, syncRepository, user]);

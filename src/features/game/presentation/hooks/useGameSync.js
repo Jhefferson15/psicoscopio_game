@@ -119,8 +119,9 @@ export const useGameSync = ({
 
     const unsubscribe = syncRepository.listenToGameState(roomId, guard((newState) => {
       if (newState.players) {
-        // Nao atualiza posicoes durante animacao de movimento local
-        if (!isMovingRef || !isMovingRef.current) {
+        // Nao atualiza posicoes durante animacao de movimento local ou passagem de turno
+        const isPassing = isTurnBeingPassedRef && isTurnBeingPassedRef.current;
+        if ((!isMovingRef || !isMovingRef.current) && !isPassing) {
           setPlayers(prev => {
             const next = newState.players.map(p =>
               new Player(p.id, p.name, p.color, p.position, p.timeLeft, p.lastRoll, p.skipNextTurn)
@@ -137,7 +138,10 @@ export const useGameSync = ({
       }
 
       if (newState.currentPlayerIndex !== undefined) {
-        setCurrentPlayerIndex(prev => prev !== newState.currentPlayerIndex ? newState.currentPlayerIndex : prev);
+        // Evita sobrescrever o indice local enquanto estamos tentando passar o turno
+        if (!isTurnBeingPassedRef || !isTurnBeingPassedRef.current) {
+          setCurrentPlayerIndex(prev => prev !== newState.currentPlayerIndex ? newState.currentPlayerIndex : prev);
+        }
       }
 
       if (newState.currentTurn !== undefined) {

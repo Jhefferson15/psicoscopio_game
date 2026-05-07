@@ -8,7 +8,7 @@ import {
   deleteDoc,
   serverTimestamp 
 } from "firebase/firestore";
-import { firestore, storage } from "../../../../config/firebase.js";
+import { firestore } from "../../../../config/firebase.js";
 import { CardRepository } from "../../domain/repositories/CardRepository";
 import { CustomCard } from "../../domain/entities/CustomCard";
 import { FirebaseStorageService } from "../services/FirebaseStorageService";

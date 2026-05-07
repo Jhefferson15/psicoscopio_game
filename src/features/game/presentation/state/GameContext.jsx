@@ -58,10 +58,7 @@ export const GameProvider = ({ children }) => {
   const [drawnCards, setDrawnCards] = useState({}); // { category: [index1, index2, ...] }
 
   
-  const [playerAttributes, setPlayerAttributes] = useState({
-    1: { memory: 20, reflection: 40, challenge: 10 },
-    2: { memory: 30, reflection: 15, challenge: 50 }
-  });
+  const [playerAttributes, setPlayerAttributes] = useState({});
 
   const [atelierContext, setAtelierContext] = useState(null);
   const [detailPopup, setDetailPopup] = useState(null);
@@ -81,6 +78,7 @@ export const GameProvider = ({ children }) => {
   const [activeVerification, setActiveVerification] = useState(null);
   const [playerSelectionTask, setPlayerSelectionTask] = useState(null);
   const [cardSelectionTask, setCardSelectionTask] = useState(null);
+  const [sharingRecipientId, setSharingRecipientId] = useState(null);
 
   // Efeito para sincronizar participantes no modo offline
   useEffect(() => {
@@ -212,7 +210,7 @@ export const GameProvider = ({ children }) => {
     }
 
     setDrawnCards(prev => ({ ...prev, [type]: newUsedIndices }));
-    const isCustom = activeCardSet?.id !== 'default';
+    const isCustom = false; // Removido isCustom global para evitar rótulo "CUSTOM" em casas normais. O isCustom será definido pela ação da casa.
     const rawCard = cardList[selectedIndex];
     const cardText = typeof rawCard === 'object' ? (rawCard.text || rawCard.content) : rawCard;
     
@@ -283,7 +281,10 @@ export const GameProvider = ({ children }) => {
     showLeaveConfirm, setShowLeaveConfirm,
     passTurn: (overrides) => passTurnRef.current?.(overrides),
     activeVerification,
-    setActiveVerification
+    setActiveVerification,
+    setFocusedCard,
+    sharingRecipientId,
+    setSharingRecipientId
   });
 
   useGameSync({
@@ -343,6 +344,7 @@ export const GameProvider = ({ children }) => {
     setLastDiceRoll, setShowModal, setFocusedCard, showSystemPopup,
     setCurrentScreen, currentScreen, setShowDiary, setAtelierContext, 
     setPlayerSelectionTask, setCardSelectionTask,
+    setSharingRecipientId,
     openDiary, closeDiary, setIsDiaryRequired,
     passTurn: (overrides) => passTurnRef.current?.(overrides), 
     setRoomStatus, setActiveVerification,
@@ -370,6 +372,12 @@ export const GameProvider = ({ children }) => {
       turnTime
     });
 
+    console.log(`[PassTurn] Calculado: ${currentPlayerIndex} -> ${nextIndex}`, {
+      isOnline,
+      roomId,
+      participants: Object.keys(roomParticipants).length
+    });
+
     setPlayers(updatedPlayers);
     setCurrentPlayerIndex(nextIndex);
     
@@ -393,8 +401,10 @@ export const GameProvider = ({ children }) => {
 
     if (isOnline && roomId) {
       syncRepository.startTurn(roomId, nextIndex, turnTime, currentTurn).then(() => {
+        console.log(`[PassTurn] Servidor atualizado com sucesso para o indice ${nextIndex}`);
         setTimeout(() => { isTurnBeingPassedRef.current = false; }, 1000);
-      }).catch(() => {
+      }).catch((err) => {
+        console.error(`[PassTurn] Erro ao atualizar servidor:`, err);
         isTurnBeingPassedRef.current = false;
       });
     } else {
@@ -432,7 +442,7 @@ export const GameProvider = ({ children }) => {
     const turnTime = activeBoardConfig.mechanics?.turnTime || 120;
     const initialPositions = activeBoardConfig.mechanics?.randomStart 
       ? BoardConfig.getRandomOuterPositions(activeBoardConfig.tiles, newPlayers.length)
-      : (activeBoardConfig.mechanics?.initialPositions || [0, 0, 0, 0]);
+      : (activeBoardConfig.mechanics?.initialPositions || [0, 0, 0, 0, 0, 0]);
     const shouldShowAtelier = !!activeBoardConfig.mechanics?.enableCardCreationStep;
     
     const preparedPlayers = newPlayers.map((p, i) => new Player(p.id || i + 1, p.name, p.color, initialPositions[i] || 0, turnTime));
@@ -444,6 +454,11 @@ export const GameProvider = ({ children }) => {
       return acc;
     }, {});
     setRoomParticipants(offlineParticipants);
+    
+    setPlayerAttributes(preparedPlayers.reduce((acc, p) => {
+      acc[p.id] = { memory: 20, reflection: 20, challenge: 20 };
+      return acc;
+    }, {}));
 
     setCurrentPlayerIndex(0);
     setCurrentTurn(1);
@@ -601,7 +616,7 @@ export const GameProvider = ({ children }) => {
         } else {
           setCardHistory(prev => [cardEntry, ...prev]);
         }
-      }, [isOnline, roomId, user?.displayName, syncRepository, setCardHistory]),
+      }, [isOnline, roomId, user?.displayName, setCardHistory, playersRef]),
 
       showCardHistory,
       setShowCardHistory,
@@ -653,6 +668,8 @@ export const GameProvider = ({ children }) => {
       setPlayerSelectionTask,
       cardSelectionTask,
       setCardSelectionTask,
+      sharingRecipientId,
+      setSharingRecipientId,
       activeVerification,
       setActiveVerification
     }}>

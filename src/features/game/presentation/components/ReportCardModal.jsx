@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ShieldAlert, X, Flag, AlertTriangle, MessageSquare, Trash2, ShieldOff } from 'lucide-react';
 import './ReportCardModal.css';
 

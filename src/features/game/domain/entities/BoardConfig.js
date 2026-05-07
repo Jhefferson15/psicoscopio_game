@@ -14,7 +14,7 @@ export class BoardConfig {
       showCardLabels: mechanics.showCardLabels !== false,
       maxTurns: mechanics.maxTurns || 0,
       centerText: mechanics.centerText || ["A APRENDIZAGEM", "É UM CICLO,", "NÃO UMA LINHA", "DE CHEGADA."],
-      initialPositions: mechanics.initialPositions || [0, 0, 0, 0],
+      initialPositions: mechanics.initialPositions || [0, 0, 0, 0, 0, 0],
       randomStart: mechanics.randomStart || false
     };
     this.createdAt = createdAt;

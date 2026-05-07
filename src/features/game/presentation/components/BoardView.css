@@ -245,14 +245,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: none;
+  transition: filter 0.2s, box-shadow 0.2s, outline 0.2s;
   cursor: pointer;
   box-sizing: border-box;
-  user-select: none; /* Previne seleção de texto ao girar */
+  user-select: none;
+  border-radius: 8px; /* Softens corners even if clipped */
 }
 
 .html-tile:hover {
-  /* No hover effects as per user request for original parity */
+  filter: brightness(1.1) saturate(1.2);
+  z-index: 10;
+}
+
+.html-tile.white-tile {
+  border: 1px solid var(--border-light);
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%) !important;
 }
 
 .html-tile.selected {
@@ -315,21 +322,34 @@
   left: 50%;
   width: 230px;
   height: 230px;
-  background: white;
+  background: var(--white);
   border-radius: 50%;
   transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  border: 4px solid #f1f5f9;
+  border: 8px solid var(--bg-darker);
   z-index: 5;
   padding: 30px;
   cursor: pointer;
+  box-shadow: var(--shadow-premium), inset 0 0 40px rgba(0,0,0,0.02);
+  transition: all var(--transition-normal);
 }
 
 .center-arrival:hover {
-  /* No scale animation as per user request */
+  transform: translate(-50%, -50%) scale(1.02);
+  border-color: var(--white);
+  box-shadow: var(--shadow-float);
+}
+
+.center-arrival .arrival-text {
+  color: var(--primary);
+  font-weight: 800;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .center-text {
@@ -340,7 +360,7 @@
   letter-spacing: 0.5px;
 }
 
-.player-marker-html {
+.player-marker {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -393,30 +413,38 @@
   left: 50%;
   width: 90px;
   height: 90px;
-  background: white;
-  border-radius: 4px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius-md);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 10px;
+  padding: 12px;
   cursor: pointer;
   z-index: 4;
-  border: 2px solid #e2e8f0;
+  border: 1px solid var(--border-light);
   box-sizing: border-box;
+  box-shadow: var(--shadow-premium);
+  transition: filter 0.2s, box-shadow 0.2s, border-color 0.2s, background 0.2s;
 }
-
 
 .special-card-html:hover {
   z-index: 50;
-  border-color: #cbd5e1;
+  box-shadow: var(--shadow-float);
+  border-color: var(--secondary-light);
+  background: var(--white);
 }
 
 .special-card-text {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
-  color: #334155;
+  color: var(--text);
   line-height: 1.2;
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-tight);
 }
 
 @media (max-width: 1024px) {

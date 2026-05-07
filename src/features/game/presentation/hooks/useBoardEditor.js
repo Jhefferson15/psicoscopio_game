@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { GenerateRandomBoardConfig } from '../../domain/usecases/GenerateRandomBoardConfig';
 import { BoardConfigRepository } from '../../data/repositories/BoardConfigRepository';
+import { getTileColor, getTileLabel } from '../../data/repositories/boardRepository';
 
 export const useBoardEditor = ({
   activeBoardConfig,
@@ -47,7 +48,15 @@ export const useBoardEditor = ({
   const handleTileChange = (index, field, value) => {
     setEditingConfig(prev => {
       const newTiles = [...prev.tiles];
-      newTiles[index] = { ...newTiles[index], [field]: value };
+      const updatedTile = { ...newTiles[index], [field]: value };
+      
+      // Se mudar tipo ou ação, atualiza cor e rótulo automaticamente se houver metadados
+      if (field === 'type' || field === 'action') {
+        updatedTile.color = getTileColor(updatedTile.type, updatedTile.action);
+        updatedTile.label = getTileLabel(updatedTile.type, updatedTile.action);
+      }
+      
+      newTiles[index] = updatedTile;
       return { ...prev, tiles: newTiles };
     });
   };

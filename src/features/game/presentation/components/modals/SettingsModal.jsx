@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Volume2, VolumeX, Printer, Brush, Image as ImageIcon, Layout, ClipboardList, RotateCcw, ChevronRight } from 'lucide-react';
+import { Volume2, VolumeX, Printer, Brush, Image as ImageIcon, Layout, ClipboardList, RotateCcw, ChevronRight, Settings } from 'lucide-react';
 import { useGame } from '../../state/useGame';
 import { PdfService } from '../../../data/services/PdfService';
 import ModalWrapper from './ModalWrapper';
-import PrintPreviewModal, { getPrintPages } from '../print/PrintPreviewModal';
+import PrintPreviewModal from '../print/PrintPreviewModal';
+import { getPrintPages } from '../print/printUtils';
 import PrintProgressModal from '../print/PrintProgressModal';
 import PagePreview from '../print/PagePreview';
 
@@ -184,6 +185,8 @@ const SettingsModal = ({ onClose }) => {
           </div>
           <ChevronRight size={20} className="text-muted" />
         </div>
+
+
 
         <div className="setting-item danger">
           <div className="setting-info">

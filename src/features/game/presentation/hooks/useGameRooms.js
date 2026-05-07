@@ -30,7 +30,10 @@ export const useGameRooms = ({
   showLeaveConfirm, setShowLeaveConfirm,
   passTurn,
   activeVerification,
-  setActiveVerification
+  setActiveVerification,
+  setFocusedCard,
+  sharingRecipientId,
+  setSharingRecipientId
 }) => {
 
 
@@ -38,17 +41,17 @@ export const useGameRooms = ({
     const turnTime = activeBoardConfig.mechanics?.turnTime || 120;
     const initialPositions = activeBoardConfig.mechanics?.randomStart 
       ? BoardConfig.getRandomOuterPositions(activeBoardConfig.tiles, newPlayers.length)
-      : (activeBoardConfig.mechanics?.initialPositions || [0, 0, 0, 0]);
+      : (activeBoardConfig.mechanics?.initialPositions || [0, 0, 0, 0, 0, 0]);
     const initialPlayers = newPlayers.map((p, i) => new Player(p.id || i + 1, p.name, p.color, initialPositions[i] || 0, turnTime));
     const gameState = {
       players: initialPlayers,
       currentPlayerIndex: 0,
       lastDiceRoll: 0,
       boardConfig: activeBoardConfig.toJSON(),
-      playerAttributes: {
-        1: { memory: 20, reflection: 40, challenge: 10 },
-        2: { memory: 30, reflection: 15, challenge: 50 }
-      }
+      playerAttributes: initialPlayers.reduce((acc, p, i) => {
+        acc[i + 1] = { memory: 20, reflection: 20, challenge: 20 };
+        return acc;
+      }, {})
     };
 
     try {
@@ -141,7 +144,7 @@ export const useGameRooms = ({
       const turnTime = activeBoardConfig.mechanics?.turnTime || 120;
       const initialPositions = activeBoardConfig.mechanics?.randomStart 
         ? BoardConfig.getRandomOuterPositions(activeBoardConfig.tiles, participantsArray.length)
-        : (activeBoardConfig.mechanics?.initialPositions || [0, 0, 0, 0]);
+        : (activeBoardConfig.mechanics?.initialPositions || [0, 0, 0, 0, 0, 0]);
       
       const initialPlayers = participantsArray.map((p, i) => ({
         id: p.id,
@@ -220,7 +223,42 @@ export const useGameRooms = ({
     setCurrentScreen('menu');
   }, [isOnline, roomId, user, syncRepository, setAtelierContext, setCurrentScreen, setRoomId, setIsOnline]);
 
-  const finishCardCreation = async () => {
+  const finishCardCreation = async (createdCard = null) => {
+    // Caso especial: Compartilhamento de carta (Online ou Offline)
+    if (atelierContext === 'share_card') {
+      const recipientId = sharingRecipientId;
+      setAtelierContext(null);
+      setSharingRecipientId(null);
+      
+      if (!createdCard) {
+        // Cancelamento: Volta para o popup de seleção
+        setCurrentScreen('game');
+        // Reabre o seletor após um pequeno delay para a transição de tela
+        setTimeout(() => {
+          // Precisamos disparar a ação de SHARE_CARD novamente ou reabrir o seletor.
+          // Como não temos acesso direto ao trigger original aqui, 
+          // confiamos que o jogo está no estado 'game' e podemos sinalizar o retorno.
+          // O ideal é limpar o estado de criação e deixar o seletor aparecer se o cardSelectionTask ainda existir
+          // ou se o sistema souber que deve voltar para lá.
+          // Por enquanto, apenas voltamos para o jogo.
+        }, 100);
+        return;
+      }
+
+      // Sucesso: Envia a carta e inicia verificação
+      setCurrentScreen('game');
+      
+      const verificationData = {
+        ...createdCard,
+        id: `shared-created-${Date.now()}`,
+        fromTileAction: true,
+        recipientId: recipientId
+      };
+
+      setFocusedCard(verificationData);
+      return;
+    }
+
     if (isOnline) {
       try {
         await syncRepository.setUserReady(roomId, user.id);
@@ -240,6 +278,7 @@ export const useGameRooms = ({
         setCurrentScreen('menu');
         return;
       }
+      
       const turnTime = activeBoardConfig.mechanics?.turnTime || 120;
       setTurnStartTime(Date.now());
       setTurnDuration(turnTime);

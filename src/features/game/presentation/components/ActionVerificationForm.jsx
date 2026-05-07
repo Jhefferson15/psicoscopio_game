@@ -36,14 +36,15 @@ export const ActionVerificationForm = () => {
   
   // Estados para denúncia
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [isReportedInSession, setIsReportedInSession] = useState(false);
+  const [reportingCard, setReportingCard] = useState(null); // { id, text }
+  const [reportedIds, setReportedIds] = useState([]); // Array de IDs denunciados nesta sessão
 
   // Filtra participantes para incluir todos os jogadores mas excluir observadores
   const participantsArray = useMemo(() => {
     return Object.values(roomParticipants || {}).filter(p => !p.isObserver);
   }, [roomParticipants]);
 
-  const { playerId, cardType, responses = {}, cardText, recipientId, isCustom, cardId } = activeVerification || {};
+  const { playerId, cardType, responses = {}, cardText, cards, recipientId, isCustom, cardId } = activeVerification || {};
   const targetPlayer = players.find(p => p.id === playerId);
 
   const question = useMemo(() => {
@@ -131,16 +132,23 @@ export const ActionVerificationForm = () => {
   };
 
   const handleReportConfirm = async (reason) => {
+    if (!reportingCard) return;
     try {
-      const actualId = isCustom ? (cardId || cardText) : cardText;
+      const actualId = reportingCard.id || reportingCard.text;
       
       // Centralized report (handles local state, localStorage and Firebase)
       await reportCard(actualId, reason);
 
-      setIsReportedInSession(true);
+      setReportedIds(prev => [...prev, actualId]);
+      setReportingCard(null);
     } catch (error) {
       console.error("Failed to report card in verification:", error);
     }
+  };
+
+  const openReportModal = (card) => {
+    setReportingCard(card);
+    setIsReportModalOpen(true);
   };
 
   const getResponseLabel = (value) => {
@@ -200,33 +208,75 @@ export const ActionVerificationForm = () => {
                )}
             </div>
 
-            <div className="card-content-preview-container">
-              <div className="card-content-preview">
-                <MessageCircle size={18} className="quote-icon" />
-                {typeof cardText === 'string' && cardText.startsWith('data:image') ? (
-                  <div className="verification-image-container">
-                    <img src={cardText} alt="Conteúdo compartilhado" className="verification-image" />
-                    <p className="image-caption"><em>Conteúdo Visual do Ateliê</em></p>
-                  </div>
-                ) : (
-                  <p>"{cardText}"</p>
-                )}
-              </div>
-              
-              {!isReportedInSession ? (
-                <button 
-                  className="report-verification-btn"
-                  onClick={() => setIsReportModalOpen(true)}
-                  title="Denunciar conteúdo inapropriado"
-                >
-                  <ShieldAlert size={18} />
-                  <span>Denunciar</span>
-                </button>
-              ) : (
-                <div className="report-badge-verification">
-                  <CheckCircle size={14} />
-                  <span>Denunciado</span>
+            <div className={`card-content-preview-container ${cards ? 'has-multiple' : ''}`}>
+              {cards ? (
+                <div className="multi-card-preview-grid">
+                  {cards.map((card, idx) => {
+                    const cardIdForReport = card.id || card.text;
+                    const isReported = reportedIds.includes(cardIdForReport);
+                    
+                    return (
+                      <div key={card.id || idx} className="card-preview-item">
+                        <div className="card-content-preview">
+                          <MessageCircle size={16} className="quote-icon" />
+                          {typeof card.text === 'string' && card.text.startsWith('data:image') ? (
+                            <div className="verification-image-container">
+                              <img src={card.text} alt="Conteúdo" className="verification-image" />
+                            </div>
+                          ) : (
+                            <p>"{card.text}"</p>
+                          )}
+                        </div>
+                        
+                        {!isReported ? (
+                          <button 
+                            className="report-verification-btn mini"
+                            onClick={() => openReportModal({ id: cardIdForReport, text: card.text })}
+                            title="Denunciar este conteúdo"
+                          >
+                            <ShieldAlert size={14} />
+                            <span>Denunciar</span>
+                          </button>
+                        ) : (
+                          <div className="report-badge-verification mini">
+                            <CheckCircle size={12} />
+                            <span>Denunciado</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
+              ) : (
+                <>
+                  <div className="card-content-preview">
+                    <MessageCircle size={18} className="quote-icon" />
+                    {typeof cardText === 'string' && cardText.startsWith('data:image') ? (
+                      <div className="verification-image-container">
+                        <img src={cardText} alt="Conteúdo compartilhado" className="verification-image" />
+                        <p className="image-caption"><em>Conteúdo Visual do Ateliê</em></p>
+                      </div>
+                    ) : (
+                      <p>"{cardText}"</p>
+                    )}
+                  </div>
+                  
+                  {!reportedIds.includes(isCustom ? (cardId || cardText) : cardText) ? (
+                    <button 
+                      className="report-verification-btn"
+                      onClick={() => openReportModal({ id: isCustom ? (cardId || cardText) : cardText, text: cardText })}
+                      title="Denunciar conteúdo inapropriado"
+                    >
+                      <ShieldAlert size={18} />
+                      <span>Denunciar</span>
+                    </button>
+                  ) : (
+                    <div className="report-badge-verification">
+                      <CheckCircle size={14} />
+                      <span>Denunciado</span>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -327,9 +377,12 @@ export const ActionVerificationForm = () => {
 
       <ReportCardModal 
         isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
+        onClose={() => {
+          setIsReportModalOpen(false);
+          setReportingCard(null);
+        }}
         onConfirm={handleReportConfirm}
-        cardId={isCustom ? cardId : cardText}
+        cardId={reportingCard?.id}
       />
     </>
   );

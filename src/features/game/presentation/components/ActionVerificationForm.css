@@ -557,3 +557,50 @@
   border: 1px solid #ddd;
   z-index: 5;
 }
+
+/* Estilos para Múltiplas Cartas */
+.multi-card-preview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.card-preview-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-preview-item .card-content-preview {
+  margin-bottom: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  padding: 16px;
+}
+
+.card-preview-item .card-content-preview p {
+  font-size: 0.9rem;
+}
+
+.report-verification-btn.mini,
+.report-badge-verification.mini {
+  position: static;
+  align-self: center;
+  font-size: 0.7rem;
+  padding: 4px 10px;
+}
+
+.card-content-preview-container.has-multiple {
+  margin-bottom: 24px;
+}
+
+@media (max-width: 480px) {
+  .multi-card-preview-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}

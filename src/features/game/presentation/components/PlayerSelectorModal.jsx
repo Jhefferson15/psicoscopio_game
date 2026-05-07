@@ -1,11 +1,16 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { Users, X, ChevronRight, Map as MapIcon } from 'lucide-react';
+import { motion, AnimatePresence, useMotionValue } from 'framer-motion';
+import { Users, X, ChevronRight, Map as MapIcon, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { useGame } from '../state/useGame';
 import BoardView from './BoardView';
 import './PlayerSelectorModal.css';
 
 const PlayerSelectorModal = () => {
   const { players, currentPlayerIndex, playerSelectionTask, setPlayerSelectionTask } = useGame();
+  const [zoom, setZoom] = useState(0.5);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const containerRef = useRef(null);
 
   if (!playerSelectionTask) return null;
 
@@ -22,6 +27,14 @@ const PlayerSelectorModal = () => {
 
   const handleClose = () => {
     setPlayerSelectionTask(null);
+  };
+
+  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.2, 2.5));
+  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.2, 0.2));
+  const handleReset = () => {
+    setZoom(0.5);
+    x.set(0);
+    y.set(0);
   };
 
   const isSwapAction = action === 'SWAP_POSITIONS';
@@ -58,12 +71,32 @@ const PlayerSelectorModal = () => {
           <div className="selector-main-layout">
             {isSwapAction && (
               <div className="board-preview-mini-container">
-                <div className="preview-label">
-                  <MapIcon size={14} />
-                  <span>Mapa de Posições</span>
+                <div className="preview-top-bar">
+                  <div className="preview-label">
+                    <MapIcon size={14} />
+                    <span>Mapa de Posições</span>
+                  </div>
+                  <div className="zoom-controls">
+                    <button onClick={handleZoomOut} title="Diminuir Zoom"><ZoomOut size={16} /></button>
+                    <button onClick={handleReset} title="Resetar Visualização"><Maximize size={16} /></button>
+                    <button onClick={handleZoomIn} title="Aumentar Zoom"><ZoomIn size={16} /></button>
+                  </div>
                 </div>
-                <div className="preview-svg-holder">
-                  <BoardView isReadOnly={true} />
+                
+                <div className="preview-svg-holder" ref={containerRef}>
+                  <motion.div 
+                    className="draggable-board-wrapper"
+                    drag
+                    dragMomentum={false}
+                    dragElastic={0}
+                    style={{ x, y, scale: zoom }}
+                  >
+                    <BoardView isReadOnly={true} />
+                  </motion.div>
+                </div>
+
+                <div className="preview-footer-hint">
+                  Pressione e arraste para navegar no tabuleiro
                 </div>
               </div>
             )}
@@ -101,3 +134,4 @@ const PlayerSelectorModal = () => {
 };
 
 export default PlayerSelectorModal;
+

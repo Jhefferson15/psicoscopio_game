@@ -1,4 +1,4 @@
-import { motion, useMotionValue, useSpring } from 'framer-motion';
+import { motion, useMotionValue } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
 import { useGame } from '../state/useGame';
 import { 
@@ -15,7 +15,7 @@ import SpecialTile from './SpecialTile';
  * It handles rotation, tile layout, and player positioning.
  */
 const BoardView = ({ boardRotation = 0, isReadOnly = false, isMiniature = false }) => {
-  const { setBoardRotation, players, activeBoardConfig, showDetailPopup, selectedTileIndex, jumpToTile } = useGame();
+  const { setBoardRotation, players, activeBoardConfig, showDetailPopup, selectedTileIndex, jumpToTile, myPlayerIndex, isOnline } = useGame();
   const boardData = activeBoardConfig.tiles;
   const [showNameId, setShowNameId] = useState(null);
   
@@ -43,7 +43,6 @@ const BoardView = ({ boardRotation = 0, isReadOnly = false, isMiniature = false 
   const dragStartPos = useRef(null);
 
   const rotMotion = useMotionValue(boardRotation);
-  const springRot = useSpring(rotMotion, { stiffness: 80, damping: 18 });
 
   // Update motion value when external rotation changes
   useEffect(() => { 
@@ -107,7 +106,7 @@ const BoardView = ({ boardRotation = 0, isReadOnly = false, isMiniature = false 
 
     // Se estiver no modo de teste dev, teletransporta o jogador para testar a mecânica
     if (activeBoardConfig.id === 'teste_dev') {
-      jumpToTile(index);
+      jumpToTile(index, isOnline ? myPlayerIndex : null);
     } else {
       showDetailPopup({
         title: tile.label || tile.type.toUpperCase(),
@@ -151,7 +150,7 @@ const BoardView = ({ boardRotation = 0, isReadOnly = false, isMiniature = false 
             height: BOARD_LAYOUT.centerSize,
             borderWidth: '4px'
           }}
-          onClick={(e) => {
+          onClick={() => {
             if (isReadOnly || isMiniature) return;
             showDetailPopup({ 
               id: 'center', 
@@ -171,7 +170,7 @@ const BoardView = ({ boardRotation = 0, isReadOnly = false, isMiniature = false 
         {/* Rotatable Rings Container */}
         <motion.div 
           className="board-ring-container"
-          style={{ rotate: isMiniature ? boardRotation : springRot }}
+          style={{ rotate: rotMotion }}
         >
           {/* Main Tiles (Inner, Middle, Outer) */}
           {boardData.filter(t => t.ring !== 'special' && t.ring !== 'center').map((tile) => {
@@ -181,12 +180,14 @@ const BoardView = ({ boardRotation = 0, isReadOnly = false, isMiniature = false 
             const ringClass = `tile-${tile.ring}`;
             const Icon = SPECIAL_ICONS[tile.action] || TILE_ICONS[tile.type] || Info;
             const isCustom = tile.isCustom || (tile.type && tile.type.startsWith('custom_'));
-            const hasPlayer = !isMiniature && players.some(p => p.position === actualIdx);
+            const hasPlayer = !isMiniature && players?.some(p => p.position === actualIdx);
 
             return (
               <div 
                 key={tile.id} 
-                className={`html-tile ${ringClass} ${selectedTileIndex === actualIdx ? 'selected' : ''}`}
+                className={`html-tile ${ringClass} ${selectedTileIndex === actualIdx ? 'selected' : ''} ${
+                  tile.color?.toLowerCase() === '#ffffff' || tile.color?.toLowerCase() === 'white' ? 'white-tile' : ''
+                }`}
                 style={{ 
                   backgroundColor: tile.color,
                   width: ringSize.w,
@@ -208,7 +209,7 @@ const BoardView = ({ boardRotation = 0, isReadOnly = false, isMiniature = false 
                     <Icon 
                       size={tile.ring === 'inner' ? 22 : 26} 
                       strokeWidth={2.2} 
-                      color={tile.color === '#000000' || tile.color === 'black' ? 'white' : undefined} 
+                      color={['#000000', '#111827', '#64748B', 'black'].includes(tile.color) ? 'white' : undefined} 
                     />
                     {isCustom && (
                       <Brush 
@@ -238,7 +239,7 @@ const BoardView = ({ boardRotation = 0, isReadOnly = false, isMiniature = false 
           <SpecialTile 
             key={tile.id} 
             tile={tile} 
-            boardRotation={isMiniature ? rotMotion : springRot}
+            boardRotation={rotMotion}
             onClick={handleTileClick(tile, boardData.indexOf(tile))}
             isReadOnly={isReadOnly || isMiniature}
           />
@@ -263,9 +264,16 @@ const BoardView = ({ boardRotation = 0, isReadOnly = false, isMiniature = false 
             const idxInTile = siblings.findIndex(s => s.id === player.id);
             const totalOnTile = siblings.length;
             
+            // Convert 22px shift to degrees based on the radius of the current ring
+            const iconOffsetDeg = r > 0 ? (22 / (2 * Math.PI * r)) * 360 : 0;
+            
+            // Distância em pixels entre os centros dos jogadores para gerar sobreposição
+            const playerGapPx = 14; 
+            const playerGapDeg = r > 0 ? (playerGapPx / (2 * Math.PI * r)) * 360 : 6;
+            
             const slotOffset = totalOnTile > 1 
-              ? (idxInTile - (totalOnTile - 1) / 2) * 22 + 15
-              : 22;
+              ? (idxInTile - (totalOnTile - 1) / 2) * playerGapDeg + iconOffsetDeg
+              : iconOffsetDeg;
             
             const radialOffset = 0;
 
@@ -275,7 +283,7 @@ const BoardView = ({ boardRotation = 0, isReadOnly = false, isMiniature = false 
                 player={player}
                 angle={finalAngle}
                 r={r}
-                boardRotation={springRot}
+                boardRotation={rotMotion}
                 isReadOnly={isReadOnly}
                 showName={showNameId === player.id}
                 onClick={() => setShowNameId(showNameId === player.id ? null : player.id)}

@@ -5,7 +5,7 @@
  * 2. Aleatoriza cada casa (tipo, cor, ação).
  * 3. Garante uma única ação por casa: se for tipo de carta, a ação especial deve ser nula.
  */
-import { STANDARD_TILE_CONFIG } from '../gameConstants';
+import { STANDARD_TILE_CONFIG, ACTION_METADATA } from '../gameConstants';
 
 export class GenerateRandomBoardConfig {
   static execute(currentTiles, tileTypes, tileActions, colors) {
@@ -27,7 +27,12 @@ export class GenerateRandomBoardConfig {
         const possibleActions = tileActions.filter(a => a.id !== null && a.id !== 'MOVE_INNER' && a.id !== 'MOVE_OUTER');
         const actionObj = possibleActions[Math.floor(Math.random() * possibleActions.length)];
         randomAction = actionObj.id;
-        if (actionObj.color) randomColor = actionObj.color;
+        if (ACTION_METADATA[randomAction]) {
+          randomColor = ACTION_METADATA[randomAction].color;
+          label = ACTION_METADATA[randomAction].label;
+        } else if (actionObj.color) {
+          randomColor = actionObj.color;
+        }
       }
       
       return {
@@ -50,7 +55,6 @@ export class GenerateRandomBoardConfig {
       if (currentCount < minCount) {
         for (let i = 0; i < (minCount - currentCount); i++) {
           // Busca casas que não tenham ações de transição ainda
-          // E que não estejam "em cima" de uma casa com a ação oposta em outro anel
           const available = ringTiles.filter(t => {
             if (t.action === 'MOVE_INNER' || t.action === 'MOVE_OUTER') return false;
             
@@ -68,9 +72,9 @@ export class GenerateRandomBoardConfig {
             const target = available[Math.floor(Math.random() * available.length)];
             const index = newTiles.findIndex(t => t.id === target.id);
             newTiles[index].action = action;
-            newTiles[index].label = action === 'MOVE_INNER' ? 'PARA DENTRO' : 'PARA FORA';
+            newTiles[index].label = ACTION_METADATA[action].label;
             newTiles[index].type = 'especial';
-            newTiles[index].color = '#FFFFFF';
+            newTiles[index].color = ACTION_METADATA[action].color;
           } else if (ringTiles.length > 0) {
             // Se não houver casas ideais, pegamos qualquer uma que não seja a própria ação
             const fallbackAvailable = ringTiles.filter(t => t.action !== action);
@@ -78,9 +82,9 @@ export class GenerateRandomBoardConfig {
                const target = fallbackAvailable[Math.floor(Math.random() * fallbackAvailable.length)];
                const index = newTiles.findIndex(t => t.id === target.id);
                newTiles[index].action = action;
-               newTiles[index].label = action === 'MOVE_INNER' ? 'PARA DENTRO' : 'PARA FORA';
+               newTiles[index].label = ACTION_METADATA[action].label;
                newTiles[index].type = 'especial';
-               newTiles[index].color = '#FFFFFF';
+               newTiles[index].color = ACTION_METADATA[action].color;
             }
           }
         }

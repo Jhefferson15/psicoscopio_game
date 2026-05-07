@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, useMotionValue } from 'framer-motion';
+import { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { 
   Maximize, 
   ZoomIn, 
@@ -10,12 +10,10 @@ import {
   Undo,
   Users,
   ArrowLeftRight,
-  HelpCircle,
   Brain,
   Sparkles,
   Zap,
   Info,
-  Brush,
   Book,
   PlusCircle,
   Gift,
@@ -29,7 +27,8 @@ import {
   Target,
   Puzzle,
   MessageCircle,
-  Sliders
+  Sliders,
+  Award
 } from 'lucide-react';
 
 // =================================================================//
@@ -62,15 +61,15 @@ const SPECIAL_ICONS = {
   'SHARE_CARD': Gift,
   'DRAW_2': Layers,
   'SKIP_TURN': UserX,
-  'MOVE_OUTER': ArrowUpCircle,
-  'MOVE_INNER': ArrowDownCircle
+  'MOVE_INNER': ArrowUpCircle,
+  'MOVE_OUTER': ArrowDownCircle
 };
 
 const TILE_ICONS = {
   brain: Brain,
-  reflexao: HelpCircle,
+  reflexao: Brain,
   desafio: Zap,
-  memoria: Brain,
+  memoria: Puzzle,
   especial: Zap,
   bulb: Lightbulb,
   eye: Eye,
@@ -80,7 +79,7 @@ const TILE_ICONS = {
   chat: MessageCircle,
   slider: Sliders,
   center: Info,
-  experiencia: Sparkles,
+  experiencia: Award,
   sorte: Sparkles,
   ...SPECIAL_ICONS
 };
@@ -89,9 +88,6 @@ const BoardPreview = ({
   editingConfig,
   selectedTileIndex,
   setSelectedTileIndex,
-  selectedPlayerIdx,
-  setSelectedPlayerIdx,
-  handleInitialPositionChange,
   isLarge = false,
   onOpenFullScreen
 }) => {
@@ -99,250 +95,229 @@ const BoardPreview = ({
   const [autoScale, setAutoScale] = useState(true);
   const containerRef = useRef(null);
 
-  // Simplified Fixed Scaling Logic
+  // Auto-ajuste de escala baseado no container
   useEffect(() => {
-    if (!autoScale || !containerRef.current) return;
-    
-    const observer = new ResizeObserver((entries) => {
-      for (let entry of entries) {
-        const { width, height } = entry.contentRect;
-        const baseSize = 820;
-        const scale = Math.min(width / baseSize, height / baseSize);
-        setZoom(scale);
-      }
-    });
-    
-    observer.observe(containerRef.current);
-    return () => observer.disconnect();
+    if (autoScale && containerRef.current) {
+      const containerWidth = containerRef.current.clientWidth;
+      const boardWidth = 800; // Tamanho base do SVG
+      const newScale = (containerWidth / boardWidth) * 0.95;
+      setZoom(Math.min(newScale, 1.2));
+    }
   }, [autoScale]);
 
-  // Use motion values for panning
-  const panX = useMotionValue(0);
-  const panY = useMotionValue(0);
-
-  if (!editingConfig) return null;
-
-  const handleZoomIn = () => {
+  const handleZoom = (delta) => {
     setAutoScale(false);
-    setZoom(prev => Math.min(prev + 0.1, 3));
-  };
-  const handleZoomOut = () => {
-    setAutoScale(false);
-    setZoom(prev => Math.max(prev - 0.1, 0.2));
-  };
-  const handleReset = () => {
-    setAutoScale(true);
-    panX.set(0);
-    panY.set(0);
+    setZoom(prev => Math.min(Math.max(prev + delta, 0.2), 3));
   };
 
-  const boardData = editingConfig.tiles;
+  const getTileLabel = (tile) => {
+    if (tile.type === 'especial' && tile.special) {
+      return tile.special.symbol;
+    }
+    return tile.type;
+  };
 
   return (
-    <div className={`preview-svg-wrapper ${isLarge ? 'large' : ''}`} ref={containerRef} style={{ overflow: 'hidden', position: 'relative', cursor: 'grab' }}>
-
-      <motion.div
-        className="board-ring-container"
-        drag
-        dragConstraints={containerRef}
-        style={{
-          x: panX,
-          y: panY,
-          scale: zoom,
-          width: 820,
-          height: 820,
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          marginTop: -410,
-          marginLeft: -410,
-          transformStyle: 'preserve-3d'
-        }}
-        onDragStart={() => {
-          if (containerRef.current) containerRef.current.style.cursor = 'grabbing';
-        }}
-        onDragEnd={() => {
-          if (containerRef.current) containerRef.current.style.cursor = 'grab';
-        }}
-      >
-        {/* Background Decorative Dashed Circles - Centered between the 3 integrated layers */}
-        <svg className="board-bg-circles" viewBox="0 0 820 820" style={{ width: '100%', height: '100%' }}>
-          {/* Gap 1 */}
-          <circle cx="410" cy="410" r="106" fill="none" stroke="#cbd5e1" strokeWidth="5" strokeDasharray="8,10" opacity="0.6" />
-          {/* Gap 2 */}
-          <circle cx="410" cy="410" r="200" fill="none" stroke="#cbd5e1" strokeWidth="5" strokeDasharray="8,10" opacity="0.6" />
-          {/* Gap 3 */}
-          <circle cx="410" cy="410" r="291" fill="none" stroke="#cbd5e1" strokeWidth="5" strokeDasharray="8,10" opacity="0.6" />
-        </svg>
-        {/* Arrivals Center Piece */}
-        <div className="center-arrival" style={{ width: BOARD_LAYOUT.centerSize, height: BOARD_LAYOUT.centerSize, pointerEvents: 'none' }}>
-          <div className="center-text" style={{ fontSize: '12px' }}>CENTRO</div>
+    <div className={`board-preview-container ${isLarge ? 'large' : ''}`} ref={containerRef}>
+      <div className="preview-controls">
+        <div className="zoom-controls">
+          <button onClick={() => handleZoom(0.1)} title="Aumentar Zoom"><ZoomIn size={16} /></button>
+          <button onClick={() => handleZoom(-0.1)} title="Diminuir Zoom"><ZoomOut size={16} /></button>
+          <button onClick={() => { setZoom(1); setAutoScale(true); }} title="Resetar Escala"><RotateCcw size={16} /></button>
         </div>
-
-        {/* Tiles */}
-        {boardData.filter(t => t.ring !== 'center').map((tile) => {
-          const actualIdx = boardData.findIndex(t => t.id === tile.id);
-          const isSpecial = tile.ring === 'special';
-          const isSelected = selectedTileIndex === actualIdx;
-
-          let r;
-          let transform;
-
-          if (isSpecial) {
-            let tx = 0, ty = 0;
-            const radius = BOARD_LAYOUT.radii.special;
-            if (tile.id === 's4') ty = -radius;
-            else if (tile.id === 's1') tx = radius;
-            else if (tile.id === 's2') ty = radius;
-            else if (tile.id === 's3') tx = -radius;
-            transform = `translate(-50%, -50%) translate(${tx}px, ${ty}px)`;
-          } else {
-            r = BOARD_LAYOUT.radii[tile.ring];
-            transform = `translate(-50%, -50%) rotate(${tile.angle}deg) translateY(-${r}px)`;
-          }
-
-          return (
-            <div
-              key={tile.id}
-              className={`${isSpecial ? 'special-card-html' : 'html-tile'} tile-${tile.ring} ${isSelected ? 'selected' : ''}`}
-              style={{
-                backgroundColor: tile.color,
-                transform,
-                width: isSpecial ? BOARD_LAYOUT.specialSize : BOARD_LAYOUT.sizes[tile.ring].w,
-                height: isSpecial ? BOARD_LAYOUT.specialSize : BOARD_LAYOUT.sizes[tile.ring].h,
-                zIndex: isSelected ? 10 : (isSpecial ? 4 : 1)
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (selectedPlayerIdx !== null) {
-                  handleInitialPositionChange(selectedPlayerIdx, actualIdx);
-                  setSelectedPlayerIdx(null);
-                } else {
-                  setSelectedTileIndex(actualIdx);
-                }
-              }}
-            >
-              <div className={isSpecial ? "special-card-text" : "tile-content"}>
-                {isSpecial ? (
-                  <>
-                    <div className="special-card-icon-container" style={{ transform: 'scale(0.7)' }}>
-                      {React.createElement(SPECIAL_ICONS[tile.action] || HelpCircle, { size: 24, strokeWidth: 2.5, color: "#4885CE" })}
-                    </div>
-                    <span className="special-card-text" style={{ fontSize: '10px', display: 'block', textAlign: 'center' }}>
-                      {tile.label}
-                    </span>
-                  </>
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {React.createElement(SPECIAL_ICONS[tile.action] || TILE_ICONS[tile.type.split('_')[1] || tile.type] || (tile.label ? 'span' : 'div'), { 
-                      size: tile.ring === 'inner' ? 22 : 26, 
-                      strokeWidth: 2.2,
-                      color: (tile.color === '#000000' || tile.color === 'black') ? 'white' : undefined,
-                      style: { opacity: 0.9 },
-                    })}
-                    {/* Custom Card Indicator - Synchronized with BoardView */}
-                    {(tile.isCustom || (tile.type && tile.type.startsWith('custom_'))) && (
-                      <div style={{
-                        position: 'absolute',
-                        bottom: '-4px',
-                        right: '-6px',
-                        backgroundColor: '#FFF',
-                        borderRadius: '50%',
-                        padding: '2px',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 2,
-                        border: '1px solid #EEE'
-                      }}>
-                        <Brush size={12} color={tile.color} strokeWidth={2.5} />
-                      </div>
-                    )}
-                    {!TILE_ICONS[tile.type] && !tile.label && (
-                       <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.5)' }} />
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Initial Positions Visualizer (Non-overlapping) */}
-        {editingConfig.mechanics?.initialPositions?.map((pos, playerIdx) => {
-          const tile = boardData[pos];
-          if (!tile) return null;
-
-          // Non-overlapping logic for preview
-          const playersAtSameTile = editingConfig.mechanics.initialPositions
-            .map((p, i) => p === pos ? i : -1)
-            .filter(i => i !== -1);
-          
-          const slotIndex = playersAtSameTile.indexOf(playerIdx);
-          const totalAtTile = playersAtSameTile.length;
-          
-          // Calculate offsets (same as BoardView) - Side-by-side with icon
-          const slotOffset = totalAtTile > 1 ? (slotIndex - (totalAtTile - 1) / 2) * 18 + 12 : 18;
-          const radialOffset = 0;
-
-          let r;
-          switch (tile.ring) {
-            case 'inner': r = BOARD_LAYOUT.radii.inner; break;
-            case 'middle': r = BOARD_LAYOUT.radii.middle; break;
-            case 'outer': r = BOARD_LAYOUT.radii.outer; break;
-            case 'special': r = BOARD_LAYOUT.radii.special; break;
-            default: r = 0;
-          }
-
-          const playerColors = ['#D84B42', '#4885CE', '#7B4BB1', '#F59E0B'];
-
-          return (
-            <div
-              key={playerIdx}
-              className="player-marker-html"
-              style={{
-                width: 20,
-                height: 20,
-                backgroundColor: playerColors[playerIdx],
-                transform: `translate(-50%, -50%) rotate(${tile.angle}deg) translateY(-${r - radialOffset}px) translateX(${slotOffset}px)`,
-                border: '2px solid white',
-                zIndex: 100 + playerIdx,
-                pointerEvents: 'none',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              <User size={10} />
-            </div>
-          );
-        })}
-      </motion.div>
-
-      <div className="zoom-controls">
-        <button className="btn-zoom" onClick={handleZoomIn} title="Aumentar Zoom">
-          <ZoomIn size={20} />
-        </button>
-        <button className="btn-zoom" onClick={handleReset} title="Resetar Visualização">
-          <RotateCcw size={16} />
-        </button>
-        <div className="zoom-level">{Math.round(zoom * 100)}%</div>
-        <button className="btn-zoom" onClick={handleZoomOut} title="Diminuir Zoom">
-          <ZoomOut size={20} />
-        </button>
+        {onOpenFullScreen && (
+          <button className="expand-btn" onClick={onOpenFullScreen} title="Ver em tela cheia">
+            <Maximize size={16} />
+          </button>
+        )}
       </div>
 
-      {!isLarge && onOpenFullScreen && (
-        <button
-          className="btn-open-fullscreen"
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenFullScreen();
-          }}
-          title="Ver em Tela Cheia"
+      <div className="board-viewport">
+        <motion.div 
+          className="board-svg-container"
+          style={{ scale: zoom }}
+          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         >
-          <Maximize size={16} />
-        </button>
-      )}
+          <svg viewBox="0 0 800 800" width="800" height="800">
+            {/* Definições de Gradiantes e Filtros */}
+            <defs>
+              <filter id="tileShadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur in="SourceAlpha" stdDeviation="3" />
+                <feOffset dx="0" dy="2" result="offsetblur" />
+                <feComponentTransfer>
+                  <feFuncA type="linear" slope="0.3" />
+                </feComponentTransfer>
+                <feMerge>
+                  <feMergeNode />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            {/* Fundo Central */}
+            <circle cx="400" cy="400" r={BOARD_LAYOUT.centerSize/2} fill="#1e293b" opacity="0.05" />
+            <circle cx="400" cy="400" r={BOARD_LAYOUT.centerSize/2 - 10} fill="none" stroke="#1e293b" strokeWidth="1" strokeDasharray="5,5" opacity="0.2" />
+
+            {/* Linhas de Conexão (Anéis) */}
+            <circle cx="400" cy="400" r={BOARD_LAYOUT.radii.inner} fill="none" stroke="#1e293b" strokeWidth="1" opacity="0.1" />
+            <circle cx="400" cy="400" r={BOARD_LAYOUT.radii.middle} fill="none" stroke="#1e293b" strokeWidth="1" opacity="0.1" />
+            <circle cx="400" cy="400" r={BOARD_LAYOUT.radii.outer} fill="none" stroke="#1e293b" strokeWidth="1" opacity="0.1" />
+
+            {/* Renderização das Casas */}
+            {editingConfig.tiles.map((tile, index) => {
+              const radius = BOARD_LAYOUT.radii[tile.ring];
+              const angle = tile.angle * (Math.PI / 180);
+              const x = 400 + radius * Math.cos(angle);
+              const y = 400 + radius * Math.sin(angle);
+              
+              const isSpecial = tile.ring === 'special';
+              const size = isSpecial ? BOARD_LAYOUT.specialSize : (BOARD_LAYOUT.sizes[tile.ring] || BOARD_LAYOUT.sizes.outer);
+              const isSelected = selectedTileIndex === index;
+              const isMoveAction = tile.special?.symbol === 'MOVE_INNER' || tile.special?.symbol === 'MOVE_OUTER';
+              
+              const Icon = TILE_ICONS[tile.type] || TILE_ICONS[tile.special?.symbol] || Sparkles;
+
+              return (
+                <g 
+                  key={index} 
+                  transform={`translate(${x}, ${y}) rotate(${tile.angle + 90})`}
+                  className={`preview-tile ${isSelected ? 'selected' : ''}`}
+                  onClick={() => setSelectedTileIndex(index)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {/* Sombra da Casa */}
+                  {isSelected && (
+                    <rect 
+                      x={isSpecial ? -size/2 - 4 : -size.w/2 - 4}
+                      y={isSpecial ? -size/2 - 4 : -size.h/2 - 4}
+                      width={isSpecial ? size + 8 : size.w + 8}
+                      height={isSpecial ? size + 8 : size.h + 8}
+                      rx={isSpecial ? size/2 : 8}
+                      fill="#4885CE"
+                      opacity="0.3"
+                    />
+                  )}
+
+                  {/* Fundo da Casa */}
+                  <rect 
+                    x={isSpecial ? -size/2 : -size.w/2}
+                    y={isSpecial ? -size/2 : -size.h/2}
+                    width={isSpecial ? size : size.w}
+                    height={isSpecial ? size : size.h}
+                    rx={isSpecial ? size/2 : 6}
+                    fill={tile.color || (isMoveAction ? '#000000' : (isSpecial ? '#1e293b' : '#cbd5e1'))}
+                    stroke={isSelected ? '#3b82f6' : (tile.color === '#ffffff' ? '#e2e8f0' : 'none')}
+                    strokeWidth={isSelected ? 3 : 1}
+                    filter="url(#tileShadow)"
+                  />
+
+                  {/* Ícone da Casa */}
+                  <g transform={`translate(0, ${isSpecial ? 0 : -8})`}>
+                    <Icon 
+                      size={isSpecial ? 32 : 20} 
+                      color={tile.color === '#ffffff' ? '#1e293b' : '#ffffff'} 
+                      strokeWidth={2.5}
+                    />
+                  </g>
+
+                  {/* Texto da Casa (Apenas normais) */}
+                  {!isSpecial && (
+                    <text 
+                      y="14" 
+                      textAnchor="middle" 
+                      fontSize="9" 
+                      fontWeight="bold"
+                      fill={tile.color === '#ffffff' ? '#64748b' : '#ffffff'}
+                      style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}
+                    >
+                      {getTileLabel(tile)}
+                    </text>
+                  )}
+                  
+                  {/* Indicador de Posição Inicial */}
+                  {(editingConfig?.mechanics?.initialPositions || []).includes(index) && (
+                    <g transform={`translate(${isSpecial ? size/2 - 5 : size.w/2 - 5}, ${isSpecial ? -size/2 + 5 : -size.h/2 + 5})`}>
+                      <circle r="8" fill="#10b981" stroke="white" strokeWidth="2" />
+                      <User size={10} color="white" style={{ transform: 'translate(-5px, -5px)' }} />
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+
+            {/* Centro do Tabuleiro */}
+            <g transform="translate(400, 400)">
+              <circle r={BOARD_LAYOUT.centerSize/2} fill="white" stroke="#e2e8f0" strokeWidth="2" />
+              <circle r={BOARD_LAYOUT.centerSize/2 - 8} fill="#f8fafc" stroke="#f1f5f9" strokeWidth="1" />
+              <Brain size={48} color="#4885CE" opacity="0.2" style={{ transform: 'translate(-24px, -24px)' }} />
+              <text y="10" textAnchor="middle" fontSize="14" fontWeight="900" fill="#1e293b" style={{ letterSpacing: '2px' }}>CENTRO</text>
+            </g>
+          </svg>
+        </motion.div>
+      </div>
+
+      <style>{`
+        .board-preview-container {
+          width: 100%;
+          background: #f8fafc;
+          border-radius: 20px;
+          border: 1px solid #e2e8f0;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          position: relative;
+        }
+        .board-preview-container.large {
+          height: 100%;
+        }
+        .preview-controls {
+          padding: 15px;
+          display: flex;
+          justify-content: space-between;
+          background: white;
+          border-bottom: 1px solid #e2e8f0;
+          z-index: 10;
+        }
+        .zoom-controls {
+          display: flex;
+          gap: 10px;
+        }
+        .zoom-controls button, .expand-btn {
+          width: 34px;
+          height: 34px;
+          border-radius: 8px;
+          border: 1px solid #e2e8f0;
+          background: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: #64748b;
+          transition: all 0.2s;
+        }
+        .zoom-controls button:hover, .expand-btn:hover {
+          background: #f1f5f9;
+          color: #4885CE;
+          border-color: #4885CE;
+        }
+        .board-viewport {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          padding: 40px;
+          cursor: grab;
+        }
+        .board-viewport:active { cursor: grabbing; }
+        .board-svg-container {
+          transform-origin: center;
+        }
+        .preview-tile:hover rect {
+          stroke: #4885CE;
+          stroke-width: 2;
+        }
+      `}</style>
     </div>
   );
 };

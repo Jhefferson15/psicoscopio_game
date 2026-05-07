@@ -45,7 +45,11 @@ const SpecialTile = ({ tile, boardRotation, onClick, isReadOnly }) => {
       onClick={onClick}
     >
       <div className="special-card-icon-container">
-        <EffectIcon size={32} strokeWidth={2.5} color="#4885CE" />
+        <EffectIcon 
+          size={32} 
+          strokeWidth={2.5} 
+          color={tile.color} 
+        />
       </div>
       <div className="special-card-text">
         {tile.label.split('\n').map((line, i) => (

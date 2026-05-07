@@ -1,4 +1,4 @@
-import { motion, useMotionValue, animate, AnimatePresence } from 'framer-motion';
+import { motion, useMotionValue, useTransform, animate, AnimatePresence } from 'framer-motion';
 import { useEffect } from 'react';
 import { User } from 'lucide-react';
 
@@ -29,37 +29,23 @@ const PlayerMarker = ({ player, angle, r, boardRotation, isReadOnly, showName, o
     return () => controls.stop();
   }, [angle, visualAngle]);
 
-  // Combined rotation (board + player position)
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-
-  useEffect(() => {
-    const unsubscribe = boardRotation.on("change", (latestBoardRot) => {
-      const currentAngle = visualAngle.get();
-      const totalDeg = (latestBoardRot + currentAngle + slotOffset) % 360;
+  const x = useTransform(
+    [boardRotation, visualAngle],
+    ([latestBoardRot, latestAngle]) => {
+      const totalDeg = (latestBoardRot + latestAngle + slotOffset - 90) % 360;
       const rad = totalDeg * Math.PI / 180;
-      
-      const finalR = r + radialOffset;
-      x.set(finalR * Math.cos(rad));
-      y.set(finalR * Math.sin(rad));
-    });
-    
-    // Also update on visualAngle changes
-    const unsubscribeAngle = visualAngle.on("change", (latestAngle) => {
-      const currentBoardRot = boardRotation.get();
-      const totalDeg = (currentBoardRot + latestAngle + slotOffset) % 360;
-      const rad = totalDeg * Math.PI / 180;
-      
-      const finalR = r + radialOffset;
-      x.set(finalR * Math.cos(rad));
-      y.set(finalR * Math.sin(rad));
-    });
+      return (r + radialOffset) * Math.cos(rad);
+    }
+  );
 
-    return () => {
-      unsubscribe();
-      unsubscribeAngle();
-    };
-  }, [boardRotation, visualAngle, r, slotOffset, radialOffset, x, y]);
+  const y = useTransform(
+    [boardRotation, visualAngle],
+    ([latestBoardRot, latestAngle]) => {
+      const totalDeg = (latestBoardRot + latestAngle + slotOffset - 90) % 360;
+      const rad = totalDeg * Math.PI / 180;
+      return (r + radialOffset) * Math.sin(rad);
+    }
+  );
 
   return (
     <motion.div

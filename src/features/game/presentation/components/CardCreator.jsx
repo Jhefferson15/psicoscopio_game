@@ -197,7 +197,7 @@ const CardCreator = () => {
       content = uploadedImage;
     }
 
-    if (!isCurrentCardValid()) return;
+    if (!isCurrentCardValid()) return null;
 
     const newCard = new CustomCard({
       type: selectedType.id,
@@ -206,14 +206,19 @@ const CardCreator = () => {
       color: selectedType.color
     });
 
-
-
     await customCardRepository.saveCard(newCard);
 
     // Sincroniza com a nuvem se estiver logado
     if (syncCustomCardToCloud) {
       await syncCustomCardToCloud(newCard.toJSON());
     }
+    
+    return {
+      cardType: selectedType.id,
+      cardText: content,
+      contentType: creationMode,
+      isCustom: true
+    };
   };
 
   const handleCreateMore = async () => {
@@ -223,11 +228,20 @@ const CardCreator = () => {
   };
 
   const handleFinish = async () => {
-    // Save last card if it has content
-    if (isCurrentCardValid()) {
-      await saveCurrentCard();
+    let createdCard = null;
+    const isValid = isCurrentCardValid();
+    
+    // Se estiver em modo de compartilhamento e o conteúdo for inválido, é um cancelamento
+    if (atelierContext === 'share_card' && !isValid) {
+      finishCardCreation(null);
+      return;
     }
-    finishCardCreation();
+
+    // Save last card if it has content
+    if (isValid) {
+      createdCard = await saveCurrentCard();
+    }
+    finishCardCreation(createdCard);
   };
 
   const colors = [
@@ -519,19 +533,24 @@ const CardCreator = () => {
         </div>
 
         <footer className="creator-action-bar">
-           <button 
-             className={`btn-premium-secondary ${!isCurrentCardValid() ? 'disabled' : ''}`} 
-             onClick={handleCreateMore}
-             disabled={!isCurrentCardValid()}
-           >
-              <Plus size={20} />
-              <span>Adicionar ao Baralho</span>
-           </button>
+           {atelierContext !== 'share_card' && (
+             <button 
+               className={`btn-premium-secondary ${!isCurrentCardValid() ? 'disabled' : ''}`} 
+               onClick={handleCreateMore}
+               disabled={!isCurrentCardValid()}
+             >
+                <Plus size={20} />
+                <span>Adicionar ao Baralho</span>
+             </button>
+           )}
+           
             <button className="btn-premium-primary" onClick={handleFinish}>
               <span>
-                {isCurrentCardValid() 
-                  ? (players.length > 0 ? 'Finalizar e Jogar' : 'Concluir e Voltar') 
-                  : 'Sair'}
+                {atelierContext === 'share_card' 
+                  ? (isCurrentCardValid() ? 'Enviar Carta' : 'Cancelar')
+                  : (isCurrentCardValid() 
+                    ? (players.length > 0 ? 'Finalizar e Jogar' : 'Concluir e Voltar') 
+                    : 'Sair')}
               </span>
               <CheckCircle size={20} />
             </button>

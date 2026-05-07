@@ -10,7 +10,8 @@ const WaitingPlayers = () => {
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutos
   
   const isOwner = ownerId === user?.id;
-  const participantList = Object.values(roomParticipants);
+  const participantList = Object.values(roomParticipants).filter(p => !p.hasLeft);
+  const readyCount = participantList.filter(p => readyPlayers[p.id]).length;
   const allReady = participantList.length > 0 && participantList.every(p => readyPlayers[p.id]);
 
   useEffect(() => {
@@ -78,12 +79,12 @@ const WaitingPlayers = () => {
           <div className="progress-bar-container">
             <div className="progress-bar-label">
               <span>Status dos Jogadores</span>
-              <span>{Object.values(readyPlayers).filter(Boolean).length} / {participantList.length} PRONTOS</span>
+              <span>{readyCount} / {participantList.length} PRONTOS</span>
             </div>
             <div className="progress-bar-track">
               <div 
                 className="progress-bar-fill"
-                style={{ width: `${(Object.values(readyPlayers).filter(Boolean).length / participantList.length) * 100}%` }}
+                style={{ width: `${participantList.length > 0 ? (readyCount / participantList.length) * 100 : 0}%` }}
               />
             </div>
           </div>
@@ -138,6 +139,7 @@ const WaitingPlayers = () => {
       </div>
     </div>
   );
+
 };
 
 export default WaitingPlayers;

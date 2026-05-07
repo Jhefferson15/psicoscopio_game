@@ -7,6 +7,7 @@ const Lobby = () => {
   const { roomId, roomParticipants, ownerId, hostRole, startOnlineGame, handleGoToMenu, players, showSystemPopup } = useGame();
   const { user } = useAuth();
   
+  const activeParticipants = Object.values(roomParticipants).filter(p => !p.hasLeft);
   const isOwner = ownerId === user?.id;
   
   const copyRoomId = () => {
@@ -47,18 +48,18 @@ const Lobby = () => {
             <div className="list-header">
               <h3>Participantes</h3>
               <div className="slots-badge">
-                {Object.keys(roomParticipants).length} / 4 JOGADORES
+                {activeParticipants.length} / 6 JOGADORES
               </div>
             </div>
             
             <div className="participants-grid">
-              {Object.values(roomParticipants).map((p, index) => (
+              {activeParticipants.map((p, index) => (
                 <div 
                   key={p.id}
                   className="participant-item"
                 >
                   <div className="participant-avatar" style={{ 
-                    backgroundColor: players[index]?.color || '#64748b',
+                    backgroundColor: players[index]?.color || ['#D84B42', '#4885CE', '#7B4BB1', '#F59E0B', '#10B981', '#6366F1'][index] || '#64748b',
                     color: 'white'
                   }}>
                     <span>{p.name?.charAt(0).toUpperCase() || '?'}</span>
@@ -83,7 +84,7 @@ const Lobby = () => {
                 </div>
               ))}
               
-              {[...Array(4 - Object.keys(roomParticipants).length)].map((_, i) => (
+              {[...Array(Math.max(0, 6 - activeParticipants.length))].map((_, i) => (
                 <div 
                   key={`empty-${i}`} 
                   className="participant-item empty"
@@ -102,14 +103,14 @@ const Lobby = () => {
             {(isOwner || hostRole === 'observer') ? (
               <div className="owner-panel">
                 <div className="panel-hint">
-                  {Object.keys(roomParticipants).length < 2 
+                  {activeParticipants.length < 2 
                     ? "Aguardando mais participantes..." 
                     : (isOwner ? "Todos prontos? Vamos começar!" : "Você pode iniciar a partida agora.")}
                 </div>
                 <button 
                   className="btn-premium-start" 
                   onClick={startOnlineGame}
-                  disabled={Object.keys(roomParticipants).length < 2}
+                  disabled={activeParticipants.length < 2}
                 >
                   <Play size={20} fill="currentColor" />
                   <span>INICIAR JORNADA</span>
@@ -121,7 +122,7 @@ const Lobby = () => {
                   <Loader2 size={32} className="spinner-modern" />
                 </div>
                 {(() => {
-                  const host = Object.values(roomParticipants).find(p => p.id === ownerId);
+                  const host = activeParticipants.find(p => p.id === ownerId);
                   const hostName = host ? host.name : 'O anfitrião';
                   return <p>{hostName} está preparando o tabuleiro...</p>;
                 })()}
@@ -132,6 +133,7 @@ const Lobby = () => {
       </div>
     </div>
   );
+
 };
 
 export default Lobby;

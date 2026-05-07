@@ -24,7 +24,9 @@ const ObserverDashboard = () => {
     }
 
     let isMounted = true;
-    setLoading(true);
+    Promise.resolve().then(() => {
+      setLoading(true);
+    });
 
     const unsubscribe = syncRepository.listenToOwnerRooms(user.id, (ownerRooms) => {
       if (!isMounted) return;
@@ -38,7 +40,7 @@ const ObserverDashboard = () => {
       isMounted = false;
       unsubscribe();
     };
-  }, [user, refreshKey]);
+  }, [user, refreshKey, setCurrentScreen]);
 
   if (selectedRoomId) {
     return <RoomMonitor roomId={selectedRoomId} onBack={() => setSelectedRoomId(null)} />;

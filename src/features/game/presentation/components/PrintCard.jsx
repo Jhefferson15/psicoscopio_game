@@ -1,4 +1,3 @@
-import React from 'react';
 import { Sparkles, Brain, Zap, Puzzle, Award, Palette, HelpCircle, Brush } from 'lucide-react';
 import './PrintCard.css';
 

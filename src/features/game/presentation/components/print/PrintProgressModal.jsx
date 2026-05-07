@@ -1,8 +1,8 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import '../MenuModals.css';
 import { FileDown } from 'lucide-react';
 
-const PrintProgressModal = ({ isOpen, progress }) => {
+const PrintProgressModal = ({ progress }) => {
   return (
     <div className="print-progress-overlay">
        <motion.div 

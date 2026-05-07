@@ -1,17 +1,5 @@
 import { 
-  FastForward, 
-  Undo, 
-  Users, 
-  ArrowLeftRight, 
-  Book, 
-  PlusCircle, 
-  Gift, 
-  Layers, 
-  UserX, 
-  ArrowUpCircle, 
-  ArrowDownCircle,
   Brain,
-  HelpCircle,
   Zap,
   Lightbulb,
   Eye,
@@ -21,28 +9,44 @@ import {
   MessageCircle,
   Sliders,
   Info,
-  Sparkles
+  Sparkles,
+  Award,
+  Palette
 } from 'lucide-react';
 
+import {
+  ReflexivePauseIcon,
+  ShareCardIcon,
+  CreateCardIcon,
+  TeamChallengeIcon,
+  WriteDiaryIcon,
+  SwapPlayersIcon,
+  DrawCardsIcon,
+  MoveInnerIcon,
+  MoveOuterIcon,
+  Move2Icon,
+  Back2Icon
+} from './CustomGameIcons';
+
 export const SPECIAL_ICONS = {
-  'MOVE_2': FastForward,
-  'BACK_2': Undo,
-  'TEAM_CHALLENGE': Users,
-  'SWAP_PLACE': ArrowLeftRight,
-  'WRITE_DIARY': Book,
-  'CREATE_CARD': PlusCircle,
-  'SHARE_CARD': Gift,
-  'DRAW_2': Layers,
-  'SKIP_TURN': UserX,
-  'MOVE_OUTER': ArrowUpCircle,
-  'MOVE_INNER': ArrowDownCircle
+  'MOVE_2': Move2Icon,
+  'BACK_2': Back2Icon,
+  'TEAM_CHALLENGE': TeamChallengeIcon,
+  'SWAP_PLACE': SwapPlayersIcon,
+  'WRITE_DIARY': WriteDiaryIcon,
+  'CREATE_CARD': CreateCardIcon,
+  'SHARE_CARD': ShareCardIcon,
+  'DRAW_2': DrawCardsIcon,
+  'SKIP_TURN': ReflexivePauseIcon,
+  'MOVE_INNER': MoveInnerIcon,
+  'MOVE_OUTER': MoveOuterIcon
 };
 
 export const TILE_ICONS = {
   brain: Brain,
-  reflexao: HelpCircle,
+  reflexao: Brain,
   desafio: Zap,
-  memoria: Brain,
+  memoria: Puzzle,
   especial: Zap,
   bulb: Lightbulb,
   eye: Eye,
@@ -52,14 +56,14 @@ export const TILE_ICONS = {
   chat: MessageCircle,
   slider: Sliders,
   center: Info,
-  experiencia: Sparkles,
+  experiencia: Award,
   sorte: Sparkles,
-  custom_memoria: Brain,
-  custom_reflexao: HelpCircle,
+  custom_memoria: Puzzle,
+  custom_reflexao: Brain,
   custom_desafio: Zap,
-  custom_experiencia: Sparkles,
+  custom_experiencia: Award,
   custom_sorte: Sparkles,
-  custom_card: Sparkles,
+  custom_card: Palette,
   ...SPECIAL_ICONS
 };
 

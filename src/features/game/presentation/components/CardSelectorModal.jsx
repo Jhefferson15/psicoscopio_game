@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, History, Brain, Zap, Sparkles, HelpCircle, Puzzle, Award, Brush, PlusCircle, Library } from 'lucide-react';
+import { X, History, Brain, Zap, Sparkles, HelpCircle, Puzzle, Award, Brush, PlusCircle, Library, Plus } from 'lucide-react';
 import { useGame } from '../state/useGame';
 import { customCardRepository } from '../../data/repositories/LocalStorageCardRepository';
 import './CardSelectorModal.css';
@@ -123,7 +123,7 @@ const CardSelectorModal = () => {
 
   if (!cardSelectionTask) return null;
 
-  const { title, message, onSelect, onDrawNew } = cardSelectionTask;
+  const { title, message, onSelect, onDrawNew, onCreateNew } = cardSelectionTask;
 
   const handleSelect = (card) => {
     if (onSelect) onSelect(card);
@@ -132,6 +132,11 @@ const CardSelectorModal = () => {
 
   const handleDrawNew = () => {
     if (onDrawNew) onDrawNew();
+    setCardSelectionTask(null);
+  };
+
+  const handleCreateNew = () => {
+    if (onCreateNew) onCreateNew();
     setCardSelectionTask(null);
   };
 
@@ -187,6 +192,24 @@ const CardSelectorModal = () => {
 
           <div className="selector-scroll-area">
             <div className="selector-options-grid">
+              {/* Opção Criar Nova (Se disponível na tarefa) */}
+              {onCreateNew && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="card-option create-new-option"
+                  onClick={handleCreateNew}
+                >
+                  <div className="draw-icon-wrapper">
+                    <Plus size={32} />
+                  </div>
+                  <div className="draw-info">
+                    <h4>Criar Nova</h4>
+                    <p>Crie uma carta personalizada agora</p>
+                  </div>
+                </motion.button>
+              )}
+
               {/* Opção de Sorteio de Nova Carta - Sempre Visível */}
               <motion.button
                 className="card-option draw-new-option"

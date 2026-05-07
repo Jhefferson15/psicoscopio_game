@@ -23,11 +23,13 @@ import {
   Image as ImageIcon,
   Puzzle,
   Award,
-  Palette
+  Palette,
+  FastForward,
+  Undo
 } from 'lucide-react';
 import { useGame } from '../state/useGame';
 import { useBoardEditor } from '../hooks/useBoardEditor';
-import { STANDARD_TILE_CONFIG } from '../../domain/gameConstants';
+import { STANDARD_TILE_CONFIG, ACTION_METADATA } from '../../domain/gameConstants';
 import BoardPreview from './BoardPreview';
 import TileEditorPopup from './TileEditorPopup';
 import './BoardEditorLayout.css';
@@ -35,37 +37,52 @@ import './BoardEditorSidebar.css';
 import './BoardEditorContent.css';
 import './BoardEditorPreview.css';
 import './BoardEditorResponsive.css';
+import {
+  ReflexivePauseIcon,
+  ShareCardIcon,
+  CreateCardIcon,
+  TeamChallengeIcon,
+  WriteDiaryIcon,
+  SwapPlayersIcon,
+  DrawCardsIcon,
+  MoveInnerIcon,
+  MoveOuterIcon
+} from './CustomGameIcons';
 
 const COLORS = [
-  '#4885CE', '#6FB05E', '#D84B42', '#7B4BB1', '#F4C746', 
-  '#1e293b', '#F43F5E', '#EC4899', '#D946EF', '#8B5CF6', 
-  '#6366F1', '#3B82F6', '#0EA5E9', '#06B6D4', '#14B8A6', 
-  '#84CC16', '#EAB308', '#F97316'
+  '#4885CE', '#6FB05E', '#D84B42', '#7B4BB1', '#F4C746', // Card Categories
+  '#F97316', '#475569', '#06B6D4', '#D946EF', '#0D9488', // Action Colors
+  '#111827', '#8B5CF6', '#EC4899', '#6366F1', '#64748B'  // Special/System
 ];
 
 const TILE_TYPES = [
-  { id: 'memoria', label: 'Memória', color: STANDARD_TILE_CONFIG.memoria.color, icon: Puzzle },
-  { id: 'reflexao', label: 'Reflexão', color: STANDARD_TILE_CONFIG.reflexao.color, icon: Brain },
-  { id: 'desafio', label: 'Desafio', color: STANDARD_TILE_CONFIG.desafio.color, icon: Zap },
-  { id: 'experiencia', label: 'Experiência', color: STANDARD_TILE_CONFIG.experiencia.color, icon: Award },
-  { id: 'sorte', label: 'Sorte', color: STANDARD_TILE_CONFIG.sorte.color, icon: Sparkles },
-  { id: 'custom_memoria', label: 'Custom Memória', color: STANDARD_TILE_CONFIG.memoria.color, icon: Puzzle },
-  { id: 'custom_reflexao', label: 'Custom Reflexão', color: STANDARD_TILE_CONFIG.reflexao.color, icon: Brain },
-  { id: 'custom_desafio', label: 'Custom Desafio', color: STANDARD_TILE_CONFIG.desafio.color, icon: Zap },
-  { id: 'custom_experiencia', label: 'Custom Experiência', color: STANDARD_TILE_CONFIG.experiencia.color, icon: Award },
-  { id: 'custom_sorte', label: 'Custom Sorte', color: STANDARD_TILE_CONFIG.sorte.color, icon: Sparkles },
-  { id: 'custom_card', label: 'Custom Geral', color: '#F4C746', icon: Palette },
-  { id: 'especial', label: 'Especial', color: '#FFFFFF', icon: Settings }
+  { id: 'memoria', label: STANDARD_TILE_CONFIG.memoria.label, color: STANDARD_TILE_CONFIG.memoria.color, icon: Puzzle },
+  { id: 'reflexao', label: STANDARD_TILE_CONFIG.reflexao.label, color: STANDARD_TILE_CONFIG.reflexao.color, icon: Brain },
+  { id: 'desafio', label: STANDARD_TILE_CONFIG.desafio.label, color: STANDARD_TILE_CONFIG.desafio.color, icon: Zap },
+  { id: 'experiencia', label: STANDARD_TILE_CONFIG.experiencia.label, color: STANDARD_TILE_CONFIG.experiencia.color, icon: Award },
+  { id: 'sorte', label: STANDARD_TILE_CONFIG.sorte.label, color: STANDARD_TILE_CONFIG.sorte.color, icon: Sparkles },
+  { id: 'custom_memoria', label: 'Custom Memória', color: STANDARD_TILE_CONFIG.custom_memoria.color, icon: Puzzle },
+  { id: 'custom_reflexao', label: 'Custom Reflexão', color: STANDARD_TILE_CONFIG.custom_reflexao.color, icon: Brain },
+  { id: 'custom_desafio', label: 'Custom Desafio', color: STANDARD_TILE_CONFIG.custom_desafio.color, icon: Zap },
+  { id: 'custom_experiencia', label: 'Custom Experiência', color: STANDARD_TILE_CONFIG.custom_experiencia.color, icon: Award },
+  { id: 'custom_sorte', label: 'Custom Sorte', color: STANDARD_TILE_CONFIG.custom_sorte.color, icon: Sparkles },
+  { id: 'custom_card', label: 'Custom Geral', color: STANDARD_TILE_CONFIG.custom_card.color, icon: Palette },
+  { id: 'especial', label: 'Especial (Mecânica)', color: '#111827', icon: Settings }
 ];
 
 const TILE_ACTIONS = [
   { id: null, label: 'Nenhuma', icon: X, color: '#FFFFFF' },
-  { id: 'MOVE_2', label: 'Avançar 2', icon: Zap, color: '#10B981' },
-  { id: 'BACK_2', label: 'Voltar 2', icon: RotateCcw, color: '#EF4444' },
-  { id: 'MOVE_INNER', label: 'Ir p/ Centro', icon: ChevronLeft, color: '#000000' },
-  { id: 'MOVE_OUTER', label: 'Ir p/ Borda', icon: ChevronLeft, color: '#000000' },
-  { id: 'DRAW_2', label: 'Comprar 2', icon: Plus, color: '#8B5CF6' },
-  { id: 'SWAP_PLACE', label: 'Trocar de Lugar', icon: Users, color: '#F43F5E' }
+  { id: 'MOVE_2', label: ACTION_METADATA.MOVE_2.label, icon: FastForward, color: ACTION_METADATA.MOVE_2.color },
+  { id: 'BACK_2', label: ACTION_METADATA.BACK_2.label, icon: Undo, color: ACTION_METADATA.BACK_2.color },
+  { id: 'MOVE_INNER', label: ACTION_METADATA.MOVE_INNER.label, icon: MoveInnerIcon, color: ACTION_METADATA.MOVE_INNER.color },
+  { id: 'MOVE_OUTER', label: ACTION_METADATA.MOVE_OUTER.label, icon: MoveOuterIcon, color: ACTION_METADATA.MOVE_OUTER.color },
+  { id: 'DRAW_2', label: ACTION_METADATA.DRAW_2.label, icon: DrawCardsIcon, color: ACTION_METADATA.DRAW_2.color },
+  { id: 'SWAP_PLACE', label: ACTION_METADATA.SWAP_PLACE.label, icon: SwapPlayersIcon, color: ACTION_METADATA.SWAP_PLACE.color },
+  { id: 'TEAM_CHALLENGE', label: ACTION_METADATA.TEAM_CHALLENGE.label, icon: TeamChallengeIcon, color: ACTION_METADATA.TEAM_CHALLENGE.color },
+  { id: 'WRITE_DIARY', label: ACTION_METADATA.WRITE_DIARY.label, icon: WriteDiaryIcon, color: ACTION_METADATA.WRITE_DIARY.color },
+  { id: 'CREATE_CARD', label: ACTION_METADATA.CREATE_CARD.label, icon: CreateCardIcon, color: ACTION_METADATA.CREATE_CARD.color },
+  { id: 'SHARE_CARD', label: ACTION_METADATA.SHARE_CARD.label, icon: ShareCardIcon, color: ACTION_METADATA.SHARE_CARD.color },
+  { id: 'SKIP_TURN', label: ACTION_METADATA.SKIP_TURN.label, icon: ReflexivePauseIcon, color: ACTION_METADATA.SKIP_TURN.color }
 ];
 
 const BoardEditor = () => {

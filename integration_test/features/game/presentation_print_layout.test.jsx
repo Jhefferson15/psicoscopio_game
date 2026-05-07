@@ -1,7 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import { describe, test, expect, vi } from 'vitest';
-import React from 'react';
+import { render } from '@testing-library/react';
 import PrintCard from '../../../src/features/game/presentation/components/PrintCard';
 import { CardSlot } from '../../../src/features/game/presentation/components/MenuModals';
 

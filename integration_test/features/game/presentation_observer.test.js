@@ -19,9 +19,9 @@ test('Fluxo do Observador: Deve permitir configurar salas e transitar para o Das
   expect(activeModal).toBe('observer_setup');
 
   // 2. Configurar turma e quantidade
-  setBatchName('Turma de Psicologia 2024');
+  setBatchName('Turma de Psicologia 2026');
   setRoomCount(4);
-  expect(batchName).toBe('Turma de Psicologia 2024');
+  expect(batchName).toBe('Turma de Psicologia 2026');
   expect(roomCount).toBe(4);
 
   // 3. Simular criação

@@ -21,9 +21,9 @@ export class PassTurnUseCase {
     for (let i = 0; i < players.length; i++) {
       const nextPlayer = updatedPlayers[nextIndex];
       const participant = roomParticipants[nextPlayer.id];
-      const isOnline = participant ? participant.isOnline : true;
+      const isOnline = participant?.isOnline ?? true;
 
-      if (nextPlayer.skipNextTurn || !isOnline) {
+      if (nextPlayer.skipNextTurn || isOnline === false) {
         // Se pular por carta, reseta a flag para a próxima rodada
         if (nextPlayer.skipNextTurn) {
           updatedPlayers = updatedPlayers.map((p, j) => 

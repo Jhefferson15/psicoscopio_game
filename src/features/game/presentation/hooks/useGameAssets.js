@@ -5,6 +5,7 @@ import { CardSetRepository } from '../../data/repositories/CardSetRepository';
 import { BoardConfigRepository } from '../../data/repositories/BoardConfigRepository';
 import { customCardRepository } from '../../data/repositories/LocalStorageCardRepository';
 import { firebaseCardRepository } from '../../data/repositories/FirebaseCardRepository';
+import { getTileColor, getTileLabel } from '../../data/repositories/boardRepository';
 
 export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudBoardConfigs, syncBoardConfigsToCloud, cloudCustomCards, showSystemPopup, setDrawnCards }) => {
 
@@ -321,8 +322,16 @@ export const useGameAssets = ({ user, cloudCardSets, syncCardSetsToCloud, cloudB
   const importBoardConfig = (data) => {
     try {
       if (!data.name || !data.tiles || !data.mechanics) throw new Error("Estrutura JSON inválida para tabuleiro.");
+      
+      // Normaliza as casas para seguir as cores e rótulos padrão se possível
+      const normalizedTiles = data.tiles.map(tile => ({
+        ...tile,
+        color: getTileColor(tile.type, tile.action),
+        label: getTileLabel(tile.type, tile.action)
+      }));
+
       const newName = `${data.name} (Importado)`;
-      return saveNewBoardConfig(newName, data.tiles, data.mechanics);
+      return saveNewBoardConfig(newName, normalizedTiles, data.mechanics);
     } catch (e) {
       console.error("Erro ao importar tabuleiro:", e);
       showSystemPopup({

@@ -257,7 +257,7 @@ exports.gameAction = onCall({
           throw new HttpsError("failed-precondition", "A partida já começou e você não faz parte dela.");
         }
 
-        if (participantIds.length >= 4) throw new HttpsError("resource-exhausted", "Sala cheia.");
+        if (participantIds.length >= 6) throw new HttpsError("resource-exhausted", "Sala cheia.");
 
         const userData = {
           id: uid,

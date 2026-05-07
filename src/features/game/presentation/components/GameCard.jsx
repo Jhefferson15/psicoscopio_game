@@ -73,7 +73,14 @@ const GameCard = ({
   const Icon = config.icon;
   const layoutId = `card-${type}-${index}`;
 
-  const [cardText] = useState(() => isCustom && contentType === 'text' ? content : getRandomCardContent(type, activeCardSet?.content));
+  const [cardText] = useState(() => {
+    if (content) {
+      if (typeof content === 'string') return content;
+      if (typeof content === 'object' && content.text) return content.text;
+      if (typeof content === 'object' && content.content && typeof content.content === 'string') return content.content;
+    }
+    return getRandomCardContent(type, activeCardSet?.content);
+  });
 
 
   // Controla a rotacao CSS (com delay para permitir a CSS transition animar)
@@ -225,7 +232,7 @@ const GameCard = ({
                           <p>{cardText}</p>
                         )}
                       </div>
-
+                      
                       {activeBoardConfig.mechanics?.showCardLabels !== false && (
                         <div className="card-footer-bar">
                           <span>PSICOSCÓPIO</span>
@@ -245,7 +252,7 @@ const GameCard = ({
                     </div>
                   </div>
                   <span className="cover-label">
-                    {isCustom ? `CUSTOM\n${config.label.toUpperCase()}` : config.label}
+                    {isCustom ? `CUSTOM\n${config.label.toUpperCase()}` : config.label.toUpperCase()}
                   </span>
                   <div className="cover-dots"></div>
                 </div>

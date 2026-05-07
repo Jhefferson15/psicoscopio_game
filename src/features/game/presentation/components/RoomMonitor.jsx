@@ -14,8 +14,10 @@ const RoomMonitor = ({ roomId, onBack }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
+    Promise.resolve().then(() => {
+      setLoading(true);
+      setError(null);
+    });
 
     const unsubRoom = syncRepository.listenToRoomData(roomId, (data) => {
       if (data) {

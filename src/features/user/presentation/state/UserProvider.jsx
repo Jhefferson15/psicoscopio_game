@@ -50,13 +50,15 @@ export const UserProvider = ({ children }) => {
         Promise.resolve().then(() => loadUserData());
       }
     } else {
-      setStats(null);
-      setDiary([]);
-      setCloudCardSets([]);
-      setCloudBoardConfigs([]);
-      setCloudCustomCards([]);
-      setLoading(false);
-      setIsLoaded(false);
+      Promise.resolve().then(() => {
+        setStats(null);
+        setDiary([]);
+        setCloudCardSets([]);
+        setCloudBoardConfigs([]);
+        setCloudCustomCards([]);
+        setLoading(false);
+        setIsLoaded(false);
+      });
     }
   }, [user, loadUserData, isLoaded]);
 

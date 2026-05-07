@@ -33,17 +33,17 @@ export const SPECIAL_TILES = [
   {
     type: 'AVANCE 2 CASAS',
     description: 'Você fez uma boa escolha!',
-    icon: 'arrow-right'
+    icon: 'fast-forward'
   },
   {
     type: 'VOLTE 2 CASAS',
     description: 'Reflita e tente outra estratégia.',
-    icon: 'arrow-left'
+    icon: 'undo'
   },
   {
     type: 'TROQUE DE LUGAR',
     description: 'Troque de posição com outro jogador.',
-    icon: 'shuffle'
+    icon: 'arrow-left-right'
   },
   {
     type: 'TEAM_CHALLENGE',
@@ -59,15 +59,15 @@ export const SPECIAL_TILES = [
   },
   {
     type: 'MOVE_INNER',
-    label: 'Mover para Dentro',
+    label: 'Ir para o Centro',
     description: 'Sua compreensão aumentou. Você pode avançar para o anel interno.',
-    icon: 'arrow-down'
+    icon: 'arrow-up-circle'
   },
   {
     type: 'MOVE_OUTER',
-    label: 'Mover para Fora',
+    label: 'Ir para a Borda',
     description: 'Às vezes é preciso recuar para enxergar melhor. Volte um anel.',
-    icon: 'arrow-up'
+    icon: 'arrow-down-circle'
   }
 ];
 
@@ -80,13 +80,14 @@ export const SYMBOL_DEFINITIONS = {
     { name: 'Sorte', color: '#F4C746', description: 'Eventos inesperados que mudam o rumo da partida.' }
   ],
   special: [
-    { symbol: 'MOVE_2', label: 'Avance 2', desc: 'Acelere seu caminho no anel atual.' },
-    { symbol: 'BACK_2', label: 'Volte 2', desc: 'Retorne para revisar o caminho.' },
-    { symbol: 'SWAP_PLACE', label: 'Troca', desc: 'Interação direta com outro peão.' },
-    { symbol: 'TEAM_CHALLENGE', label: 'Equipe', desc: 'Ação colaborativa entre todos.' },
-    { symbol: 'WRITE_DIARY', label: 'Diário', desc: 'Momento de registro e escrita.' },
-    { symbol: 'MOVE_INNER', label: 'Entrar', desc: 'Transição para o próximo anel interno.' },
-    { symbol: 'MOVE_OUTER', label: 'Sair', desc: 'Retorno para o anel anterior.' }
+    { symbol: 'MOVE_2', label: 'Avance 2', desc: 'Acelere seu caminho no anel atual.', color: '#F97316' }, 
+    { symbol: 'BACK_2', label: 'Volte 2', desc: 'Retorne para revisar o caminho.', color: '#475569' }, 
+    { symbol: 'SWAP_PLACE', label: 'Troca', desc: 'Interação direta com outro peão.', color: '#D946EF' }, 
+    { symbol: 'TEAM_CHALLENGE', label: 'Equipe', desc: 'Ação colaborativa entre todos.', color: '#06B6D4' }, 
+    { symbol: 'WRITE_DIARY', label: 'Diário', desc: 'Momento de registro e escrita.', color: '#0D9488' }, 
+    { symbol: 'MOVE_INNER', label: 'Centro', desc: 'Transição para o próximo anel interno.', color: '#111827' }, 
+    { symbol: 'MOVE_OUTER', label: 'Borda', desc: 'Retorno para o anel anterior.', color: '#111827' },
+    { symbol: 'SKIP_TURN', label: 'Pausa', desc: 'Pausa reflexiva, pule uma vez.', color: '#64748B' }
   ]
 };
 
@@ -102,7 +103,7 @@ export const GAME_RULES = {
     "Lançar o Dado: O número indica quantas casas você deve avançar.",
     "Ação da Casa: Ao parar em uma casa, execute a ação (Carta ou Símbolo).",
     "Verificação Social: Se cair em uma carta, sua resposta deve ser validada pelos outros jogadores.",
-    "Transição: Se parar em uma casa de Seta, você pode mudar de anel na próxima rodada."
+    "Transição: Se parar em uma casa de 'Ir para o Centro' ou 'Ir para a Borda', você pode mudar de anel na próxima rodada."
   ],
   components: [
     "1 Tabuleiro Circular",
@@ -114,18 +115,40 @@ export const GAME_RULES = {
 };
 
 export const STANDARD_TILE_CONFIG = {
-  memoria: { color: '#4885CE', label: 'MEMÓRIA' },
-  experiencia: { color: '#6FB05E', label: 'EXPERIÊNCIA' },
-  desafio: { color: '#D84B42', label: 'DESAFIO' },
-  reflexao: { color: '#7B4BB1', label: 'REFLEXÃO' },
-  sorte: { color: '#F4C746', label: 'SORTE' },
-  custom_memoria: { color: '#4885CE', label: 'CUSTOM\nMEMÓRIA' },
-  custom_experiencia: { color: '#6FB05E', label: 'CUSTOM\nEXPERIÊNCIA' },
-  custom_desafio: { color: '#D84B42', label: 'CUSTOM\nDESAFIO' },
-  custom_reflexao: { color: '#7B4BB1', label: 'CUSTOM\nREFLEXÃO' },
-  custom_sorte: { color: '#F4C746', label: 'CUSTOM\nSORTE' },
-  custom_card: { color: '#F4C746', label: 'CARTA\nCUSTOM' }
+  memoria: { color: '#4885CE', label: 'MEMÓRIA', icon: 'puzzle' },
+  experiencia: { color: '#6FB05E', label: 'EXPERIÊNCIA', icon: 'award' },
+  desafio: { color: '#D84B42', label: 'DESAFIO', icon: 'zap' },
+  reflexao: { color: '#7B4BB1', label: 'REFLEXÃO', icon: 'brain' },
+  sorte: { color: '#F4C746', label: 'SORTE', icon: 'sparkles' },
+  custom_memoria: { color: '#4885CE', label: 'CUSTOM\nMEMÓRIA', icon: 'puzzle' },
+  custom_experiencia: { color: '#6FB05E', label: 'CUSTOM\nEXPERIÊNCIA', icon: 'award' },
+  custom_desafio: { color: '#D84B42', label: 'CUSTOM\nDESAFIO', icon: 'zap' },
+  custom_reflexao: { color: '#7B4BB1', label: 'CUSTOM\nREFLEXÃO', icon: 'brain' },
+  custom_sorte: { color: '#F4C746', label: 'CUSTOM\nSORTE', icon: 'sparkles' },
+  custom_card: { color: '#F4C746', label: 'CARTA\nCUSTOM', icon: 'palette' }
 };
+
+export const ACTION_METADATA = {
+  'MOVE_2': { color: '#F97316', label: 'AVANCE 2', icon: 'move-2' },
+  'BACK_2': { color: '#475569', label: 'VOLTE 2', icon: 'back-2' },
+  'TEAM_CHALLENGE': { color: '#06B6D4', label: 'EQUIPE', icon: 'team' },
+  'SWAP_PLACE': { color: '#D946EF', label: 'TROCA', icon: 'swap' },
+  'WRITE_DIARY': { color: '#0D9488', label: 'DIÁRIO', icon: 'diary' },
+  'MOVE_INNER': { color: '#000000', label: 'IR P/ CENTRO', icon: 'circle-arrow-up' },
+  'MOVE_OUTER': { color: '#000000', label: 'IR P/ BORDA', icon: 'circle-arrow-down' },
+  'CREATE_CARD': { color: '#8B5CF6', label: 'CRIAR CARTA', icon: 'create-card' },
+  'SHARE_CARD': { color: '#EC4899', label: 'DAR CARTA', icon: 'share-card' },
+  'DRAW_2': { color: '#6366F1', label: 'COMPRAR 2', icon: 'draw-2' },
+  'SKIP_TURN': { color: '#78909C', label: 'PAUSA', icon: 'pause' }
+};
+
+export const GAME_CARDS = [
+  { id: 'memoria', type: 'MEMÓRIA', color: '#4885CE', icon: 'puzzle' },
+  { id: 'experiencia', type: 'EXPERIÊNCIA', color: '#6FB05E', icon: 'award' },
+  { id: 'desafio', type: 'DESAFIO', color: '#D84B42', icon: 'zap' },
+  { id: 'reflexao', type: 'REFLEXÃO', color: '#7B4BB1', icon: 'brain' },
+  { id: 'sorte', type: 'SORTE', color: '#F4C746', icon: 'sparkles' }
+];
 
 
 

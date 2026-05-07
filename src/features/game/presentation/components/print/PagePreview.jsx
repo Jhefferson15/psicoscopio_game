@@ -1,30 +1,14 @@
 import { memo, useRef, useState, useEffect } from 'react';
 import { 
-  Brain, 
-  HelpCircle, 
-  Zap, 
-  Sparkles, 
-  Book, 
   Target, 
   List, 
   RefreshCw, 
-  ArrowRightCircle, 
   Info,
-  FastForward,
-  Undo,
-  Users,
-  ArrowLeftRight,
-  PlusCircle,
-  Gift,
-  Layers,
-  UserX,
-  ArrowUpCircle,
-  ArrowDownCircle
 } from 'lucide-react';
 import { GAME_RULES, SYMBOL_DEFINITIONS } from '../../../domain/gameConstants';
+import { TILE_ICONS, SPECIAL_ICONS } from '../board_constants';
 import BoardView from '../BoardView';
 import PrintCard from '../PrintCard';
-import { useGame } from '../../state/useGame';
 import '../MenuModals.css';
 
 const CATEGORY_COLORS = {
@@ -36,7 +20,7 @@ const CATEGORY_COLORS = {
   custom: '#94A3B8'
 };
 
-export const CardSlot = ({ category, label, icon, color }) => (
+export const CardSlot = ({ label, icon, color }) => (
   <div className="card-stack-slot" style={{ '--slot-color': color }}>
     <div className="slot-border" />
     <div className="slot-content">
@@ -88,7 +72,7 @@ const PagePreview = memo(({ type, data, settings, pageNumber, isExport = false }
           </div>
         );
       case 'board-left':
-      case 'board-right':
+      case 'board-right': {
         const isLeft = type === 'board-left';
         // The board-half-container is 820px wide (base).
         // To center it at the edge, the unscaled offset must be -410px.
@@ -109,16 +93,16 @@ const PagePreview = memo(({ type, data, settings, pageNumber, isExport = false }
                 <>
                   <div className="board-title-vertical">PSICOSCÓPIO</div>
                   <div className="card-stack-slots">
-                    <CardSlot category="memoria" label="MEMÓRIA" icon={<Brain size={16} />} color={CATEGORY_COLORS.memoria} />
-                    <CardSlot category="reflexao" label="REFLEXÃO" icon={<HelpCircle size={16} />} color={CATEGORY_COLORS.reflexao} />
-                    <CardSlot category="desafio" label="DESAFIO" icon={<Zap size={16} />} color={CATEGORY_COLORS.desafio} />
+                    <CardSlot label="MEMÓRIA" icon={<Brain size={16} />} color={CATEGORY_COLORS.memoria} />
+                    <CardSlot label="REFLEXÃO" icon={<HelpCircle size={16} />} color={CATEGORY_COLORS.reflexao} />
+                    <CardSlot label="DESAFIO" icon={<Zap size={16} />} color={CATEGORY_COLORS.desafio} />
                   </div>
                 </>
               ) : (
                 <>
                   <div className="card-stack-slots">
-                    <CardSlot category="experiencia" label="EXPERIÊNCIA" icon={<Sparkles size={16} />} color={CATEGORY_COLORS.experiencia} />
-                    <CardSlot category="sorte" label="SORTE" icon={<Sparkles size={16} />} color={CATEGORY_COLORS.sorte} />
+                    <CardSlot label="EXPERIÊNCIA" icon={<Sparkles size={16} />} color={CATEGORY_COLORS.experiencia} />
+                    <CardSlot label="SORTE" icon={<Sparkles size={16} />} color={CATEGORY_COLORS.sorte} />
                   </div>
                   <div className="board-notebook-slot">
                     <div className="notebook-header">
@@ -151,6 +135,7 @@ const PagePreview = memo(({ type, data, settings, pageNumber, isExport = false }
             }} />
           </div>
         );
+      }
       case 'accessories':
         return (
           <div className="preview-page-accessories" style={{ padding }}>
@@ -286,36 +271,28 @@ const PagePreview = memo(({ type, data, settings, pageNumber, isExport = false }
                 <div className="symbols-grid">
                   <div className="symbol-column">
                     <h3>Categorias de Cartas</h3>
-                    {SYMBOL_DEFINITIONS.categories.map((cat, i) => (
-                      <div key={i} className="symbol-item">
-                        <div className="symbol-icon-circle" style={{ backgroundColor: cat.color }}>
-                          {cat.name === 'Memória' && <Brain size={14} color="white" />}
-                          {cat.name === 'Experiência' && <Sparkles size={14} color="white" />}
-                          {cat.name === 'Desafio' && <Zap size={14} color="white" />}
-                          {cat.name === 'Reflexão' && <HelpCircle size={14} color="white" />}
-                          {cat.name === 'Sorte' && <PlusCircle size={14} color="white" />}
+                    {SYMBOL_DEFINITIONS.categories.map((cat, i) => {
+                      const iconKey = cat.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                      const CategoryIcon = TILE_ICONS[iconKey] || Info;
+                      return (
+                        <div key={i} className="symbol-item">
+                          <div className="symbol-icon-circle" style={{ backgroundColor: cat.color }}>
+                            <CategoryIcon size={14} color="white" />
+                          </div>
+                          <div>
+                            <strong>{cat.name}</strong>
+                            <p>{cat.description}</p>
+                          </div>
                         </div>
-                        <div>
-                          <strong>{cat.name}</strong>
-                          <p>{cat.description}</p>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   <div className="symbol-column">
                     <h3>Casas Especiais</h3>
                     <div className="special-symbols-grid">
                       {SYMBOL_DEFINITIONS.special.map((spec, i) => {
-                        const Icon = {
-                          'MOVE_2': FastForward,
-                          'BACK_2': Undo,
-                          'SWAP_PLACE': ArrowLeftRight,
-                          'TEAM_CHALLENGE': Users,
-                          'WRITE_DIARY': Book,
-                          'MOVE_INNER': ArrowDownCircle,
-                          'MOVE_OUTER': ArrowUpCircle
-                        }[spec.symbol] || Info;
+                        const Icon = SPECIAL_ICONS[spec.symbol] || Info;
 
                         return (
                           <div key={i} className="symbol-item mini">
